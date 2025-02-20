@@ -37,7 +37,7 @@ for task in "${tasks[@]}"; do
     go build -buildmode=plugin -trimpath -o "$task.task" ./main.go
     
     # Mover el archivo .plugin si es el plugin 'task'
-    mv "./$task.plugin" "../../backend/plugins/tasks/"
+    mv "./$task.task" "../../backend/plugins/tasks/"
     
 done
 
@@ -60,5 +60,8 @@ for dinamic in "${dinamics[@]}"; do
     mv "./$dinamic.dinamic" "../../backend/plugins/"
 
 done
+
+chmod +x "$BASE_DIR/backend/plugins/tasks/*"
+chmod +x "$BASE_DIR/backend/plugins/*"
 
 echo "¡Proceso completado!"
