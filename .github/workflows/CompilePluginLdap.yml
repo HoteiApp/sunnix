@@ -1,0 +1,75 @@
+name: Compile and Deploy - Plugins Ldap
+
+on:
+  push:
+    branches: [ "testing", "pro" ]
+    paths:
+      - 'plugins/ldap/**'
+  workflow_dispatch:
+    inputs:
+      deploy_to_server:
+        description: 'Deploy to server'
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22.7'
+
+    - name: Debug Info
+      working-directory: ./plugins/ldap
+      run: |
+        pwd
+        ls -la
+        go version
+        cat go.mod
+
+    - name: Download dependencies
+      working-directory: ./plugins/ldap
+      run: |
+        go mod tidy
+
+    - name: Build
+      working-directory: ./plugins/ldap
+      run: |
+        echo "Iniciando compilación..."
+        sudo go build -v -buildmode=plugin -trimpath -o ldap.plugin main.go
+        echo "Compilación completada"
+        ls -la ldap.plugin
+
+    - name: Deploy Ldap Plugin to Server
+      if: ${{ github.event_name == 'push' || github.event.inputs.deploy_to_server == 'true' }}
+      env:
+        PRIVATE_KEY: ${{ github.ref == 'refs/heads/pro' && secrets.SSH_PRIVATE_KEY_PRO || secrets.SSH_PRIVATE_KEY }}
+        HOSTNAME: ${{ github.ref == 'refs/heads/pro' && secrets.IP_ADDRESS_PRO || secrets.IP_ADDRESS }}
+        USER_NAME: ${{ secrets.USER_NAME }}
+        CALLED_BY_DEPLOY_CENTER: ${{ github.event.inputs.called_by_deploy_center }}
+      run: |
+        echo "Desplegando en rama ${{ github.ref }} a servidor $HOSTNAME"
+        echo "$PRIVATE_KEY" > private_key.pem
+        chmod 600 private_key.pem
+        scp -o StrictHostKeyChecking=no -i private_key.pem ./plugins/ldap/ldap.plugin $USER_NAME@$HOSTNAME:/tmp/ldap.plugin.tmp
+        ssh -o StrictHostKeyChecking=no -i private_key.pem $USER_NAME@$HOSTNAME << EOF
+          if [[ -z "$CALLED_BY_DEPLOY_CENTER" ]]; then
+            sudo systemctl stop sunissup
+          fi
+          # Verificar si el directorio existe, si no, crearlo
+          if [ ! -d "/opt/sunissUp/plugins" ]; then
+            sudo mkdir -p /opt/sunissUp/plugins
+          fi
+          sudo mv /tmp/ldap.plugin.tmp /opt/sunissUp/plugins/ldap.plugin
+          sudo chmod +x /opt/sunissUp/plugins/ldap.plugin
+          if [[ -z "$CALLED_BY_DEPLOY_CENTER" ]]; then
+            sudo systemctl start sunissup
+          fi
+          echo "Ldap Plugin desplegado correctamente."
+        EOF

@@ -1,0 +1,226 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "path/to/your/go/package/auth";
+
+// Definimos el servicio
+service AuthUser {
+  // Definimos el método para obtener un usuario activo, que devuelve un ActiveUser
+  rpc GetActiveUser (UserRequest) returns (ActiveUser);
+}
+
+// Mensaje para identificar el usuario (puede ser un ID o lo que necesites)
+message UserRequest {
+  string user_id = 1;
+}
+
+// Definimos el mensaje ActiveUser con sus campos
+message ActiveUser {
+  User user = 1;                      // Referencia al mensaje 'User'
+  WorkerRecord record = 2;            // Referencia al mensaje 'WorkerRecord'
+  string signature = 3;               // Firma del usuario
+  Week week_active = 4;               // Semana activa del usuario
+  repeated Event events = 5;          // Eventos relacionados
+  repeated OutConversation conversation = 6; // Conversaciones relacionadas
+}
+
+// Definición de Users (Usuario)
+message User {
+  uint32 id = 1;                          // ID del usuario
+  string uid = 2;                         // Username
+  string email = 3;                       // Email address
+  string nick = 4;                        // NickName
+  bool change_password = 5;               // Si el usuario debe cambiar la contraseña
+  string status = 6;                      // Estado (active | inactive | hiring)
+  bool security_code = 7;                 // Security Code 2fa
+  bool global = 8;                        // Indica si el usuario es global
+  bool approved = 9;                      // Indica si el usuario ha sido aprobado
+  bool active = 10;                       // Indica si el usuario está activo
+  
+  uint32 referrer_id = 11;                // ID del usuario que refirió a este usuario (opcional)
+  string roll = 12;                       // Roles del sistema (tmp|TCM|SUPERVISOR|QA|HR|MG)
+  string credentials = 13;                // Credenciales si el usuario es TCM o Supervisor
+  bool temporary_supervisor = 14;         // Indica si el supervisor es temporal
+  string signature = 15;                  // Firma del usuario (usualmente no se incluye en el protocolo)
+  bool hr_can_sign = 16;                  // Autoriza a HR a firmar por el usuario
+  bool qa_can_sign = 17;                  // Autoriza a QA a firmar por el usuario
+  bool supervisor_can_sign = 18;          // Autoriza al Supervisor a firmar por el usuario
+  uint32 record = 19;                     // Registro asociado al usuario
+  string supervisor = 20;                 // ID del supervisor si es TCM
+  float payment_by_units = 21;            // Pago por unidades, valor por defecto 7.28
+}
+
+// Definición de OutConversation (Conversaciones salientes)
+message OutConversation {
+  double id = 1;           // Utilizamos 'double' para mapear 'float64' en Go
+  double user = 2;         // 'user' es 'float64' en Go, por lo que usamos 'double' en Protobuf
+  bool online = 3;         // 'online' es un valor booleano
+  string nick = 4;         // 'nick' es de tipo 'string'
+  string last_message = 5; // 'last_message' es de tipo 'string'
+}
+
+// Definición de WorkerRecord (Historial laboral)
+message WorkerRecord {
+    uint32 id = 1;
+    string uid = 2;
+    string full_name = 3;
+    string email = 4;
+    string address = 5;
+    string city = 6;
+    string state = 7;
+    string zip_code = 8;
+    string county = 9;
+    string home_phone = 10;
+    string cell_phone = 11;
+    string social_security = 12;
+    string dob = 13;
+    string application_date = 14;
+    string applying_as = 15;
+    string position_applied = 16;
+    string available_start_date = 17;
+    string available_for = 18;
+    string question1 = 19;
+    string question2 = 20;
+    string question3 = 21;
+    string question4 = 22;
+    string question5 = 23;
+    string question6 = 24;
+    string question7 = 25;
+    string question8 = 26;
+    string question9 = 27;
+    string details_questions_in_yes = 28;
+    string question10 = 29;
+    string charged_explain = 30;
+    string question11 = 31;
+    string question12 = 32;
+    string language_list = 33;
+    string skills_list = 34;
+    Educations education = 35;
+    EmploymentHistory employment_history = 36;
+    PersonalReferences personal_references = 37;
+    EmergencyMedical emergency_medical = 38;
+    NecessaryDocuments necessary_documents = 39;
+    DirectDeposit direct_deposit = 40;
+}
+
+// Definición de Educations
+message Educations {
+    string institution = 1;
+    string course = 2;
+    string started = 3;
+    string completed = 4;
+    string second_institution = 5;
+    string second_course = 6;
+    string second_started = 7;
+    string second_completed = 8;
+    string third_institution = 9;
+    string third_course = 10;
+    string third_started = 11;
+    string third_completed = 12;
+}
+
+// Definición de EmploymentHistory
+message EmploymentHistory {
+    string employer = 1;
+    string address = 2;
+    string supervisor = 3;
+    string phone = 4;
+    string period = 5;
+    string position = 6;
+    string reason = 7;
+    string second_employer = 8;
+    string second_address = 9;
+    string second_supervisor = 10;
+    string second_phone = 11;
+    string second_period = 12;
+    string second_position = 13;
+    string second_reason = 14;
+}
+
+// Definición de PersonalReferences
+message PersonalReferences {
+    string name = 1;
+    string phone = 2;
+    string relationship = 3;
+    string second_name = 4;
+    string second_phone = 5;
+    string second_relationship = 6;
+}
+
+// Definición de EmergencyMedical
+message EmergencyMedical {
+    string name = 1;
+    string relationship = 2;
+    string home_phone = 3;
+    string cell_phone = 4;
+    string employer = 5;
+    string employer_phone = 6;
+    string known_allergies = 7;
+    string health_condition = 8;
+    string medications = 9;
+    string physicians_name = 10;
+    string physicians_phone = 11;
+    string preferred_hospital = 12;
+    string medical_insurance = 13;
+    string policy = 14;
+}
+
+// Definición de NecessaryDocuments
+message NecessaryDocuments {
+    bool resume = 1;
+    bool diploma_transcripts = 2;
+    bool licenses_certifications = 3;
+    bool course_fcb = 4;
+    bool service_trainer_provider = 5;
+    string service_trainer_provider_date = 6;
+    bool service_cpr_aed = 7;
+    string service_cpr_aed_date = 8;
+    bool service_osha = 9;
+    string service_osha_date = 10;
+    bool service_infection_control = 11;
+    string service_infection_control_date = 12;
+    bool service_hiv_aids = 13;
+    bool service_domestic_violence = 14;
+    bool service_hippa = 15;
+    bool service_security_awareness = 16;
+    bool service_access_civil_rights = 17;
+    bool service_deaf_hard = 18;
+    bool service_fars_cfars = 19;
+    bool other_medicaid_certification = 20;
+    bool other_medicaid_provider = 21;
+    bool other_drivers_license = 22;
+    bool other_social_security_card = 23;
+    bool other_proof_legal_status = 24;
+    bool other_employee_id_badge = 25;
+    bool other_vehicle_registration = 26;
+    bool other_proof_insurance = 27;
+    bool form_i9 = 28;
+    bool form_w9 = 29;
+    bool form_w4 = 30;
+}
+
+// Definición de DirectDeposit
+message DirectDeposit {
+    string financial_institution = 1;
+    string routing_number = 2;
+    string account_number = 3;
+    string options = 4;
+}
+
+// Definición de Week
+message Week {
+    uint32 id = 1;
+    string start = 2;
+    string end = 3;
+    bool active = 4;
+}
+
+// Definición de Event
+message Event {
+    uint32 id = 1;
+    uint32 user = 2;
+    string date = 3;
+    string title = 4;
+    string description = 5;
+}

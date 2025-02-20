@@ -1,0 +1,11 @@
+[Unit]
+Description=SunissUp
+
+[Service]
+WorkingDirectory=/opt/sunissUp
+ExecStart=/opt/sunissUp/sunissup
+#CPUAccounting=true
+#CPUQuota=40%
+Restart=always
+[Install]
+WantedBy=multi-user.target

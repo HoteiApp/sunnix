@@ -1,0 +1,12 @@
+/vendor/
+/data/
+/app/
+/modules/
+/plugins/
+database.db
+.vscode/
+.env
+sunissup*
+document.pdf
+server_sunissup
+run.sh

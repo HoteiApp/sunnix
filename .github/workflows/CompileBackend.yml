@@ -1,0 +1,141 @@
+name: Compile and Deploy - Backend
+
+on:
+  push:
+    branches: [ "testing", "pro" ]
+    paths:
+      - 'backend/**'
+  workflow_dispatch:
+    inputs:
+      deploy_to_server:
+        description: 'Desplegar al servidor'
+        type: boolean
+        required: true
+        default: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+          
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22.7'
+
+    - name: Install ALSA dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libasound2-dev pkg-config
+
+    - name: Debug Info
+      working-directory: ./backend
+      run: |
+        pwd
+        ls -la
+        go version
+        cat go.mod
+        
+    - name: Download dependencies
+      working-directory: ./backend
+      run: |
+        go mod tidy
+        
+    - name: Build
+      working-directory: ./backend
+      run: |
+        echo "Iniciando compilación..."
+        sudo go build -v -trimpath -o sunissup main.go
+        echo "Compilación completada"
+        ls -la sunissup
+
+    - name: Deploy Backend to Server
+      if: ${{ github.event_name == 'push' || github.event.inputs.deploy_to_server == 'true' }}
+      env:
+        PRIVATE_KEY: ${{ github.ref == 'refs/heads/pro' && secrets.SSH_PRIVATE_KEY_PRO || secrets.SSH_PRIVATE_KEY }}
+        HOSTNAME: ${{ github.ref == 'refs/heads/pro' && secrets.IP_ADDRESS_PRO || secrets.IP_ADDRESS }}
+        USER_NAME: ${{ secrets.USER_NAME }}
+        CALLED_BY_DEPLOY_CENTER: ${{ github.event.inputs.called_by_deploy_center }}
+      run: |
+        echo "Desplegando en rama ${{ github.ref }} a servidor $HOSTNAME"
+        echo "$PRIVATE_KEY" > private_key.pem
+        chmod 600 private_key.pem
+        # Primero verificamos cada directorio individualmente
+        STATIC_EXISTS=$(ssh -o StrictHostKeyChecking=no -i private_key.pem $USER_NAME@$HOSTNAME "[ -d '/opt/sunissUp/static' ] && echo 'true' || echo 'false'")
+        LOCALE_EXISTS=$(ssh -o StrictHostKeyChecking=no -i private_key.pem $USER_NAME@$HOSTNAME "[ -d '/opt/sunissUp/locale' ] && echo 'true' || echo 'false'")
+        TOOLS_EXISTS=$(ssh -o StrictHostKeyChecking=no -i private_key.pem $USER_NAME@$HOSTNAME "[ -d '/opt/sunissUp/tools' ] && echo 'true' || echo 'false'")
+        
+        # Copiar el ejecutable
+        scp -o StrictHostKeyChecking=no -i private_key.pem ./backend/sunissup $USER_NAME@$HOSTNAME:/tmp/sunissup.tmp
+        
+        # Copiar solo los directorios que no existen
+        if [ "$STATIC_EXISTS" = "false" ]; then
+          echo "Copiando directorio static..."
+          scp -r -o StrictHostKeyChecking=no -i private_key.pem ./backend/static $USER_NAME@$HOSTNAME:/tmp/
+        fi
+        if [ "$LOCALE_EXISTS" = "false" ]; then
+          echo "Copiando directorio locale..."
+          scp -r -o StrictHostKeyChecking=no -i private_key.pem ./backend/locale $USER_NAME@$HOSTNAME:/tmp/
+        fi
+        if [ "$TOOLS_EXISTS" = "false" ]; then
+          echo "Copiando directorio tools..."
+          scp -r -o StrictHostKeyChecking=no -i private_key.pem ./backend/tools $USER_NAME@$HOSTNAME:/tmp/
+        fi
+        
+        ssh -o StrictHostKeyChecking=no -i private_key.pem $USER_NAME@$HOSTNAME << EOF
+          # Verificar y crear directorio si no existe
+          if [ ! -d "/opt/sunissUp" ]; then
+            sudo mkdir -p /opt/sunissUp
+          fi
+
+          # Verificar y crear directorios app y data si no existen
+          if [ ! -d "/opt/sunissUp/app" ]; then
+            sudo mkdir -p /opt/sunissUp/app
+            sudo chmod 755 /opt/sunissUp/app
+          fi
+
+          if [ ! -d "/opt/sunissUp/data" ]; then
+            sudo mkdir -p /opt/sunissUp/data
+            sudo chmod 755 /opt/sunissUp/data
+          fi
+
+          # Verificar e instalar libasound2 si no está instalado
+          if ! dpkg -l | grep -q libasound2; then
+            sudo apt-get update
+            sudo apt-get install -y libasound2
+          fi
+
+          if [[ -z "$CALLED_BY_DEPLOY_CENTER" ]]; then
+            sudo systemctl stop sunissup
+          fi
+          
+          # Mover el ejecutable
+          sudo mv /tmp/sunissup.tmp /opt/sunissUp/sunissup
+          
+          # Mover y establecer permisos solo para los directorios que no existían
+          if [ ! -d "/opt/sunissUp/static" ] && [ -d "/tmp/static" ]; then
+            sudo mv /tmp/static /opt/sunissUp/
+            sudo chmod -R 755 /opt/sunissUp/static
+          fi
+          
+          if [ ! -d "/opt/sunissUp/locale" ] && [ -d "/tmp/locale" ]; then
+            sudo mv /tmp/locale /opt/sunissUp/
+            sudo chmod -R 755 /opt/sunissUp/locale
+          fi
+          
+          if [ ! -d "/opt/sunissUp/tools" ] && [ -d "/tmp/tools" ]; then
+            sudo mv /tmp/tools /opt/sunissUp/
+            sudo chmod -R 755 /opt/sunissUp/tools
+          fi
+          
+          # Establecer permisos del ejecutable
+          sudo chmod +x /opt/sunissUp/sunissup
+          
+          if [[ -z "$CALLED_BY_DEPLOY_CENTER" ]]; then
+            sudo systemctl start sunissup
+          fi
+          echo "Backend desplegado correctamente."
+        EOF
+

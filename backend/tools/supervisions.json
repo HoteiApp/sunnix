@@ -1,0 +1,299 @@
+{
+    "supervisions": [
+        {
+            "order": 1,
+            "domain": "Engagement and Assessment",
+            "active": true,
+            "topics": [
+                {
+                    "title": "Case Management Principles and Core Functions",
+                    "hour": 1,
+                    "order": 1
+                },
+                {
+                    "title": "Screening Instruments, Procedures and Techniques",
+                    "hour": 1,
+                    "order": 2
+                },
+                {
+                    "title": "Assessment Instruments, Procedures and Techniques",
+                    "hour": 1,
+                    "order": 3
+                },
+                {
+                    "title": "Behavioral Health Conditions - Mental Health / Substance Use",
+                    "hour": 1,
+                    "order": 4
+                },
+                {
+                    "title": "Risk Factors / Risk Assessment ( safety, suicide, etc)",
+                    "hour": 1,
+                    "order": 5
+                },
+                {
+                    "title": "Client Engagement Stretegies",
+                    "hour": 1,
+                    "order": 6
+                },
+                {
+                    "title": "Skills to Build Rapport",
+                    "hour": 1,
+                    "order": 7
+                },
+                {
+                    "title": "Motivational Interviewing",
+                    "hour": 1,
+                    "order": 8
+                },
+                {
+                    "title": "Functional Assessment",
+                    "hour": 1,
+                    "order": 9
+                },
+                {
+                    "title": "Assessment Data Collection and Analysis",
+                    "hour": 1,
+                    "order": 10
+                }
+            ]
+        },
+        {
+            "order": 2,
+            "domain": "Service Planning and Development",
+            "active": true,
+            "topics": [
+                {
+                    "title": "Srengths-based and Person-Centered Planning",
+                    "hour": 1,
+                    "order": 1
+                },
+                {
+                    "title": "Components of a Service Plan",
+                    "hour": 1,
+                    "order": 2
+                },
+                {
+                    "title": "Collaboration with Collateral Resources",
+                    "hour": 1,
+                    "order": 3
+                },
+                {
+                    "title": "Developing Goals and Objectives",
+                    "hour": 1,
+                    "order": 4
+                },
+                {
+                    "title": "Writing Measureable and Effective Service Plans",
+                    "hour": 1,
+                    "order": 5
+                },
+                {
+                    "title": "Prioritization of Needs across Functional Domains",
+                    "hour": 1,
+                    "order": 6
+                },
+                {
+                    "title": "Measuring Success",
+                    "hour": 1,
+                    "order": 7
+                },
+                {
+                    "title": "Stages of Change",
+                    "hour": 1,
+                    "order": 8
+                },
+                {
+                    "title": "Principles of Recovery / Recovery Supports",
+                    "hour": 1,
+                    "order": 9
+                },
+                {
+                    "title": "Special Population Needs",
+                    "hour": 1,
+                    "order": 10
+                },
+                {
+                    "title": "Service Plan Monitoring and Updates",
+                    "hour": 1,
+                    "order": 11
+                },
+                {
+                    "title": "Strategies for Termination or Transfer of Services",
+                    "hour": 1,
+                    "order": 12
+                }
+            ]
+        },
+        {
+            "order": 3,
+            "domain": "Coordination, Linkage and Monitoring",
+            "active": true,
+            "topics": [
+                {
+                    "title": "Making Effective Referrals and Follow-ups",
+                    "hour": 1,
+                    "order": 1
+                },
+                {
+                    "title": "Networking and Collaboration with Community Resources/Services",
+                    "hour": 1,
+                    "order": 2
+                },
+                {
+                    "title": "Linkage to Formal and Informal Supports",
+                    "hour": 1,
+                    "order": 3
+                },
+                {
+                    "title": "Strategies to Build Partnerships and Alliances",
+                    "hour": 1,
+                    "order": 4
+                },
+                {
+                    "title": "Communications Skills",
+                    "hour": 1,
+                    "order": 5
+                },
+                {
+                    "title": "Multidisciplinary Teamwork",
+                    "hour": 1,
+                    "order": 6
+                },
+                {
+                    "title": "Confidentiality Laws and Regulations",
+                    "hour": 1,
+                    "order": 7
+                },
+                {
+                    "title": "Advocacy for Client Services and Supports",
+                    "hour": 1,
+                    "order": 8
+                }
+            ]
+        },
+        {
+            "order": 4,
+            "domain": "Documentation",
+            "active": true,
+            "topics": [
+                {
+                    "title": "Assessment, Discharge or Transfer Summaries",
+                    "hour": 1,
+                    "order": 1
+                },
+                {
+                    "title": "Progress Notes",
+                    "hour": 1,
+                    "order": 2
+                },
+                {
+                    "title": "Documentation Requirements and Techniques",
+                    "hour": 1,
+                    "order": 3
+                },
+                {
+                    "title": "Records Management / Use of Technology for Documentation",
+                    "hour": 1,
+                    "order": 4
+                },
+                {
+                    "title": "Privacy & Confidentiality",
+                    "hour": 1,
+                    "order": 5
+                }
+            ]
+        },
+        {
+            "order": 5,
+            "domain": "Professional, Legal and Ethical Responsibilities",
+            "active": true,
+            "topics": [
+                {
+                    "title": "Professional Boundaries",
+                    "hour": 1,
+                    "order": 1
+                },
+                {
+                    "title": "Cultural Competence",
+                    "hour": 1,
+                    "order": 2
+                },
+                {
+                    "title": "Ethical Decision Making / Code of Ethics",
+                    "hour": 1,
+                    "order": 3
+                },
+                {
+                    "title": "Laws / Rules & Regulations",
+                    "hour": 1,
+                    "order": 4
+                },
+                {
+                    "title": "Privacy / Confidentiality / HIPPA",
+                    "hour": 1,
+                    "order": 5
+                },
+                {
+                    "title": "Relationships / Dual Relationships",
+                    "hour": 1,
+                    "order": 6
+                },
+                {
+                    "title": "Sexual Misconduct",
+                    "hour": 1,
+                    "order": 7
+                },
+                {
+                    "title": "Effective Use of Supervision and Case Consultation",
+                    "hour": 1,
+                    "order": 8
+                },
+                {
+                    "title": "Computer and Socual Media Ethics",
+                    "hour": 1,
+                    "order": 9
+                },
+                {
+                    "title": "Progess Note",
+                    "hour": 1,
+                    "order": 10
+                },
+                {
+                    "title": "Services at Community",
+                    "hour": 1,
+                    "order": 11
+                },
+                {
+                    "title": "Advocacy Services",
+                    "hour": 1,
+                    "order": 12
+                },
+                {
+                    "title": "Coordination Services",
+                    "hour": 1,
+                    "order": 13
+                },
+                {
+                    "title": "Linking Services",
+                    "hour": 1,
+                    "order": 14
+                },
+                {
+                    "title": "Monitoring Services",
+                    "hour": 1,
+                    "order": 15
+                },
+                {
+                    "title": "Documenting General Rules",
+                    "hour": 1,
+                    "order": 16
+                },
+                {
+                    "title": "Case Management Principles and Core Functions",
+                    "hour": 1,
+                    "order": 17
+                }
+            ]
+        }
+    ]
+}

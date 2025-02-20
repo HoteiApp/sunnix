@@ -1,0 +1,57 @@
+name: eventsPluginDeploy
+
+on:
+  push:
+    branches: [ "main" ]
+  
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+          
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21.5'
+                
+    - name: Check Service
+      uses: actions/setup-go@v5
+      with: 
+        go-version: '1.21.5'
+            
+    - name: Build
+      run: sudo go build -buildmode=plugin -trimpath -o events.dinamic main.go
+      
+    - name: CopyFile
+      env:
+        PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        HOSTNAME: ${{secrets.IP_ADDRESS}}
+        USER_NAME: ${{secrets.USER_NAME}}
+      run: |      
+        sudo echo "$PRIVATE_KEY" > private_key.pem
+        sudo chmod 600 private_key.pem
+        sudo scp -o StrictHostKeyChecking=no -i private_key.pem events.dinamic $USER_NAME@$HOSTNAME:/home/$USER_NAME/events.dinamic.tmp
+        
+
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+    
+    - name: Deploy eventskPlugin to EC2
+      env:
+        PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        HOSTNAME: ${{secrets.IP_ADDRESS}}
+        USER_NAME: ${{secrets.USER_NAME}}
+      run: |      
+        echo "$PRIVATE_KEY" > private_key.pem
+        chmod 600 private_key.pem
+        ssh -o StrictHostKeyChecking=no -i private_key.pem $USER_NAME@$HOSTNAME '
+          sudo systemctl stop sunissup
+          sudo mv /home/'$USER_NAME'/events.dinamic.tmp /opt/sunissUp/plugins/events.dinamic
+          sudo chmod +x /opt/sunissUp/plugins/events.dinamic
+          sudo systemctl start sunissup
+          echo "Events Plugin Deployed"
+        '

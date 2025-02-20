@@ -1,0 +1,401 @@
+name: SunissUp Deploy Center
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_all:
+        description: 'Desplegar todo'
+        type: choice
+        options:
+          - 'No'
+          - 'Solo compilar'
+          - 'Compilar y desplegar'
+        default: 'No'
+        required: true
+      backend_action:
+        description: 'Backend'
+        type: choice
+        options:
+          - 'No ejecutar'
+          - 'Solo compilar'
+          - 'Compilar y desplegar'
+        default: 'No ejecutar'
+        required: true
+      chat_plugin_action:
+        description: 'Plugin Chat'
+        type: choice
+        options:
+          - 'No ejecutar'
+          - 'Solo compilar'
+          - 'Compilar y desplegar'
+        default: 'No ejecutar'
+        required: true
+      events_plugin_action:
+        description: 'Plugin Events'
+        type: choice
+        options:
+          - 'No ejecutar'
+          - 'Solo compilar'
+          - 'Compilar y desplegar'
+        default: 'No ejecutar'
+        required: true
+      ldap_plugin_action:
+        description: 'Plugin LDAP'
+        type: choice
+        options:
+          - 'No ejecutar'
+          - 'Solo compilar'
+          - 'Compilar y desplegar'
+        default: 'No ejecutar'
+        required: true
+      pdf_plugin_action:
+        description: 'Plugin PDF'
+        type: choice
+        options:
+          - 'No ejecutar'
+          - 'Solo compilar'
+          - 'Compilar y desplegar'
+        default: 'No ejecutar'
+        required: true
+      s3_plugin_action:
+        description: 'Plugin S3'
+        type: choice
+        options:
+          - 'No ejecutar'
+          - 'Solo compilar'
+          - 'Compilar y desplegar'
+        default: 'No ejecutar'
+        required: true
+      task_plugin_action:
+        description: 'Plugin Task'
+        type: choice
+        options:
+          - 'No ejecutar'
+          - 'Solo compilar'
+          - 'Compilar y desplegar'
+        default: 'No ejecutar'
+        required: true
+      task_weeks_plugin_action:
+        description: 'Plugin Task Weeks'
+        type: choice
+        options:
+          - 'No ejecutar'
+          - 'Solo compilar'
+          - 'Compilar y desplegar'
+        default: 'No ejecutar'
+        required: true
+
+  push:
+    branches: [ "deploy" ]
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  check-deploy-mode:
+    runs-on: ubuntu-latest
+    outputs:
+      deploy_full: ${{ steps.check-mode.outputs.deploy_full }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check deploy mode
+        id: check-mode
+        run: |
+          if [ -f "actions_mode.txt" ]; then
+            DEPLOY_FULL=$(grep "deploy_full=" actions_mode.txt | cut -d'=' -f2)
+            echo "deploy_full=${DEPLOY_FULL}" >> $GITHUB_OUTPUT
+          else
+            echo "deploy_full=false" >> $GITHUB_OUTPUT
+          fi
+
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.check-changes.outputs.backend }}
+      chat: ${{ steps.check-changes.outputs.chat }}
+      events: ${{ steps.check-changes.outputs.events }}
+      ldap: ${{ steps.check-changes.outputs.ldap }}
+      pdf: ${{ steps.check-changes.outputs.pdf }}
+      s3: ${{ steps.check-changes.outputs.s3 }}
+      task: ${{ steps.check-changes.outputs.task }}
+      taskweeks: ${{ steps.check-changes.outputs.taskweeks }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check changed files
+        id: check-changes
+        run: |
+          git diff --name-only HEAD^ HEAD > changed_files.txt
+          
+          echo "backend=$(if grep -q '^backend/' changed_files.txt; then echo 'true'; else echo 'false'; fi)" >> $GITHUB_OUTPUT
+          echo "chat=$(if grep -q '^plugins/chat/' changed_files.txt; then echo 'true'; else echo 'false'; fi)" >> $GITHUB_OUTPUT
+          echo "events=$(if grep -q '^plugins/events/' changed_files.txt; then echo 'true'; else echo 'false'; fi)" >> $GITHUB_OUTPUT
+          echo "ldap=$(if grep -q '^plugins/ldap/' changed_files.txt; then echo 'true'; else echo 'false'; fi)" >> $GITHUB_OUTPUT
+          echo "pdf=$(if grep -q '^plugins/pdf/' changed_files.txt; then echo 'true'; else echo 'false'; fi)" >> $GITHUB_OUTPUT
+          echo "s3=$(if grep -q '^plugins/s3/' changed_files.txt; then echo 'true'; else echo 'false'; fi)" >> $GITHUB_OUTPUT
+          echo "task=$(if grep -q '^plugins/task/' changed_files.txt; then echo 'true'; else echo 'false'; fi)" >> $GITHUB_OUTPUT
+          echo "taskweeks=$(if grep -q '^plugins/taskweeks/' changed_files.txt; then echo 'true'; else echo 'false'; fi)" >> $GITHUB_OUTPUT
+
+  stop-service:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' && (
+        inputs.deploy_all == 'Compilar y desplegar' ||
+        inputs.backend_action == 'Compilar y desplegar' ||
+        inputs.chat_plugin_action == 'Compilar y desplegar' ||
+        inputs.events_plugin_action == 'Compilar y desplegar' ||
+        inputs.ldap_plugin_action == 'Compilar y desplegar' ||
+        inputs.pdf_plugin_action == 'Compilar y desplegar' ||
+        inputs.s3_plugin_action == 'Compilar y desplegar' ||
+        inputs.task_plugin_action == 'Compilar y desplegar' ||
+        inputs.task_weeks_plugin_action == 'Compilar y desplegar'
+      )
+    steps:
+      - name: Setup SSH and Stop Service
+        env:
+          PRIVATE_KEY: ${{ github.ref == 'refs/heads/pro' && secrets.SSH_PRIVATE_KEY_PRO || secrets.SSH_PRIVATE_KEY }}
+          HOSTNAME: ${{ github.ref == 'refs/heads/pro' && secrets.IP_ADDRESS_PRO || secrets.IP_ADDRESS }}
+          USER_NAME: ${{ secrets.USER_NAME }}
+        run: |
+          echo "Deteniendo servicio en rama ${{ github.ref }} en servidor $HOSTNAME"
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER_NAME@$HOSTNAME "sudo systemctl stop sunissup || true"
+
+  trigger-workflows:
+    needs: [detect-changes, check-deploy-mode, stop-service]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ejecutar CompileBackend
+        if: |
+          github.event_name == 'workflow_dispatch' && (
+            inputs.deploy_all != 'No' ||
+            inputs.backend_action != 'No ejecutar'
+          ) ||
+          github.event_name == 'push' && (
+            needs.check-deploy-mode.outputs.deploy_full == 'true' ||
+            needs.detect-changes.outputs.backend == 'true'
+          )
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: CompileBackend.yml
+          inputs: |
+            {
+              "deploy_to_server": ${{ 
+                github.event_name == 'workflow_dispatch' && (
+                  inputs.deploy_all == 'Compilar y desplegar' ||
+                  inputs.backend_action == 'Compilar y desplegar'
+                ) || 
+                github.event_name == 'push'
+              }}
+            }
+          token: ${{ secrets.GIT_TOKEN }}
+
+      - name: Ejecutar CompilePluginChat
+        if: |
+          github.event_name == 'workflow_dispatch' && (
+            inputs.deploy_all != 'No' ||
+            inputs.chat_plugin_action != 'No ejecutar'
+          ) ||
+          github.event_name == 'push' && (
+            needs.check-deploy-mode.outputs.deploy_full == 'true' ||
+            needs.detect-changes.outputs.chat == 'true'
+          )
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: CompilePluginChat.yml
+          inputs: |
+            {
+              "deploy_to_server": ${{ 
+                github.event_name == 'workflow_dispatch' && (
+                  inputs.deploy_all == 'Compilar y desplegar' ||
+                  inputs.chat_plugin_action == 'Compilar y desplegar'
+                ) || 
+                github.event_name == 'push'
+              }}
+            }
+          token: ${{ secrets.GIT_TOKEN }}
+
+      - name: Ejecutar CompilePluginEvents
+        if: |
+          github.event_name == 'workflow_dispatch' && (
+            inputs.deploy_all != 'No' ||
+            inputs.events_plugin_action != 'No ejecutar'
+          ) ||
+          github.event_name == 'push' && (
+            needs.check-deploy-mode.outputs.deploy_full == 'true' ||
+            needs.detect-changes.outputs.events == 'true'
+          )
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: CompilePluginEvents.yml
+          inputs: |
+            {
+              "deploy_to_server": ${{ 
+                github.event_name == 'workflow_dispatch' && (
+                  inputs.deploy_all == 'Compilar y desplegar' ||
+                  inputs.events_plugin_action == 'Compilar y desplegar'
+                ) || 
+                github.event_name == 'push'
+              }}
+            }
+          token: ${{ secrets.GIT_TOKEN }}
+
+      - name: Ejecutar CompilePluginLdap
+        if: |
+          github.event_name == 'workflow_dispatch' && (
+            inputs.deploy_all != 'No' ||
+            inputs.ldap_plugin_action != 'No ejecutar'
+          ) ||
+          github.event_name == 'push' && (
+            needs.check-deploy-mode.outputs.deploy_full == 'true' ||
+            needs.detect-changes.outputs.ldap == 'true'
+          )
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: CompilePluginLdap.yml
+          inputs: |
+            {
+              "deploy_to_server": ${{ 
+                github.event_name == 'workflow_dispatch' && (
+                  inputs.deploy_all == 'Compilar y desplegar' ||
+                  inputs.ldap_plugin_action == 'Compilar y desplegar'
+                ) || 
+                github.event_name == 'push'
+              }}
+            }
+          token: ${{ secrets.GIT_TOKEN }}
+
+      - name: Ejecutar CompilePluginPdf
+        if: |
+          github.event_name == 'workflow_dispatch' && (
+            inputs.deploy_all != 'No' ||
+            inputs.pdf_plugin_action != 'No ejecutar'
+          ) ||
+          github.event_name == 'push' && (
+            needs.check-deploy-mode.outputs.deploy_full == 'true' ||
+            needs.detect-changes.outputs.pdf == 'true'
+          )
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: CompilePluginPdf.yml
+          inputs: |
+            {
+              "deploy_to_server": ${{ 
+                github.event_name == 'workflow_dispatch' && (
+                  inputs.deploy_all == 'Compilar y desplegar' ||
+                  inputs.pdf_plugin_action == 'Compilar y desplegar'
+                ) || 
+                github.event_name == 'push'
+              }}
+            }
+          token: ${{ secrets.GIT_TOKEN }}
+
+      - name: Ejecutar CompilePluginS3
+        if: |
+          github.event_name == 'workflow_dispatch' && (
+            inputs.deploy_all != 'No' ||
+            inputs.s3_plugin_action != 'No ejecutar'
+          ) ||
+          github.event_name == 'push' && (
+            needs.check-deploy-mode.outputs.deploy_full == 'true' ||
+            needs.detect-changes.outputs.s3 == 'true'
+          )
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: CompilePluginS3.yml
+          inputs: |
+            {
+              "deploy_to_server": ${{ 
+                github.event_name == 'workflow_dispatch' && (
+                  inputs.deploy_all == 'Compilar y desplegar' ||
+                  inputs.s3_plugin_action == 'Compilar y desplegar'
+                ) || 
+                github.event_name == 'push'
+              }}
+            }
+          token: ${{ secrets.GIT_TOKEN }}
+
+      - name: Ejecutar CompilePluginTask
+        if: |
+          github.event_name == 'workflow_dispatch' && (
+            inputs.deploy_all != 'No' ||
+            inputs.task_plugin_action != 'No ejecutar'
+          ) ||
+          github.event_name == 'push' && (
+            needs.check-deploy-mode.outputs.deploy_full == 'true' ||
+            needs.detect-changes.outputs.task == 'true'
+          )
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: CompilePluginTask.yml
+          inputs: |
+            {
+              "deploy_to_server": ${{ 
+                github.event_name == 'workflow_dispatch' && (
+                  inputs.deploy_all == 'Compilar y desplegar' ||
+                  inputs.task_plugin_action == 'Compilar y desplegar'
+                ) || 
+                github.event_name == 'push'
+              }}
+            }
+          token: ${{ secrets.GIT_TOKEN }}
+
+      - name: Ejecutar CompilePluginTaskWeeks
+        if: |
+          github.event_name == 'workflow_dispatch' && (
+            inputs.deploy_all != 'No' ||
+            inputs.task_weeks_plugin_action != 'No ejecutar'
+          ) ||
+          github.event_name == 'push' && (
+            needs.check-deploy-mode.outputs.deploy_full == 'true' ||
+            needs.detect-changes.outputs.taskweeks == 'true'
+          )
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: CompilePluginTaskWeeks.yml
+          inputs: |
+            {
+              "deploy_to_server": ${{ 
+                github.event_name == 'workflow_dispatch' && (
+                  inputs.deploy_all == 'Compilar y desplegar' ||
+                  inputs.task_weeks_plugin_action == 'Compilar y desplegar'
+                ) || 
+                github.event_name == 'push'
+              }}
+            }
+          token: ${{ secrets.GIT_TOKEN }}
+
+  start-service:
+    needs: trigger-workflows
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' && (
+        inputs.deploy_all == 'Compilar y desplegar' ||
+        inputs.backend_action == 'Compilar y desplegar' ||
+        inputs.chat_plugin_action == 'Compilar y desplegar' ||
+        inputs.events_plugin_action == 'Compilar y desplegar' ||
+        inputs.ldap_plugin_action == 'Compilar y desplegar' ||
+        inputs.pdf_plugin_action == 'Compilar y desplegar' ||
+        inputs.s3_plugin_action == 'Compilar y desplegar' ||
+        inputs.task_plugin_action == 'Compilar y desplegar' ||
+        inputs.task_weeks_plugin_action == 'Compilar y desplegar'
+      )
+    steps:
+      - name: Wait for deployments
+        run: sleep 120  # Ajusta este tiempo según sea necesario
+
+      - name: Setup SSH and Start Service
+        env:
+          PRIVATE_KEY: ${{ github.ref == 'refs/heads/pro' && secrets.SSH_PRIVATE_KEY_PRO || secrets.SSH_PRIVATE_KEY }}
+          HOSTNAME: ${{ github.ref == 'refs/heads/pro' && secrets.IP_ADDRESS_PRO || secrets.IP_ADDRESS }}
+          USER_NAME: ${{ secrets.USER_NAME }}
+        run: |
+          echo "Iniciando servicio en rama ${{ github.ref }} en servidor $HOSTNAME"
+          echo "$PRIVATE_KEY" > private_key.pem
+          chmod 600 private_key.pem
+          ssh -o StrictHostKeyChecking=no -i private_key.pem $USER_NAME@$HOSTNAME "sudo systemctl start sunissup"

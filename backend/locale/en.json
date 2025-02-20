@@ -1,0 +1,16 @@
+{
+    "global_info_001": "",
+    "user_add": "The user was added to the system",
+    "user_add_exist": "There is already a user with the email",
+    "login_ok_001": "you should checking your diary",
+    "login_err_001": "There are missing data in the form submission or there is a format error",
+    "login_err_002": "Incorrect username or password",
+    "login_err_003": "User not found",
+    "login_err_004": "The second factor code is incorrect",
+    "login_err_005": "You can not access the account",
+    "logout_ok_001": "I successfully logged out of the system",
+    "changepassword_ok_001": "Password was changed successfully",
+    "changepassword_err_001": "You must enter a password",
+    "changepassword_err_002": "The password you provided matches the current one",
+    "global_info_002": ""
+}

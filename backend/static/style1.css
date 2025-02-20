@@ -1,0 +1,508 @@
+/* Cutom prime react variables */
+/* :root {
+    
+} */
+
+html {
+  font-size: 16px;
+}
+
+@media only screen and (max-width: 3440px) {
+  html {
+    font-size: 20px;
+  }
+}
+
+@media only screen and (max-width: 2560px) {
+  html {
+    font-size: 18px;
+  }
+}
+
+@media only screen and (max-width: 1920px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+@media only screen and (max-width: 1280px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media only screen and (max-width: 1024px) {
+  html {
+    font-size: 12px;
+  }
+}
+
+@keyframes p-progress-spinner-color {
+  100%,
+  0% {
+    stroke: #1c8e02;
+  }
+  40% {
+    stroke: #0057e7;
+  }
+  66% {
+    stroke: #1c8e02;
+  }
+  80%,
+  90% {
+    stroke: #0057e7;
+  }
+}
+
+.banner img {
+  @apply absolute top-0 left-0 w-full h-full;
+}
+
+.p-inputtext:enabled:focus,
+.p-dropdown:not(.p-disabled).p-focus,
+.p-treeselect:not(.p-disabled).p-focus,
+[type="text"]:focus,
+[type="email"]:focus,
+[type="url"]:focus,
+[type="password"]:focus,
+[type="number"]:focus,
+[type="date"]:focus,
+[type="datetime-local"]:focus,
+[type="month"]:focus,
+[type="search"]:focus,
+[type="tel"]:focus,
+[type="time"]:focus,
+[type="week"]:focus,
+[multiple]:focus,
+textarea:focus,
+select:focus {
+  @apply hover:border-primary focus:border-primary focus:primary-ring-shadow;
+}
+
+.p-autocomplete-multiple-container:not(.p-disabled).p-focus {
+  @apply shadow-sm shadow-primary ring-0 ring-offset-transparent overflow-x-auto !important;
+}
+
+.p-autocomplete-multiple-container input[type="text"] {
+  @apply shadow-none !important;
+}
+
+.float-label .p-inputwrapper-filled ~ label,
+.float-label .p-inputwrapper-focus ~ label,
+.float-label input.p-filled ~ label,
+.float-label input:focus ~ label,
+.float-label textarea.p-filled ~ label,
+.float-label textarea:focus ~ label {
+  @apply -top-5 left-1 text-xs;
+}
+
+.p-component.p-inputtext-sm.p-inputwrapper:not(.slashed) input,
+.p-component.p-inputtext-sm.p-inputwrapper:not(.slashed)
+  > button.p-button-icon-only {
+  line-height: inherit;
+  padding: 0.65625rem 0.65625rem;
+}
+
+.p-fileupload.p-fileupload-basic.p-component.p-button-sm
+  > .p-button.p-component.p-fileupload-choose {
+  line-height: inherit;
+  padding: 0.65625rem 0.65625rem;
+}
+
+.p-dropdown-filter-container > .p-dropdown-filter {
+  @apply text-sm p-2;
+}
+
+.p-component.horizontal.p-inputwrapper,
+.p-component.horizontal.p-inputtext,
+.p-component.horizontal.textarea,
+.p-component.horizontal.p-numberinput {
+  @apply flex-1;
+}
+
+.p-component.p-autocomplete.horizontal > .p-autocomplete-input {
+  @apply flex-1;
+}
+
+.p-calendar .p-component:focus {
+  @apply z-10;
+}
+
+.p-component.p-inputwrapper.slashed:not(.p-autocomplete),
+.p-component.p-inputtext.slashed,
+.p-component.textarea.slashed,
+.p-component.p-autocomplete.slashed,
+.p-component.p-calendar.slashed,
+.p-component.p-numberinput.slashed {
+  @apply focus:border-0 focus:border-b border-0 border-b border-slate-300 p-0.5 rounded-sm shadow-none hover:bg-slate-100;
+}
+
+.p-component.slashed .p-inputtext,
+.p-component.slashed .p-multiselect-label {
+  @apply p-0.5 border-0 focus:shadow-none bg-transparent;
+}
+
+.p-component.p-calendar.slashed .p-inputtext {
+  @apply cursor-pointer;
+}
+
+.p-component.p-calendar.slashed .p-datepicker-trigger {
+  @apply p-0 bg-transparent border-0 text-inherit !important;
+}
+
+.p-dropdown.slashed .p-dropdown-trigger,
+.p-multiselect.slashed .p-multiselect-trigger,
+.p-component.p-calendar.slashed .p-datepicker-trigger {
+  @apply justify-end;
+}
+
+.p-dropdown.small-trigger .p-dropdown-trigger {
+  @apply w-fit mx-1;
+}
+
+.p-component.p-inputnumber.input-text-center
+  > .p-inputtext.p-inputnumber-input {
+  @apply text-center;
+}
+
+textarea::placeholder {
+  @apply text-slate-400;
+}
+
+.p-inputtext.static-border,
+textarea.static-border,
+.p-inputnumber.static-border .p-inputtext,
+.p-dropdown.static-border .p-inputtext {
+  @apply focus:border-slate-300 hover:border-slate-300 focus:shadow-none;
+}
+
+.p-inputgroup.credit-card-field > .p-inputgroup-addon {
+  @apply p-3;
+}
+
+/* tabs element */
+.p-tabview .p-tabview-nav li .p-tabview-nav-link {
+  @apply font-medium text-base p-3.5;
+}
+
+.p-tabview .p-tabview-nav li .p-tabview-nav-link:not(.p-disabled) {
+  @apply focus:shadow-none;
+}
+
+.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+  @apply text-primary border-primary;
+}
+
+.p-tabview .p-tabview-nav .p-tabview-ink-bar {
+  @apply bg-primary;
+}
+
+.p-tabmenu.tab-small-padding > .p-tabmenu-nav .p-menuitem-link {
+  @apply p-3;
+}
+
+.field > .p-inputswitch {
+  @apply h-full;
+}
+
+.field > .p-inputswitch > .p-inputswitch-slider {
+  @apply my-2;
+}
+
+/* menu element */
+
+.p-menu {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.p-menu li {
+  border-bottom: 1px solid rgb(246, 246, 246);
+}
+
+.p-menu li:last-of-type {
+  border-bottom: none;
+}
+.p-menu li:first-of-type :hover {
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+
+.p-menu li:last-of-type :hover {
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  border-bottom: none;
+}
+
+.p-inputtext,
+.p-dropdown:not(.p-disabled):hover {
+  @apply hover:border-primary focus:border-primary focus:primary-ring-shadow !important;
+}
+
+.p-dropdown:not(.p-disabled).p-focus {
+  @apply border-primary primary-ring-shadow;
+}
+
+/* button element */
+
+.p-button.p-button-outlined.p-button-primary {
+  @apply border border-solid border-gray-300;
+}
+
+button.button-banner {
+  @apply bg-white hover:bg-gray-100 text-slate-700 h-9 text-sm border-none focus:shadow-none !important;
+}
+
+button.button-banner span.p-button-label {
+  @apply font-normal  !important;
+}
+
+button.button-default {
+  @apply bg-white border-gray-300 text-gray-700 hover:bg-gray-100 focus:primary-ring-shadow !important;
+}
+
+button.button-primary,
+a.button-primary {
+  @apply bg-primary text-white border-primary hover:bg-primary-hover focus:primary-ring-shadow !important;
+}
+
+.p-fileupload.p-fileupload-basic .p-button {
+  @apply bg-primary text-white border-primary hover:bg-primary-hover focus:primary-ring-shadow !important;
+}
+
+button.button-primary,
+.p-selectbutton.p-buttonset.p-component .p-button.p-highlight,
+.p-selectbutton.p-buttonset.p-component .p-button:active,
+.p-button.p-datepicker-trigger,
+.button-primary .p-fileupload.p-fileupload-basic .p-button {
+  @apply bg-primary text-white border-primary hover:bg-primary-hover focus:primary-ring-shadow !important;
+}
+
+button.button-primary-outlined {
+  @apply text-primary border-primary focus:primary-ring-shadow !important;
+}
+
+button.p-button-outlined {
+  @apply text-primary border-primary focus:primary-ring-shadow !important;
+}
+
+button.p-button-outlined:hover,
+button.p-button-text:hover {
+  background-color: hsl(var(--color-primary) / 0.1) !important;
+}
+
+button.p-button-outlined:focus,
+button.p-button-outlined:active,
+button.p-button-text:focus,
+button.p-button-text:active {
+  background-color: hsl(var(--color-primary) / 0.15) !important;
+}
+
+button.button-primary-outlined:hover {
+  background-color: hsl(var(--color-primary) / 0.1) !important;
+}
+button.button-primary-outlined:focus,
+button.button-primary-outlined:active {
+  background-color: hsl(var(--color-primary) / 0.15) !important;
+}
+
+button.p-button-text {
+  @apply text-primary focus:ring-1 focus:ring-primary !important;
+}
+
+button.p-button.small-padding {
+  @apply px-2 py-1.5;
+}
+
+button.p-button.paddingless {
+  @apply p-0;
+}
+
+button.button-icon {
+  @apply p-2;
+}
+
+/* SplitButton */
+.p-splitbutton .p-button,
+.p-splitbutton .p-button:active {
+  @apply bg-primary border-primary hover:border-primary hover:bg-primary-hover focus:primary-ring-shadow focus:z-10;
+}
+
+.p-splitbutton .p-splitbutton-menubutton {
+  @apply rounded-l-none !important;
+}
+
+/* Select Button */
+.p-selectbutton.p-buttonset.p-component .p-button {
+  @apply p-2.5 text-sm focus:primary-ring-shadow;
+}
+
+/* Input Number Button */
+.p-inputnumber-buttons-horizontal .p-inputnumber-button {
+  @apply bg-primary border-primary hover:border-primary hover:bg-primary-hover focus:primary-ring-shadow !important;
+}
+
+.p-inputnumber-buttons-horizontal .p-inputnumber-input.p-inputtext {
+  @apply hover:border-primary focus:border-primary focus:shadow-none !important;
+}
+
+.p-inputnumber-buttons-stacked .p-inputnumber-button {
+  @apply bg-primary border-primary hover:border-primary hover:bg-primary-hover !important;
+}
+
+/* InputSwitch */
+.p-inputswitch.p-inputswitch-checked .p-inputswitch-slider {
+  @apply bg-primary hover:bg-primary-hover focus:primary-ring-shadow !important;
+}
+
+/* Tooltip */
+.p-tooltip > span {
+  @apply p-0 m-0 space-y-0;
+}
+
+.p-tooltip-text {
+  @apply p-2 text-sm !important;
+}
+
+.p-skeleton-circle {
+  @apply rounded-full;
+}
+
+/* Chip */
+.p-chip.custom-chip {
+  font-size: x-small;
+}
+
+.p-chip.custom-chip.default {
+  font-size: inherit;
+}
+
+.p-chip.custom-chip > .p-chip-text {
+  margin-block: 0px;
+}
+
+.p-chip.custom-chip.is-danger {
+  @apply bg-red-400 text-white font-semibold;
+}
+
+.p-chip.custom-chip.is-warning {
+  @apply bg-yellow-400 text-white font-semibold;
+}
+
+.p-chip.custom-chip.is-success {
+  @apply bg-green-400 text-white font-semibold;
+}
+
+.p-chip.custom-chip.is-secondary {
+  @apply bg-gray-200 text-black font-semibold;
+}
+
+.p-chip.custom-chip.is-draft {
+  @apply bg-yellow-100 text-red-600 font-semibold;
+}
+
+.p-chip.custom-chip.is-info {
+  @apply bg-blue-400 text-white font-semibold;
+}
+
+/* Multiselect */
+.p-multiselect-panel.p-component.hidden-header .p-multiselect-header {
+  @apply hidden;
+}
+
+.p-multiselect.p-component.small-padding .p-multiselect-label {
+  @apply p-1;
+}
+
+.p-multiselect.p-component.hidden-labels .p-multiselect-label {
+  @apply hidden;
+}
+
+.p-multiselect-panel .p-multiselect-item.p-highlight {
+  @apply text-primary !important;
+}
+
+/* DataTable */
+.p-datatable.p-component.gohst-header .p-datatable-thead {
+  @apply hidden;
+}
+
+.p-badge-dot {
+  @apply h-2;
+  @apply min-w-[.5rem];
+}
+
+.p-sidebar-content {
+  @apply p-0 !important;
+}
+
+/* Overlay Panel */
+.p-overlaypanel.p-component.form-panel .p-overlaypanel-content {
+  @apply p-3;
+}
+
+/* Text */
+.text-is-danger {
+  @apply text-red-400;
+}
+
+.text-is-warning {
+  @apply text-yellow-400;
+}
+
+.text-is-success {
+  @apply text-green-400;
+}
+
+.text-is-info {
+  @apply text-blue-400;
+}
+
+/* Speed Dial */
+.p-speeddial > button.p-button-sm {
+  @apply w-14 h-14 !important;
+}
+
+/* Checkbox */
+.p-checkbox .p-checkbox-box.p-highlight,
+.p-checkbox:not(.p-checkbox-disabled) .p-checkbox-box.p-highlight:hover {
+  @apply border-primary bg-primary;
+}
+
+.p-checkbox:not(.p-checkbox-disabled) .p-checkbox-box:hover,
+.p-checkbox:not(.p-checkbox-disabled) .p-checkbox-box.p-focus {
+  @apply border-primary;
+}
+
+/* Radio button */
+.p-radiobutton .p-radiobutton-box.p-highlight,
+.p-radiobutton:not(.p-radiobutton-disabled)
+  .p-radiobutton-box.p-highlight:hover {
+  @apply border-primary bg-primary;
+}
+
+.p-radiobutton .p-radiobutton-box:not(.p-disabled):not(.p-highlight):hover,
+.p-radiobutton .p-radiobutton-box:not(.p-disabled).p-focus {
+  @apply border-primary !important;
+}
+
+.p-sidebar-mask.p-component-overlay.slideover .p-sidebar-header {
+  @apply hidden !important;
+}
+
+.p-dialog-footer {
+  @apply flex justify-end;
+}
+
+.dialog-form-container .p-dialog-content,
+.p-dialog.paddingless .p-dialog-content {
+  @apply p-0 flex overflow-hidden rounded-b-md;
+}
+
+.p-dialog.headerless .p-dialog-header {
+  @apply hidden;
+}
+
+.p-dialog.headerless.paddingless .p-dialog-content {
+  @apply rounded-md;
+}

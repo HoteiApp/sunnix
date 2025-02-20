@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package billing;
+
+// Definimos el servicio
+service BillingService {
+  // Definimos el método para procesar facturación, que recibe un Billing y retorna una Respuesta
+  rpc ProcessBilling (Billing) returns (Response);
+}
+
+// Definimos el mensaje Billing con dos campos
+message Billing {
+  int32 week = 1;
+  string date = 2;
+}
+
+// Mensaje de respuesta del servidor
+message Response {
+  string message = 1;
+}
