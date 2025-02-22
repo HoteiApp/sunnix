@@ -31,7 +31,8 @@ func CoreGetTCMS(c *fiber.Ctx) error {
 			tcm := core.GetUsersFromLDAP("(&(roll=tcm)(supervisor=" + supervisor.Uid + "))")
 			var outTCM []models.OutTCM
 			for i, uTCM := range tcm {
-				tcmInfo := core.GetWorkerRecord(uTCM.Uid)
+				// tcmInfo := core.GetWorkerRecord(uTCM.Uid)
+				tcmUserData := GetUserInfo(uTCM.Uid)
 				// Billing por tcm
 				var bill models.Billing
 				_, _ = database.WithDB(func(db *gorm.DB) interface{} {
@@ -391,7 +392,8 @@ func CoreGetTCMS(c *fiber.Ctx) error {
 				// --------------
 				outTCM = append(outTCM, models.OutTCM{
 					ID:       i + 1,
-					Info:     tcmInfo,
+					Info:     tcmUserData.Record,
+					User:     tcmUserData.User,
 					Clients:  clients,
 					BillData: billData,
 				})
