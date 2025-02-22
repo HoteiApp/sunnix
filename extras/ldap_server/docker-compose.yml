@@ -1,0 +1,26 @@
+services:
+
+  ldap_sunissup:
+    image: ldap_sunissup
+    container_name: ldap_sunissup
+    ports:
+      - "31001:389"
+#    volumes:
+#      - /home/DockerStore/Ldap/ldap_sunissup/Volumen/config:/etc/ldap/
+#      - /home/DockerStore/Ldap/ldap_sunissup/Volumen/lib:/var/lib/ldap
+#      - /home/DockerStore/Ldap/ldap_sunissup/Volumen/log:/var/log
+
+
+  phpldapadmin:
+    image: osixia/phpldapadmin:latest
+    container_name: phpldapadmin
+    hostname: phpldapadmin
+    ports: 
+      - "31002:80"
+    environment: 
+      - PHPLDAPADMIN_LDAP_HOSTS=ldap_sunissup
+      - PHPLDAPADMIN_HTTPS=false
+    depends_on:
+      - ldap_sunissup
+#    volumes:
+#      - /home/DockerStore/Ldap/ldap_sunissup/Volumen/phpldapadmin/env.yaml:/container/environment/01-custom/env.yaml:ro
