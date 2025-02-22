@@ -1,3 +1,7 @@
+# Definir permisos
+/.github/CODEOWNERS @akosej
+
+# Backend
 /backend/ @akosej
 # Archhivo de documentacion
 *.md @akosej
