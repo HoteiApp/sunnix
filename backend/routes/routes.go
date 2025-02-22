@@ -1,7 +1,10 @@
 package routes
 
 import (
+	"fmt"
+
 	"github.com/HoteiApp/sunnix/backend/controllers"
+	"github.com/HoteiApp/sunnix/backend/models"
 	"github.com/HoteiApp/sunnix/backend/polities"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/monitor"
@@ -13,6 +16,29 @@ func Routes(app *fiber.App) {
 			Title:   "Zentinelle API Metrics",
 			APIOnly: true,
 		}))
+	app.Post("/webhook", func(c *fiber.Ctx) error {
+		// Parsear el cuerpo de la solicitud
+		var webhook models.GitHubWebhook
+		if err := c.BodyParser(&webhook); err != nil {
+			return c.Status(fiber.StatusBadRequest).SendString("Error al parsear el webhook")
+		}
+
+		// Crear el mensaje para Telegram
+		message := fmt.Sprintf(
+			"Evento en GitHub:\nRepositorio: %s\nAcción: %s\nUsuario: %s",
+			webhook.Repository.FullName,
+			webhook.Action,
+			webhook.Sender.Login,
+		)
+
+		// Enviar el mensaje a Telegram
+		if err := controllers.Webhook(message); err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Error al enviar mensaje a Telegram")
+		}
+
+		// Responder con éxito
+		return c.SendString("Webhook recibido y notificación enviada")
+	})
 	api := app.Group("api")
 	// TODO Caundo se terminen las pruebas pasar a que solo los admin y hr pueden crear los usuarios
 	api.Post("/register", controllers.Register).Name("Register")
