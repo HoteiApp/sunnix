@@ -59,18 +59,31 @@ jobs:
         chmod 600 private_key.pem
         scp -o StrictHostKeyChecking=no -i private_key.pem ./tasks/weeks/weeks.task $USER_NAME@$HOSTNAME:/tmp/weeks.task.tmp
         ssh -o StrictHostKeyChecking=no -i private_key.pem $USER_NAME@$HOSTNAME << EOF
+          # Crear directorio de respaldo si no existe
+          if [ ! -d "/home/$USER_NAME/backup/sunissUp/plugins/tasks" ]; then
+            mkdir -p /home/$USER_NAME/backup/sunissUp/plugins/tasks
+          fi
+          
+          # Crear copia de respaldo del plugin weeks.task
+          cp /opt/sunissUp/plugins/tasks/weeks.task /home/$USER_NAME/backup/sunissUp/plugins/tasks/weeks.task_$(date +%Y%m%d_%H%M%S)
+          
           if [[ -z "$CALLED_BY_DEPLOY_CENTER" ]]; then
             sudo systemctl stop sunissup
           fi
+          
           # Verificar si el directorio existe, si no, crearlo
           if [ ! -d "/opt/sunissUp/plugins" ]; then
             sudo mkdir -p /opt/sunissUp/plugins
           fi
+          
           # Verificar si existe el directorio tasks, si no, crearlo
           if [ ! -d "/opt/sunissUp/plugins/tasks" ]; then
             sudo mkdir -p /opt/sunissUp/plugins/tasks
           fi
+          
+          # Mover el plugin
           sudo mv /tmp/weeks.task.tmp /opt/sunissUp/plugins/tasks/weeks.task
+          
           sudo chmod +x /opt/sunissUp/plugins/tasks/weeks.task
           if [[ -z "$CALLED_BY_DEPLOY_CENTER" ]]; then
             sudo systemctl start sunissup

@@ -59,14 +59,26 @@ jobs:
         chmod 600 private_key.pem
         scp -o StrictHostKeyChecking=no -i private_key.pem ./plugins/events/events.dinamic $USER_NAME@$HOSTNAME:/tmp/events.dinamic.tmp
         ssh -o StrictHostKeyChecking=no -i private_key.pem $USER_NAME@$HOSTNAME << EOF
+          # Crear directorio de respaldo si no existe
+          if [ ! -d "/home/$USER_NAME/backup/sunissUp/plugins" ]; then
+            mkdir -p /home/$USER_NAME/backup/sunissUp/plugins
+          fi
+          
+          # Crear copia de respaldo del plugin events.dinamic
+          cp /opt/sunissUp/plugins/events.dinamic /home/$USER_NAME/backup/sunissUp/plugins/events.dinamic_$(date +%Y%m%d_%H%M%S)
+          
           if [[ -z "$CALLED_BY_DEPLOY_CENTER" ]]; then
             sudo systemctl stop sunissup
           fi
+          
           # Verificar si el directorio existe, si no, crearlo
           if [ ! -d "/opt/sunissUp/plugins" ]; then
             sudo mkdir -p /opt/sunissUp/plugins
           fi
+          
+          # Mover el plugin
           sudo mv /tmp/events.dinamic.tmp /opt/sunissUp/plugins/events.dinamic
+          
           sudo chmod +x /opt/sunissUp/plugins/events.dinamic
           if [[ -z "$CALLED_BY_DEPLOY_CENTER" ]]; then
             sudo systemctl start sunissup

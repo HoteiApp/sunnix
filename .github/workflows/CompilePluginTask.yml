@@ -59,14 +59,26 @@ jobs:
         chmod 600 private_key.pem
         scp -o StrictHostKeyChecking=no -i private_key.pem ./plugins/task/task.plugin $USER_NAME@$HOSTNAME:/tmp/task.plugin.tmp
         ssh -o StrictHostKeyChecking=no -i private_key.pem $USER_NAME@$HOSTNAME << EOF
+          # Crear directorio de respaldo si no existe
+          if [ ! -d "/home/$USER_NAME/backup/sunissUp/plugins" ]; then
+            mkdir -p /home/$USER_NAME/backup/sunissUp/plugins
+          fi
+          
+          # Crear copia de respaldo del plugin task.plugin
+          cp /opt/sunissUp/plugins/task.plugin /home/$USER_NAME/backup/sunissUp/plugins/task.plugin_$(date +%Y%m%d_%H%M%S)
+          
           if [[ -z "$CALLED_BY_DEPLOY_CENTER" ]]; then
             sudo systemctl stop sunissup
           fi
+          
           # Verificar si el directorio existe, si no, crearlo
           if [ ! -d "/opt/sunissUp/plugins" ]; then
             sudo mkdir -p /opt/sunissUp/plugins
           fi
+          
+          # Mover el plugin
           sudo mv /tmp/task.plugin.tmp /opt/sunissUp/plugins/task.plugin
+          
           sudo chmod +x /opt/sunissUp/plugins/task.plugin
           if [[ -z "$CALLED_BY_DEPLOY_CENTER" ]]; then
             sudo systemctl start sunissup
