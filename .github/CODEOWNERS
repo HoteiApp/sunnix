@@ -1,1 +1,6 @@
 /backend/ @akosej
+# Archhivo de documentacion
+*.md @akosej
+
+# Archivos de configuración
+*.yml @akosej @ssanchezhlg
