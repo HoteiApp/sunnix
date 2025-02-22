@@ -75,6 +75,7 @@ func ModuleTCMRoutes(app *fiber.App) error {
 	bill.Post("/periodTcm", controllers.BillPeriodTcm).Name("BillPeriodTcm")
 	bill.Post("/periodBusiness", controllers.BillPeriodBusiness).Name("BillPeriodBusiness")
 	bill.Post("/businessconfig", controllers.BusinessConfig).Name("BusinessConfig")
+	bill.Post("/userconfig", controllers.UserConfig).Name("UserConfig")
 	bill.Get("/tcms/", controllers.BillActiveWeekTCMS).Name("BillActiveWeekTCMS")
 	bill.Get("/biller/", controllers.BillActiveWeekBiller).Name("BillActiveWeekBiller")
 	bill.Delete("/", controllers.DeleteBillWeekActive).Name("DeleteBillWeekActive")

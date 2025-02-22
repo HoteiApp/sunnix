@@ -3,6 +3,7 @@ package models
 type OutTCM struct {
 	ID       int            `json:"id"`
 	Info     WorkerRecord   `json:"info"`
+	User     Users          `json:"user"`
 	Clients  []OutClients   `json:"clients"`
 	BillData BillingDataOUT `json:"bill"`
 }
