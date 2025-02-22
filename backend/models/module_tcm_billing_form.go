@@ -32,6 +32,11 @@ type FormRequestBusinessConfig struct {
 	Rent     float64 `json:"rent"`
 	Business string  `json:"business"`
 }
+type FormRequestUserConfig struct {
+	ID          int     `json:"id"`
+	FixedPay    bool    `json:"fixedPay"`
+	PaymentRate float64 `json:"paymentRate"`
+}
 
 type FormRequestViewBill struct {
 	Tcm  int    `json:"tcm"`

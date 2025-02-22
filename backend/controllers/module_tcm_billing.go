@@ -1157,6 +1157,57 @@ func BusinessConfig(c *fiber.Ctx) error {
 	})
 }
 
+func UserConfig(c *fiber.Ctx) error {
+	claims, err := GetClaims(c)
+	if err != nil {
+		c.Status(fiber.StatusForbidden)
+		return c.JSON(fiber.Map{
+			"message": "Session error",
+		})
+	}
+	// activeUser := GetUserInfo(claims["Uid"].(string))
+	//-------------------
+	var requestData models.FormRequestUserConfig
+	if err := c.BodyParser(&requestData); err != nil {
+		return err
+	}
+
+	//-------------------
+	// Buscar uid del usuario
+	result := core.ExtractFunctionsPlugins("ldap", "Search", "(&(id="+strconv.Itoa(requestData.ID)+"))")
+	bytes, _ := json.Marshal(&result)
+	var resultSearch ldap.SearchResult
+	_ = json.Unmarshal(bytes, &resultSearch)
+
+	if len(resultSearch.Entries) > 0 {
+		userLdap := resultSearch.Entries[0]
+		uid := userLdap.GetAttributeValue("uid")
+		core.ExtractFunctionsPlugins("ldap", "ModifyAccount", uid,
+			"global-->"+strconv.FormatBool(requestData.FixedPay),
+			"paymentByUnits-->"+strconv.FormatFloat(requestData.PaymentRate, 'f', -1, 64),
+		)
+		system.Log <- models.Logs{
+			App:         "sunissup",
+			Action:      "MODIFY_USER_BILL",
+			LoggedIn:    claims["UID"].(string),
+			Username:    uid,
+			Client:      0,
+			Description: "Information saved correctly",
+		}
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"ok":      "true",
+			"message": "Modified data",
+		})
+
+	}
+
+	return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+		"ok":      "false",
+		"message": "Error data modify",
+	})
+}
+
 func PutBillAdd(c *fiber.Ctx) error {
 	//-------------------
 	claims, _ := GetClaims(c)

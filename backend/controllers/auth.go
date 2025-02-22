@@ -116,10 +116,11 @@ func GetUserInfo(uid string) models.ActiveUser {
 			user.Credentials = userLdap.GetAttributeValue("credentials")
 			user.Supervisor = userLdap.GetAttributeValue("supervisor")
 			user.Business = userLdap.GetAttributeValue("business")
+			// TODO: Se esta utilizando el campo global para el campo FixedPay hasta que se actualicen los ldap
+			user.FixedPay = system.StringToBool(userLdap.GetAttributeValue("global"))
+			// user.FixedPay = system.StringToBool(userLdap.GetAttributeValue("fixedPay"))
 
-			user.FixedPay = system.StringToBool(userLdap.GetAttributeValue("FixedPay"))
-
-			paymentByUnits, _ := strconv.ParseFloat(userLdap.GetAttributeValue("PaymentByUnits"), 64)
+			paymentByUnits, _ := strconv.ParseFloat(userLdap.GetAttributeValue("paymentByUnits"), 64)
 
 			rent, _ := strconv.ParseFloat(userLdap.GetAttributeValue("rent"), 64)
 
