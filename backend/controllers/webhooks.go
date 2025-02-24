@@ -9,7 +9,7 @@ import (
 
 const (
 	TelegramBotToken = "1812808528:AAHixtQSqqIHXMpu0A5eWLDASoiQw1pKE24" // Reemplaza con el token de tu bot
-	TelegramChatID   = "-4694669794"                                    // Reemplaza con el ID del chat
+	TelegramChatID   = "-1002318517831"                                 // Reemplaza con el ID del chat
 )
 
 // Función para enviar mensajes a Telegram
