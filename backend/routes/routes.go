@@ -16,7 +16,7 @@ func Routes(app *fiber.App) {
 			Title:   "Zentinelle API Metrics",
 			APIOnly: true,
 		}))
-	app.Post("/webhook", func(c *fiber.Ctx) error {
+	app.Post("/githubwebhook", func(c *fiber.Ctx) error {
 		// Parsear el cuerpo de la solicitud
 		var webhook models.GitHubWebhook
 		if err := c.BodyParser(&webhook); err != nil {
@@ -25,10 +25,34 @@ func Routes(app *fiber.App) {
 
 		// Crear el mensaje para Telegram
 		message := fmt.Sprintf(
-			"Evento en GitHub:\nRepositorio: %s\nAcción: %s\nUsuario: %s",
+			"GitHub Alert:\nRepositorio: %s\nAcción: %s\nUsuario: %s",
 			webhook.Repository.FullName,
 			webhook.Action,
 			webhook.Sender.Login,
+		)
+
+		// Enviar el mensaje a Telegram
+		if err := controllers.Webhook(message); err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Error al enviar mensaje a Telegram")
+		}
+
+		// Responder con éxito
+		return c.SendString("Webhook recibido y notificación enviada")
+	})
+	app.Post("/webhook", func(c *fiber.Ctx) error {
+		// Parsear el cuerpo de la solicitud
+		var webhook models.AlertWebhook
+		if err := c.BodyParser(&webhook); err != nil {
+			return c.Status(fiber.StatusBadRequest).SendString("Error al parsear el webhook")
+		}
+
+		// Crear el mensaje para Telegram
+		message := fmt.Sprintf(
+			"Alert System:\nAction: %s\nService: %s\nUsuario: %s \nUsuario: %s",
+			webhook.Action,
+			webhook.Service,
+			webhook.User,
+			webhook.Message,
 		)
 
 		// Enviar el mensaje a Telegram
