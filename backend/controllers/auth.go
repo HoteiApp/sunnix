@@ -283,7 +283,7 @@ func AuthLogin(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"OK":         true,
-		"message":    "Welcome " + activeUser.User.Nick + ", " + core.GetTextMessage("login_ok_001"),
+		"message":    "Welcome " + activeUser.Record.FullName + ", " + core.GetTextMessage("login_ok_001"),
 		"activeUser": activeUser,
 	})
 }
