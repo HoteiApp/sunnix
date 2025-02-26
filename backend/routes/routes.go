@@ -48,7 +48,7 @@ func Routes(app *fiber.App) {
 
 		// Crear el mensaje para Telegram
 		message := fmt.Sprintf(
-			"Alert System:\nAction: %s\nService: %s\nUsuario: %s \nUsuario: %s",
+			"Alert System:\nAction: %s\nService: %s\nUsuario: %s \nMessage: %s",
 			webhook.Action,
 			webhook.Service,
 			webhook.User,
