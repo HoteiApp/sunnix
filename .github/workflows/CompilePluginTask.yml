@@ -59,7 +59,7 @@ jobs:
       working-directory: ./plugins/task
       run: |
         echo "Iniciando compilación..."
-        sudo go build -v -buildmode=plugin -trimpath -o task.plugin main.go
+        sudo --preserve-env=PATH,GOPATH,GOROOT go build -v -buildmode=plugin -trimpath -o task.plugin main.go
         echo "Compilación completada"
         ls -la task.plugin
 
