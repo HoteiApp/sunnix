@@ -30,15 +30,15 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23.2'
+        go-version: '1.23.7'
         cache: false
 
     - name: Verificar versión de Go
       run: |
         go_version=$(go version)
         echo "Versión instalada: $go_version"
-        if [[ "$go_version" != *"go1.23.2"* ]]; then
-          echo "Error: Se esperaba Go 1.23.2 pero se obtuvo $go_version"
+        if [[ "$go_version" != *"go1.23.7"* ]]; then
+          echo "Error: Se esperaba Go 1.23.7 pero se obtuvo $go_version"
           exit 1
         fi
 
