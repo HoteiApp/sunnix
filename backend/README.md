@@ -1,4 +1,4 @@
-# Sunissup-API
+# Sunnix-API
 
 # System roles
 - `tmp` Temporary roll for users to be hired  
