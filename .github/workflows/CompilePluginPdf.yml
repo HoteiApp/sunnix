@@ -1,5 +1,8 @@
 name: Compile and Deploy - Plugins Pdf
 
+env:
+  GO_VERSION: '1.23.2'
+
 on:
   push:
     branches: [ "testing", "pro" ]
@@ -20,10 +23,27 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v4
 
+    - name: Limpiar caché de Go
+      run: |
+        sudo rm -rf /opt/hostedtoolcache/go
+        rm -rf ~/.cache/go-build
+        rm -rf ~/go/pkg/mod
+        echo "Caché de Go eliminado correctamente"
+
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.23.7'
+        go-version: ${{ env.GO_VERSION }}
+        cache: false
+
+    - name: Verificar versión de Go
+      run: |
+        go_version=$(go version)
+        echo "Versión instalada: $go_version"
+        if [[ "$go_version" != *"go${{ env.GO_VERSION }}"* ]]; then
+          echo "Error: Se esperaba Go ${{ env.GO_VERSION }} pero se obtuvo $go_version"
+          exit 1
+        fi
 
     - name: Debug Info
       working-directory: ./plugins/pdf
@@ -42,7 +62,7 @@ jobs:
       working-directory: ./plugins/pdf
       run: |
         echo "Iniciando compilación..."
-        sudo go build -v -buildmode=plugin -trimpath -o pdf.plugin main.go
+        sudo /opt/hostedtoolcache/go/${{ env.GO_VERSION }}/x64/bin/go build -v -buildmode=plugin -trimpath -o pdf.plugin main.go
         echo "Compilación completada"
         ls -la pdf.plugin
 
