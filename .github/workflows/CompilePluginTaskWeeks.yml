@@ -1,7 +1,7 @@
 name: Compile and Deploy - Weeks Task
 
 env:
-  GO_VERSION: '1.23.2'
+  GO_VERSION: ${{ vars.GO_VERSION }}
 
 on:
   push:
