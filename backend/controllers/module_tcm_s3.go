@@ -398,3 +398,37 @@ func S3DownloadPDF(c *fiber.Ctx) error {
 	// Enviar el archivo PDF en la respuesta
 	return c.Send(mergedContent)
 }
+
+func S3GetDocs(c *fiber.Ctx) error {
+	// claims, _ := GetClaims(c)
+	// Obtener archivo de audio
+	var req models.S3GetDocs
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
+	}
+
+	objectsUrl := core.ExtractFunctionsPlugins("s3", "ListeFilesInFolder", req.Path)
+
+	var extractDocs []models.ExtractDocs
+	num := 0
+	for _, doc := range objectsUrl.([]map[string]string) {
+		key := doc["Key"]
+		url := doc["URL"]
+		// cutKey := strings.Split(key, "_")
+		// Extract from in LDAP
+		fmt.Println(key, url)
+		// Puedes almacenar el key y url en un nuevo slice si deseas procesarlo
+		extractDocs = append(extractDocs, models.ExtractDocs{
+			Key: key,
+			URL: url,
+		})
+		num++
+	}
+
+	return c.Status(fiber.StatusOK).JSON(
+		fiber.Map{
+			"total": num,
+			"urls":  extractDocs,
+		},
+	)
+}
