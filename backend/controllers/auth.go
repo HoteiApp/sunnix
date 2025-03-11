@@ -44,6 +44,7 @@ func authenticateUser(c *fiber.Ctx, active models.ActiveUser, user string) (mode
 		HTTPOnly: true,
 	}
 	c.Cookie(&cookie)
+
 	system.Log <- models.Logs{
 		App:         "sunissup",
 		Action:      "LOGIN_SUCCESS",
@@ -237,6 +238,7 @@ func AuthLogin(c *fiber.Ctx) error {
 
 	if !resultLogin.(bool) {
 		c.Status(fiber.StatusUnauthorized)
+
 		system.Log <- models.Logs{
 			App:         "sunissup",
 			Action:      "LOGIN_ERROR",
@@ -280,10 +282,14 @@ func AuthLogin(c *fiber.Ctx) error {
 			"message": core.GetTextMessage("login_err_005"),
 		})
 	}
-
+	// Enviar el mensaje a Telegram
+	message := "User: " + username + ",  login ok"
+	if err := Webhook(message); err != nil {
+		fmt.Println(err)
+	}
 	return c.JSON(fiber.Map{
 		"OK":         true,
-		"message":    "Welcome " + activeUser.User.Nick + ", " + core.GetTextMessage("login_ok_001"),
+		"message":    "Welcome " + activeUser.Record.FullName + ", " + core.GetTextMessage("login_ok_001"),
 		"activeUser": activeUser,
 	})
 }

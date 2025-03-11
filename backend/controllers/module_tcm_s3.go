@@ -28,6 +28,7 @@ func S3List(c *fiber.Ctx) error {
 	return c.JSON(objects.([]map[string]string))
 }
 
+// Subir los files de los expedientes de los trabajadores
 func S3UploadFile(c *fiber.Ctx) error {
 	// claims, _ := GetClaims(c)
 	// typeFile := c.Params("file")
@@ -41,64 +42,89 @@ func S3UploadFile(c *fiber.Ctx) error {
 			// Leer el contenido del archivo en un []byte
 			fileBytes, _ := io.ReadAll(openfile)
 			keyName := strings.Replace(strings.Replace(key, "-", "/", -1), "%20", " ", -1)
-
+			fmt.Println(keyName)
 			objects := core.ExtractFunctionsPlugins("s3", "UploadFileInByte", keyName+".pdf", false, fileBytes)
 
 			if objects.(bool) {
 				part := strings.Split(keyName, "/")
+				if part[0] == "records" {
+					result := core.ExtractFunctionsPlugins("ldap", "Search", "(&(uid="+part[1]+"))")
+					bytes, _ := json.Marshal(&result)
+					var resultSearch ldap.SearchResult
+					_ = json.Unmarshal(bytes, &resultSearch)
 
-				result := core.ExtractFunctionsPlugins("ldap", "Search", "(&(uid="+part[1]+"))")
-				bytes, _ := json.Marshal(&result)
-				var resultSearch ldap.SearchResult
-				_ = json.Unmarshal(bytes, &resultSearch)
+					if len(resultSearch.Entries) > 0 {
+						userLdap := resultSearch.Entries[0]
 
-				if len(resultSearch.Entries) > 0 {
-					userLdap := resultSearch.Entries[0]
+						id, _ := strconv.ParseUint(userLdap.GetAttributeValue("id"), 10, 64)
 
-					id, _ := strconv.ParseUint(userLdap.GetAttributeValue("id"), 10, 64)
+						var doc models.NecessaryDocuments
+						// record/uid/document
+						_, _ = database.WithDB(func(db *gorm.DB) interface{} {
+							db.Where("worker_record_id = ?", id).Find(&doc)
 
-					var doc models.NecessaryDocuments
-					// record/uid/document
+							docMap := map[string]*bool{
+								"resume":                       &doc.Resume,
+								"diploma_transcripts":          &doc.DiplomaTranscripts,
+								"licenses_certifications":      &doc.LicensesCertifications,
+								"course_fcb":                   &doc.CourseFcb,
+								"service_trainer_provider":     &doc.ServiceTrainerProvider,
+								"service_cpr_aed":              &doc.ServiceCprAed,
+								"service_osha":                 &doc.ServiceOSHA,
+								"service_infection_control":    &doc.ServiceInfectionControl,
+								"service_hiv_aids":             &doc.ServiceHivAids,
+								"service_domestic_violence":    &doc.ServiceDomesticViolence,
+								"service_hippa":                &doc.ServiceHIPPA,
+								"service_security_awareness":   &doc.ServiceSecurityAwarenes,
+								"service_access_civil_rights":  &doc.ServicAccessCivilRights,
+								"service_deaf_hard":            &doc.ServiceDeafHard,
+								"service_fars_cfars":           &doc.ServiceFarsCfars,
+								"other_medicaid_certification": &doc.OtherMedicaidCertification,
+								"other_medicaid_provider":      &doc.OtherMedicaidProvider,
+								"other_drivers_license":        &doc.OtherDriversLicense,
+								"other_social_security_card":   &doc.OtherSocialSecurityCard,
+								"other_proof_legal_status":     &doc.OtherProofLegalStatus,
+								"other_employee_id_badge":      &doc.OtherEmployeeIDBadge,
+								"other_vehicle_registration":   &doc.OtherVehicleRegistration,
+								"other_proof_insurance":        &doc.OtherProofInsurance,
+								"form_i9":                      &doc.FormI9,
+								"form_w9":                      &doc.Formw9,
+								"form_w4":                      &doc.Formw4,
+							}
+
+							if field, exists := docMap[part[2]]; exists {
+								*field = true
+							}
+
+							db.Save(&doc)
+							return false
+						})
+
+					}
+				}
+				// Si el tipo de fichero que se desa subir es para un INSURANCE
+				if part[3] == "insurance" {
+					var file models.ClientSCMSureFilesInCloud
 					_, _ = database.WithDB(func(db *gorm.DB) interface{} {
-						db.Where("worker_record_id = ?", id).Find(&doc)
-
-						docMap := map[string]*bool{
-							"resume":                       &doc.Resume,
-							"diploma_transcripts":          &doc.DiplomaTranscripts,
-							"licenses_certifications":      &doc.LicensesCertifications,
-							"course_fcb":                   &doc.CourseFcb,
-							"service_trainer_provider":     &doc.ServiceTrainerProvider,
-							"service_cpr_aed":              &doc.ServiceCprAed,
-							"service_osha":                 &doc.ServiceOSHA,
-							"service_infection_control":    &doc.ServiceInfectionControl,
-							"service_hiv_aids":             &doc.ServiceHivAids,
-							"service_domestic_violence":    &doc.ServiceDomesticViolence,
-							"service_hippa":                &doc.ServiceHIPPA,
-							"service_security_awareness":   &doc.ServiceSecurityAwarenes,
-							"service_access_civil_rights":  &doc.ServicAccessCivilRights,
-							"service_deaf_hard":            &doc.ServiceDeafHard,
-							"service_fars_cfars":           &doc.ServiceFarsCfars,
-							"other_medicaid_certification": &doc.OtherMedicaidCertification,
-							"other_medicaid_provider":      &doc.OtherMedicaidProvider,
-							"other_drivers_license":        &doc.OtherDriversLicense,
-							"other_social_security_card":   &doc.OtherSocialSecurityCard,
-							"other_proof_legal_status":     &doc.OtherProofLegalStatus,
-							"other_employee_id_badge":      &doc.OtherEmployeeIDBadge,
-							"other_vehicle_registration":   &doc.OtherVehicleRegistration,
-							"other_proof_insurance":        &doc.OtherProofInsurance,
-							"form_i9":                      &doc.FormI9,
-							"form_w9":                      &doc.Formw9,
-							"form_w4":                      &doc.Formw4,
+						db.Where("scm = ? and sure = ?", part[2], part[4]).First(&file)
+						if part[5] == "Auth Request" {
+							file.Auth = true
 						}
-
-						if field, exists := docMap[part[2]]; exists {
-							*field = true
+						if part[5] == "Certification" {
+							file.Certification = true
 						}
-
-						db.Save(&doc)
-						return false
+						if part[5] == "Assessment" {
+							file.Assessment = true
+						}
+						if part[5] == "Service Plan" {
+							file.Sp = true
+						}
+						if part[5] == "Evaluation" {
+							file.Evaluation = true
+						}
+						db.Save(&file)
+						return true
 					})
-
 				}
 
 				return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Upload ok"})
@@ -108,6 +134,7 @@ func S3UploadFile(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusConflict).JSON(fiber.Map{"message": "Error"})
 }
 
+// Subir los ficheros de las auth
 func S3Upload(c *fiber.Ctx) error {
 	var req PDFRequestUpload
 	if err := c.BodyParser(&req); err != nil {
@@ -121,35 +148,86 @@ func S3Upload(c *fiber.Ctx) error {
 
 	if objects.(bool) {
 
-		var file models.ClientSCMSureFilesInCloud
-		// tcm/client/scm/sure/
+		// tcm/client/scm/insurance/id
 		part := strings.Split(req.Folder, "/")
-		_, _ = database.WithDB(func(db *gorm.DB) interface{} {
-			db.Where("scm = ? and sure = ?", part[2], part[3]).First(&file)
-			if req.Name == "Auth Request" {
-				file.Auth = true
-			}
-			if req.Name == "Certification" {
-				file.Certification = true
-			}
-			if req.Name == "Assessment" {
-				file.Assessment = true
-			}
-			if req.Name == "Service Plan" {
-				file.Sp = true
-			}
-			if req.Name == "Evaluation" {
-				file.Evaluation = true
-			}
-			db.Save(&file)
-			return false
-		})
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Upload ok"})
+
+		// Si el tipo de fichero que se desa subir es para un INSURANCE
+		if part[3] == "insurance" {
+			var file models.ClientSCMSureFilesInCloud
+			_, _ = database.WithDB(func(db *gorm.DB) interface{} {
+				db.Where("scm = ? and sure = ?", part[2], part[4]).First(&file)
+				if req.Name == "Auth Request" {
+					file.Auth = true
+				}
+				if req.Name == "Certification" {
+					file.Certification = true
+				}
+				if req.Name == "Assessment" {
+					file.Assessment = true
+				}
+				if req.Name == "Service Plan" {
+					file.Sp = true
+				}
+				if req.Name == "Evaluation" {
+					file.Evaluation = true
+				}
+				db.Save(&file)
+				return true
+			})
+		}
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Upload file"})
 	}
 	// Devuelve la lista de objetos como JSON
-	return c.Status(fiber.StatusConflict).JSON(fiber.Map{"message": "Error"})
+	return c.Status(fiber.StatusConflict).JSON(fiber.Map{"message": "Error to upload file"})
 }
 
+// Subir ficheros de las evaluaciones y las miscelaneus
+func S3UploadEvalMisc(c *fiber.Ctx) error {
+	var req PDFRequestUpload
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
+	}
+	fmt.Println(req.Folder)
+	// El foder debe de llegar con la estructura de (tcm/client/scm/[eval|misc]/)
+
+	// pdf := core.ExtractFunctionsPlugins("pdf", "CreatePDF", req.HTML, req.PageSize)
+
+	// -- Modo de uso: system.ExtractFunctionsPlugins("s3","UploadFileInByte", "key", [true|false], "pathFile")
+	// objects := core.ExtractFunctionsPlugins("s3", "UploadFileInByte", req.Folder+req.Name+".pdf", false, pdf.([]byte))
+
+	// if objects.(bool) {
+
+	// var file models.ClientSCMSureFilesInCloud
+	// tcm/client/scm/sure/
+	// part := strings.Split(req.Folder, "/")
+	// _, _ = database.WithDB(func(db *gorm.DB) interface{} {
+	// 	db.Where("scm = ? and sure = ?", part[2], part[3]).First(&file)
+	// 	if req.Name == "Auth Request" {
+	// 		file.Auth = true
+	// 	}
+	// 	if req.Name == "Certification" {
+	// 		file.Certification = true
+	// 	}
+	// 	if req.Name == "Assessment" {
+	// 		file.Assessment = true
+	// 	}
+	// 	if req.Name == "Service Plan" {
+	// 		file.Sp = true
+	// 	}
+	// 	if req.Name == "Evaluation" {
+	// 		file.Evaluation = true
+	// 	}
+	// 	db.Save(&file)
+	// 	return false
+	// })
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Upload ok"})
+	// }
+	// Devuelve la lista de objetos como JSON
+	// return c.Status(fiber.StatusConflict).JSON(fiber.Map{"message": "Error"})
+}
+
+// Crear url para visualizar un fichero
 func S3PresignedURL(c *fiber.Ctx) error {
 	var req models.S3PresignedURL
 	if err := c.BodyParser(&req); err != nil {
@@ -179,7 +257,7 @@ func S3DeleteObj(c *fiber.Ctx) error {
 		// tcm/client/scm/sure/
 		part := strings.Split(obj.Key, "/")
 		_, _ = database.WithDB(func(db *gorm.DB) interface{} {
-			db.Where("scm = ? and sure = ?", part[2], part[3]).First(&file)
+			db.Where("scm = ? and sure = ?", part[2], part[4]).First(&file)
 			if obj.Name == "Auth Request" {
 				file.Auth = false
 			}
@@ -319,4 +397,38 @@ func S3DownloadPDF(c *fiber.Ctx) error {
 	c.Set("Content-Disposition", "attachment; filename=merged.pdf")
 	// Enviar el archivo PDF en la respuesta
 	return c.Send(mergedContent)
+}
+
+func S3GetDocs(c *fiber.Ctx) error {
+	// claims, _ := GetClaims(c)
+	// Obtener archivo de audio
+	var req models.S3GetDocs
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
+	}
+
+	objectsUrl := core.ExtractFunctionsPlugins("s3", "ListeFilesInFolder", req.Path)
+
+	var extractDocs []models.ExtractDocs
+	num := 0
+	for _, doc := range objectsUrl.([]map[string]string) {
+		key := doc["Key"]
+		url := doc["URL"]
+		// cutKey := strings.Split(key, "_")
+		// Extract from in LDAP
+		fmt.Println(key, url)
+		// Puedes almacenar el key y url en un nuevo slice si deseas procesarlo
+		extractDocs = append(extractDocs, models.ExtractDocs{
+			Key: key,
+			URL: url,
+		})
+		num++
+	}
+
+	return c.Status(fiber.StatusOK).JSON(
+		fiber.Map{
+			"total": num,
+			"urls":  extractDocs,
+		},
+	)
 }
