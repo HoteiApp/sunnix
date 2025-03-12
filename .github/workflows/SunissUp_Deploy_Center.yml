@@ -99,14 +99,24 @@ jobs:
       deploy_full: ${{ steps.check-mode.outputs.deploy_full }}
     steps:
       - uses: actions/checkout@v4
-      
+        with:
+          ref: ${{ github.ref_name }}  # Obtiene la rama actual
+
       - name: Check deploy mode
         id: check-mode
         run: |
+          if [[ "${{ github.ref }}" != "refs/heads/testing" && "${{ github.ref }}" != "refs/heads/pro" ]]; then
+            echo "Error: Este workflow solo puede ejecutarse en las ramas 'testing' o 'pro'"
+            exit 1
+          fi
+          
           if [ -f "actions_mode.txt" ]; then
             DEPLOY_FULL=$(grep "deploy_full=" actions_mode.txt | cut -d'=' -f2)
+            echo "Rama actual: ${{ github.ref_name }}"
+            echo "Valor encontrado en actions_mode.txt: ${DEPLOY_FULL}"
             echo "deploy_full=${DEPLOY_FULL}" >> $GITHUB_OUTPUT
           else
+            echo "Archivo actions_mode.txt no encontrado en la rama ${{ github.ref_name }}"
             echo "deploy_full=false" >> $GITHUB_OUTPUT
           fi
 
