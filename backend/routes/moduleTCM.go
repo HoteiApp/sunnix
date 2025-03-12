@@ -100,7 +100,9 @@ func ModuleTCMRoutes(app *fiber.App) error {
 	// S3
 	s3 := tcm.Group("/s3")
 	s3.Get("/", controllers.S3List).Name("S3List")
+	s3.Post("/getdocs", controllers.S3GetDocs).Name("S3GetDocs")
 	s3.Post("/uploadPDF", controllers.S3Upload).Name("S3Upload")
+	s3.Post("/uploadEvalMisc", controllers.S3UploadEvalMisc).Name("S3UploadEvalMisc")
 	s3.Post("/downloadZip", controllers.S3DownloadZip).Name("S3DownloadZip")
 	s3.Post("/downloadPdf", controllers.S3DownloadPDF).Name("S3DownloadPDF")
 	s3.Post("/uploadFile/:file", controllers.S3UploadFile).Name("S3UploadFile")
