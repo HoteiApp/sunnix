@@ -1,0 +1,61 @@
+dn: dc=sunissup,dc=com
+dc: sunissup
+o: sunissup.com
+objectclass: top
+objectclass: dcObject
+objectclass: organization
+
+dn: cn=admin,dc=sunissup,dc=com
+cn: admin
+description: LDAP administrator
+objectclass: simpleSecurityObject
+objectclass: organizationalRole
+userpassword: {MD5}JfnnlDI7RTiF9RgfG2JNCw==
+
+
+dn: ou=users,dc=sunissup,dc=com
+objectclass: organizationalUnit
+objectclass: top
+ou: users
+
+dn: uid=user1,ou=users,dc=sunissup,dc=com
+uid: user1
+givenName: Usuario
+lastName: Apellido1 Apellido2
+cn: Nombre1 Apellido1 Apellido2
+secundaryEmail: nombre1apellido2@sunissup.com 
+objectclass: inetOrgPerson
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: shadowAccount
+objectclass: servicesAccount
+sn: 1
+id: 10001
+supervisor: True
+nick: True
+referrer: True
+status: True         		
+mailService: True
+chatService: True  
+faxService: True
+changePassword: True
+securityCode: True 	  	
+global: True       	  	
+approved: True     	  	
+active: True       	  	
+hrCanSign: True         	
+qaCanSign: True         	
+tcmsCanSign: True	
+temporarySupervisor: True
+billCanSing: True
+managerCanSing: True
+financeCanSing: True
+roll: Personal: True
+credentials: Categoria1
+rent: 55
+business: Empresa
+signature: 3a305c33c89da6af826309f370a950b1a256f1a6581b17e2e6a38e994e2c7d06
+userPassword: {MD5}j9YljroNzzHjA7EIhCfZRQ==
+userPasswordSet: Jueves 10 de Octubre del 2024 1:47Am - 172.23.0.4 Buena
+

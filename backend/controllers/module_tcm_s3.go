@@ -42,7 +42,7 @@ func S3UploadFile(c *fiber.Ctx) error {
 			// Leer el contenido del archivo en un []byte
 			fileBytes, _ := io.ReadAll(openfile)
 			keyName := strings.Replace(strings.Replace(key, "-", "/", -1), "%20", " ", -1)
-			fmt.Println(keyName)
+			// fmt.Println(keyName)
 			objects := core.ExtractFunctionsPlugins("s3", "UploadFileInByte", keyName+".pdf", false, fileBytes)
 
 			if objects.(bool) {
@@ -188,7 +188,7 @@ func S3UploadEvalMisc(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
 	}
-	fmt.Println(req.Folder)
+	// fmt.Println(req.Folder)
 	// El foder debe de llegar con la estructura de (tcm/client/scm/[eval|misc]/)
 
 	// pdf := core.ExtractFunctionsPlugins("pdf", "CreatePDF", req.HTML, req.PageSize)
@@ -412,15 +412,9 @@ func S3GetDocs(c *fiber.Ctx) error {
 	var extractDocs []models.ExtractDocs
 	num := 0
 	for _, doc := range objectsUrl.([]map[string]string) {
-		key := doc["Key"]
-		url := doc["URL"]
-		// cutKey := strings.Split(key, "_")
-		// Extract from in LDAP
-		fmt.Println(key, url)
-		// Puedes almacenar el key y url en un nuevo slice si deseas procesarlo
 		extractDocs = append(extractDocs, models.ExtractDocs{
-			Key: key,
-			URL: url,
+			Key: doc["Key"],
+			URL: doc["URL"],
 		})
 		num++
 	}
