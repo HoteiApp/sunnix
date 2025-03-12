@@ -1,6 +1,10 @@
 name: SunissUp Deploy Center
 
 on:
+  push:
+    branches: [ "testing", "pro" ]
+    paths:
+      - 'actions_mode.txt'
   workflow_dispatch:
     inputs:
       deploy_all:
@@ -85,9 +89,6 @@ on:
         default: 'No ejecutar'
         required: true
 
-  push:
-    branches: [ "deploy" ]
-
 permissions:
   actions: write
   contents: read
@@ -100,7 +101,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}  # Obtiene la rama actual
+          ref: ${{ github.ref_name }}
 
       - name: Check deploy mode
         id: check-mode
