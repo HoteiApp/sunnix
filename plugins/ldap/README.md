@@ -1,4 +1,4 @@
-# Plugin LDAP para AGA
+# Plugin LDAP
 
 Este repositorio contiene un conjunto de funciones en Go que permiten interactuar con un servidor LDAP. Personalizadas para el uso de AGA
 
