@@ -231,8 +231,6 @@ func AuthLogin(c *fiber.Ctx) error {
 			"message": fmt.Sprintf("%s: %v.", core.GetTextMessage("global_info_001"), strings.Join(missingFields, ", ")),
 		})
 	}
-
-	// resultLogin := core.CheckLogin(email, password)
 	// ---------------
 	resultLogin := core.ExtractFunctionsPlugins("ldap", "Login", username, password)
 
@@ -283,10 +281,12 @@ func AuthLogin(c *fiber.Ctx) error {
 		})
 	}
 	// Enviar el mensaje a Telegram
-	message := "User: " + username + ",  login ok"
-	if err := Webhook(message); err != nil {
-		fmt.Println(err)
-	}
+	go func() {
+		message := "User: " + username + ",  login system: " + system.Version
+		if err := Webhook(message); err != nil {
+			fmt.Println(err)
+		}
+	}()
 	return c.JSON(fiber.Map{
 		"OK":         true,
 		"message":    "Welcome " + activeUser.Record.FullName + ", " + core.GetTextMessage("login_ok_001"),
