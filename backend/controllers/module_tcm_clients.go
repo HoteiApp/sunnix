@@ -1731,6 +1731,26 @@ func ClientsRequestEditSCMSpPost(c *fiber.Ctx) error {
 }
 
 // QA|TCMS -- New Client ------------------------------------------------------
+func AvailableMr(c *fiber.Ctx) error {
+	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
+
+		mr := c.Params("mr")
+
+		var client models.Clients
+		db.Where("mr = ?", mr).First(&client)
+
+		if client.ID > 0 {
+			return false
+		} else {
+			return true
+		}
+	})
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"available": result,
+	})
+}
+
 func ProposeMr(c *fiber.Ctx) error {
 	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
 		var clients []models.Clients
