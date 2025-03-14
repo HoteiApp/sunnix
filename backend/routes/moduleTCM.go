@@ -32,6 +32,8 @@ func ModuleTCMRoutes(app *fiber.App) error {
 
 	// -- Clients
 	clients := tcm.Group("/clients")
+	clients.Get("/availableMr/:mr", controllers.AvailableMr).Name("AvailableMr")
+	clients.Get("/proposeMr", controllers.ProposeMr).Name("ProposeMr")
 	clients.Get("/requestNewClients", controllers.CoreListRequestNewClients).Name("CoreListRequestNewClients")
 	clients.Put("/requestNewClient", controllers.ClientsRequestNewClientePut).Name("NewCliente")                                  //ok
 	clients.Post("/requestEditClient", controllers.ClientsRequestEditClientePost).Name("EditCliente")                             //ok

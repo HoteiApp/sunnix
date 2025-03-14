@@ -1731,6 +1731,47 @@ func ClientsRequestEditSCMSpPost(c *fiber.Ctx) error {
 }
 
 // QA|TCMS -- New Client ------------------------------------------------------
+func AvailableMr(c *fiber.Ctx) error {
+	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
+
+		mr := c.Params("mr")
+
+		var client models.Clients
+		db.Where("mr = ?", mr).First(&client)
+
+		if client.ID > 0 {
+			return false
+		} else {
+			return true
+		}
+	})
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"available": result,
+	})
+}
+
+func ProposeMr(c *fiber.Ctx) error {
+	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
+		var clients []models.Clients
+		db.Order("mr asc").Find(&clients)
+
+		proposedMr := 1
+		for _, client := range clients {
+			if client.Mr != proposedMr {
+				break
+			}
+			proposedMr++
+		}
+
+		return proposedMr
+	})
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"proposed_mr": result.(int),
+	})
+}
+
 func ClientsNewClientePut(c *fiber.Ctx) error {
 	// claims, _ := GetClaims(c)
 	var requestData models.FormNewClient
@@ -1740,6 +1781,7 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 
 	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
 		var client models.Clients
+		client.Mr = requestData.Newclient.Mr
 		client.ReferringAgency = requestData.Newclient.ReferringAgency
 		client.ReferringPerson = requestData.Newclient.ReferringPerson
 		client.CellPhone = requestData.Newclient.CellPhone
@@ -2029,6 +2071,7 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 
 						clients = append(clients, models.OutClients{
 							ID:              client.ID,
+							Mr:              client.Mr,
 							ReferrerID:      client.ReferrerID,
 							ReferringAgency: client.ReferringAgency,
 							ReferringPerson: client.ReferringPerson,

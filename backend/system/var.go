@@ -15,6 +15,7 @@ const (
 var (
 	Path, _      = os.Getwd()
 	MODE         = configEnv("mode")
+	Version      = configEnv("version")
 	UrlApi       = configEnv("sunissUp.api.URL")
 	Port         = configEnv("sunissUp.api.Port")
 	RpcPort      = configEnv("sunissUp.rpc.Port")

@@ -45,6 +45,7 @@ type FormRequestNewClient struct {
 
 type FormNewClient struct {
 	Newclient struct {
+		Mr                  int    `json:"mr"`
 		ReferringAgency     string `json:"referring_agency"`
 		ReferringPerson     string `json:"referring_person"`
 		CellPhone           string `json:"cell_phone"`

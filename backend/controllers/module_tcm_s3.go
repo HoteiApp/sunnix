@@ -254,28 +254,30 @@ func S3DeleteObj(c *fiber.Ctx) error {
 
 	if result.(bool) {
 		var file models.ClientSCMSureFilesInCloud
-		// tcm/client/scm/sure/
+		// tcm/client/idscm/sure/
 		part := strings.Split(obj.Key, "/")
-		_, _ = database.WithDB(func(db *gorm.DB) interface{} {
-			db.Where("scm = ? and sure = ?", part[2], part[4]).First(&file)
-			if obj.Name == "Auth Request" {
-				file.Auth = false
-			}
-			if obj.Name == "Certification" {
-				file.Certification = false
-			}
-			if obj.Name == "Assessment" {
-				file.Assessment = false
-			}
-			if obj.Name == "Service Plan" {
-				file.Sp = false
-			}
-			if obj.Name == "Evaluation" {
-				file.Evaluation = false
-			}
-			db.Save(&file)
-			return false
-		})
+		if part[3] == "insurance" {
+			_, _ = database.WithDB(func(db *gorm.DB) interface{} {
+				db.Where("scm = ? and sure = ?", part[2], part[4]).First(&file)
+				if obj.Name == "Auth Request" {
+					file.Auth = false
+				}
+				if obj.Name == "Certification" {
+					file.Certification = false
+				}
+				if obj.Name == "Assessment" {
+					file.Assessment = false
+				}
+				if obj.Name == "Service Plan" {
+					file.Sp = false
+				}
+				if obj.Name == "Evaluation" {
+					file.Evaluation = false
+				}
+				db.Save(&file)
+				return false
+			})
+		}
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Object deleted"})
 	}
 	// Devuelve la lista de objetos como JSON

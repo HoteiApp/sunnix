@@ -371,6 +371,7 @@ type OutClientSCMActive struct {
 
 type OutClients struct {
 	ID              uint   `json:"id"`          // ID of the user who referred this user (optional)
+	Mr              int    `json:"mr"`          // Medical Record Number
 	ReferrerID      uint   `json:"referrer_id"` // ID of the user who referred this user (optional)
 	ReferringAgency string `json:"referring_agency"`
 	ReferringPerson string `json:"referring_person"`
