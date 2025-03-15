@@ -259,19 +259,21 @@ func S3DeleteObj(c *fiber.Ctx) error {
 		if part[3] == "insurance" {
 			_, _ = database.WithDB(func(db *gorm.DB) interface{} {
 				db.Where("scm = ? and sure = ?", part[2], part[4]).First(&file)
-				if obj.Name == "Auth Request" {
+				fileName := strings.Split(part[5], ".")
+				if fileName[0] == "Auth Request" {
 					file.Auth = false
 				}
-				if obj.Name == "Certification" {
+				if fileName[0] == "Certification" {
+
 					file.Certification = false
 				}
-				if obj.Name == "Assessment" {
+				if fileName[0] == "Assessment" {
 					file.Assessment = false
 				}
-				if obj.Name == "Service Plan" {
+				if fileName[0] == "Service Plan" {
 					file.Sp = false
 				}
-				if obj.Name == "Evaluation" {
+				if fileName[0] == "Evaluation" {
 					file.Evaluation = false
 				}
 				db.Save(&file)
