@@ -2379,6 +2379,7 @@ func TCMClients(c *fiber.Ctx) error {
 
 			clients = append(clients, models.OutClients{
 				ID:              client.ID,
+				Mr:              client.Mr,
 				ReferrerID:      client.ReferrerID,
 				ReferringAgency: client.ReferringAgency,
 				ReferringPerson: client.ReferringPerson,
@@ -2451,6 +2452,7 @@ func TCMClientsActiveCsm(c *fiber.Ctx) error {
 
 			clients = append(clients, models.OutClients{
 				ID:              client.ID,
+				Mr:              client.Mr,
 				ReferrerID:      client.ReferrerID,
 				ReferringAgency: client.ReferringAgency,
 				ReferringPerson: client.ReferringPerson,
