@@ -111,6 +111,18 @@ func ClientsRequestNewClientePut(c *fiber.Ctx) error {
 		// 	Client:      0,
 		// 	Description: "Information saved correctly",
 		// }
+		// Enviar el mensaje a Telegram
+		go func() {
+			message := "User: " + claims["UID"].(string)
+			if requestData.Requestnewclient.Id == "0" {
+				message += message + ": ADD_REQUEST_NEW_CLIENT : " + requestData.Requestnewclient.FirstName + " " + requestData.Requestnewclient.LastName
+			} else {
+				message += message + ": ADD_NEW_ADMISSION_CLIENT : " + requestData.Requestnewclient.FirstName + " " + requestData.Requestnewclient.LastName
+			}
+			if err := Webhook(message); err != nil {
+				fmt.Println(err)
+			}
+		}()
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"message": "Information saved correctly",
 		})
