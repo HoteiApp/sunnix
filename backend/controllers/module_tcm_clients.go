@@ -51,7 +51,7 @@ func ClientsRequestNewClientePut(c *fiber.Ctx) error {
 
 	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
 		var request models.RequestNewClient
-		request.ClientId = strconv.Itoa(requestData.Requestnewclient.ClientId)
+		request.ClientId = requestData.Requestnewclient.ClientId
 		request.ReferrerID = uint(claims["ID"].(float64))
 		request.ReferringAgency = requestData.Requestnewclient.ReferringAgency
 		request.ReferringPerson = requestData.Requestnewclient.ReferringPerson
@@ -1794,7 +1794,7 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 
 	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
 		var client models.Clients
-		if requestData.Newclient.ClientId == "0" {
+		if requestData.Newclient.ClientId == 0 {
 			client.Mr = requestData.Newclient.Mr
 			client.ReferringAgency = requestData.Newclient.ReferringAgency
 			client.ReferringPerson = requestData.Newclient.ReferringPerson
@@ -1832,16 +1832,10 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 			}
 		}
 		// Obtener el ID del cliente insertado
-		client_id, err := strconv.ParseUint(requestData.Newclient.ClientId, 10, 32)
-		clientID := uint(client_id)
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"message": "Invalid ClientId format",
-			})
-		}
 
-		if requestData.Newclient.ClientId == "0" {
-			clientID = client.ID
+		clientID := requestData.Newclient.ClientId
+		if requestData.Newclient.ClientId == 0 {
+			clientID = int(client.ID)
 		}
 
 		tcm, _ := core.GetUserFromLDAP(requestData.Newcasemanagement.Tcm)
