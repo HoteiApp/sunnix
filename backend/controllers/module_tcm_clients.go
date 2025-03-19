@@ -1794,233 +1794,244 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 
 	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
 		var client models.Clients
-		client.Mr = requestData.Newclient.Mr
-		client.ReferringAgency = requestData.Newclient.ReferringAgency
-		client.ReferringPerson = requestData.Newclient.ReferringPerson
-		client.CellPhone = requestData.Newclient.CellPhone
-		client.Fax = requestData.Newclient.Fax
-		client.Email = requestData.Newclient.Email
-		client.Date = requestData.Newclient.Date
+		if requestData.Newclient.ClientId == "0" {
+			client.Mr = requestData.Newclient.Mr
+			client.ReferringAgency = requestData.Newclient.ReferringAgency
+			client.ReferringPerson = requestData.Newclient.ReferringPerson
+			client.CellPhone = requestData.Newclient.CellPhone
+			client.Fax = requestData.Newclient.Fax
+			client.Email = requestData.Newclient.Email
+			client.Date = requestData.Newclient.Date
 
-		client.LastName = requestData.Newclient.LastName
-		client.FirstName = requestData.Newclient.FirstName
-		client.SS = requestData.Newclient.SS
-		client.DOB = requestData.Newclient.Dob
-		client.Sexo = requestData.Newclient.Sexo
-		client.Race = requestData.Newclient.Race
+			client.LastName = requestData.Newclient.LastName
+			client.FirstName = requestData.Newclient.FirstName
+			client.SS = requestData.Newclient.SS
+			client.DOB = requestData.Newclient.Dob
+			client.Sexo = requestData.Newclient.Sexo
+			client.Race = requestData.Newclient.Race
 
-		client.Address = requestData.Newclient.Address
-		client.State = requestData.Newclient.State
-		client.ZipCode = requestData.Newclient.ZipCode
+			client.Address = requestData.Newclient.Address
+			client.State = requestData.Newclient.State
+			client.ZipCode = requestData.Newclient.ZipCode
 
-		client.Phone = requestData.Newclient.Phone
-		client.School = requestData.Newclient.School
-		client.Lenguage = requestData.Newclient.Lenguage
+			client.Phone = requestData.Newclient.Phone
+			client.School = requestData.Newclient.School
+			client.Lenguage = requestData.Newclient.Lenguage
 
-		client.LegalGuardian = requestData.Newclient.LegalGuardian
-		client.Relationship = requestData.Newclient.Relationship
-		client.CellPhoneGuardian = requestData.Newclient.CellPhoneGuardian
+			client.LegalGuardian = requestData.Newclient.LegalGuardian
+			client.Relationship = requestData.Newclient.Relationship
+			client.CellPhoneGuardian = requestData.Newclient.CellPhoneGuardian
 
-		client.Medicaid = requestData.Newclient.Medicalid
-		client.GoldCardNumber = requestData.Newclient.GoldCardNumber
-		client.Medicare = requestData.Newclient.Medicare
+			client.Medicaid = requestData.Newclient.Medicalid
+			client.GoldCardNumber = requestData.Newclient.GoldCardNumber
+			client.Medicare = requestData.Newclient.Medicare
 
-		db.Save(&client)
-		if db.Error != nil {
-			return false
-		} else {
-			// Obtener el ID del cliente insertado
-			clientID := client.ID
-			tcm, _ := core.GetUserFromLDAP(requestData.Newcasemanagement.Tcm)
-			tcms, _ := core.GetUserFromLDAP(tcm.Supervisor)
-			if requestData.Newclient.CaseManagement && clientID != 0 {
-				// Crear el registro de ClientServiceCaseManagement
-				status := "Pending"
-
-				// Create folder in Bucket
-				core.ExtractFunctionsPlugins("s3", "CreateFolder", "clients/"+strconv.FormatUint(uint64(clientID), 10)+"/")
-				// TODO Esto tiene que ir para el .env para que sea dinamico, por si ahi que agregar otro seguro
-				// pendingPlanNames := []string{"Aetna Better Health", "Molina Healthcare", "Wellcare Health Plan", "Cigna"}
-
-				// for _, planName := range pendingPlanNames {
-				// 	if requestData.NewCMSure.PlanName == planName {
-				// 		status = "Pending"
-				// 		break // Sal del bucle tan pronto como se encuentre una coincidencia
-				// 	}
-				// }
-
-				clientServiceCaseManagement := models.ClientServiceCaseManagement{
-					Client: clientID,
-					TCM:    int(tcm.ID), // Valor por defecto para TCM
-					Doa:    requestData.Newcasemanagement.Doa,
-					Status: status,
-				}
-				db.Save(&clientServiceCaseManagement)
-				if db.Error != nil {
-					return false
-				} else {
-					scmID := clientServiceCaseManagement.ID
-
-					// Demografic----------------------
-					clientSCMDemografic := models.ClientSCMDemografic{
-						Client: clientID,
-						Scm:    scmID,
-
-						ReferringAgency: requestData.Newclient.ReferringAgency,
-						ReferringPerson: requestData.Newclient.ReferringPerson,
-						CellPhone:       requestData.Newclient.CellPhone,
-						Fax:             requestData.Newclient.Fax,
-						Email:           requestData.Newclient.Email,
-						Date:            requestData.Newclient.Date,
-
-						LastName:  requestData.Newclient.LastName,
-						FirstName: requestData.Newclient.FirstName,
-						SS:        requestData.Newclient.SS,
-						DOB:       requestData.Newclient.Dob,
-						Sexo:      requestData.Newclient.Sexo,
-						Race:      requestData.Newclient.Race,
-
-						Address: requestData.Newclient.Address,
-						State:   requestData.Newclient.State,
-						ZipCode: requestData.Newclient.ZipCode,
-
-						Phone:    requestData.Newclient.CellPhone,
-						School:   requestData.Newclient.School,
-						Lenguage: requestData.Newclient.Lenguage,
-
-						LegalGuardian:     requestData.Newclient.LegalGuardian,
-						Relationship:      requestData.Newclient.Relationship,
-						CellPhoneGuardian: requestData.Newclient.CellPhoneGuardian,
-
-						Medicaid:       requestData.Newclient.Medicalid,
-						GoldCardNumber: requestData.Newclient.GoldCardNumber,
-						Medicare:       requestData.Newclient.Medicare,
-					}
-					db.Save(&clientSCMDemografic)
-					// TCM-------------------------
-					// var tcm models.WorkerRecord
-					// db.Where("ID = ?", requestData.Newcasemanagement.Tcm).Find(&tcm)
-					clientSCMTcm := models.ClienteSCMTcm{
-						Client:      clientID,
-						Scm:         scmID,
-						FullName:    tcm.Nick,
-						Categorytcm: tcm.Credentials,
-						Signature:   tcm.Signature,
-						Active:      tcm.Active,
-					}
-					db.Save(&clientSCMTcm)
-					// Medical-------------------------
-					clientSCMMedical := models.ClientSCMMedical{
-						Client:            clientID,
-						Scm:               scmID,
-						MedicalPcp:        requestData.NewCMMedical.MedicalPcp,
-						MedicalPcpAddress: requestData.NewCMMedical.MedicalPcpAddress,
-						MedicalPcpPhone:   requestData.NewCMMedical.MedicalPcpPhone,
-
-						MedicalPsychiatrisy:        requestData.NewCMMedical.MedicalPsychiatrisy,
-						MedicalPsychiatrisyAddress: requestData.NewCMMedical.MedicalPsychiatrisyAddress,
-						MedicalPsychiatrisyPhone:   requestData.NewCMMedical.MedicalPsychiatrisyPhone,
-					}
-					db.Save(&clientSCMMedical)
-					// Mental--------------------------
-					clientSCMMental := models.ClientSCMMental{
-						Client:              clientID,
-						Scm:                 scmID,
-						MentalPrimary:       requestData.Newclient.MentalPrimary,
-						MentalPrimaryDate:   requestData.Newclient.MentalPrimaryDate,
-						MentalSecondary:     requestData.Newclient.MentalSecondary,
-						MentalSecondaryDate: requestData.Newclient.MentalSecondaryDate,
-					}
-					db.Save(&clientSCMMental)
-					// Certification---------------------
-					clientCertification := models.ClientSCMCertification{
-						Client: clientID,
-						Scm:    scmID,
-						// -- Dates TCM
-						Tcm:         int(tcm.ID),
-						Nametcm:     tcm.Nick,
-						Categorytcm: tcm.Credentials,
-						// Dates TCMS
-						Supervisor:         int(tcms.ID),
-						NameSupervisor:     tcms.Nick,
-						Categorysupervisor: tcms.Credentials,
-					}
-					db.Save(&clientCertification)
-					// Assessment------------------------
-					clientAssessment := models.ClientSCMAssessment{
-						Client: clientID,
-						Scm:    scmID,
-						// Dates TCM
-						Tcm:         int(tcm.ID),
-						Nametcm:     tcm.Nick,
-						Categorytcm: tcm.Credentials,
-						// Dates TCMS
-						Supervisor:         int(tcms.ID),
-						NameSupervisor:     tcms.Nick,
-						CategorySupervisor: tcms.Credentials,
-					}
-					db.Save(&clientAssessment)
-					// SP------------------------
-
-					clientSp := models.ClientSCMSp{
-						Client: clientID,
-						Scm:    scmID,
-						// Dates TCM
-						Tcm:         int(tcm.ID),
-						Nametcm:     tcm.Nick,
-						Categorytcm: tcm.Credentials,
-						// Dates TCMS
-						Supervisor:         int(tcms.ID),
-						NameSupervisor:     tcms.Nick,
-						CategorySupervisor: tcms.Credentials,
-					}
-					db.Save(&clientSp)
-					var sp models.ClientSCMSp
-					db.Where("scm = ?", scmID).Find(&sp)
-					// Goal1------------------------
-					goal1 := models.SpGoal1{
-						Sp: sp.ID,
-					}
-					db.Save(&goal1)
-					// Goal2------------------------
-					goal2 := models.SpGoal2{
-						Sp: sp.ID,
-					}
-					db.Save(&goal2)
-					// Goal3------------------------
-					goal3 := models.SpGoal3{
-						Sp: sp.ID,
-					}
-					db.Save(&goal3)
-					// Goal4------------------------
-					goal4 := models.SpGoal4{
-						Sp: sp.ID,
-					}
-					db.Save(&goal4)
-					// Goal5------------------------
-					goal5 := models.SpGoal5{
-						Sp: sp.ID,
-					}
-					db.Save(&goal5)
-					// Goal6------------------------
-					goal6 := models.SpGoal6{
-						Sp: sp.ID,
-					}
-					db.Save(&goal6)
-					// Goal7------------------------
-					goal7 := models.SpGoal7{
-						Sp: sp.ID,
-					}
-					db.Save(&goal7)
-					// Goal8------------------------
-					goal8 := models.SpGoal8{
-						Sp: sp.ID,
-					}
-					db.Save(&goal8)
-				}
+			db.Save(&client)
+			if db.Error != nil {
+				return false
 			}
 		}
+		// Obtener el ID del cliente insertado
+		client_id, err := strconv.ParseUint(requestData.Newclient.ClientId, 10, 32)
+		clientID := uint(client_id)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Invalid ClientId format",
+			})
+		}
 
+		if requestData.Newclient.ClientId == "0" {
+			clientID = client.ID
+		}
+
+		tcm, _ := core.GetUserFromLDAP(requestData.Newcasemanagement.Tcm)
+		tcms, _ := core.GetUserFromLDAP(tcm.Supervisor)
+		if requestData.Newclient.CaseManagement && clientID != 0 {
+			// Crear el registro de ClientServiceCaseManagement
+			status := "Pending"
+
+			// Create folder in Bucket
+			core.ExtractFunctionsPlugins("s3", "CreateFolder", "clients/"+strconv.FormatUint(uint64(clientID), 10)+"/")
+			// TODO Esto tiene que ir para el .env para que sea dinamico, por si ahi que agregar otro seguro
+			// pendingPlanNames := []string{"Aetna Better Health", "Molina Healthcare", "Wellcare Health Plan", "Cigna"}
+
+			// for _, planName := range pendingPlanNames {
+			// 	if requestData.NewCMSure.PlanName == planName {
+			// 		status = "Pending"
+			// 		break // Sal del bucle tan pronto como se encuentre una coincidencia
+			// 	}
+			// }
+
+			clientServiceCaseManagement := models.ClientServiceCaseManagement{
+				Client: uint(clientID),
+				TCM:    int(tcm.ID), // Valor por defecto para TCM
+				Doa:    requestData.Newcasemanagement.Doa,
+				Status: status,
+			}
+			db.Save(&clientServiceCaseManagement)
+			if db.Error != nil {
+				return false
+			} else {
+				scmID := clientServiceCaseManagement.ID
+
+				// Demografic----------------------
+				clientSCMDemografic := models.ClientSCMDemografic{
+					Client: clientID,
+					Scm:    scmID,
+
+					ReferringAgency: requestData.Newclient.ReferringAgency,
+					ReferringPerson: requestData.Newclient.ReferringPerson,
+					CellPhone:       requestData.Newclient.CellPhone,
+					Fax:             requestData.Newclient.Fax,
+					Email:           requestData.Newclient.Email,
+					Date:            requestData.Newclient.Date,
+
+					LastName:  requestData.Newclient.LastName,
+					FirstName: requestData.Newclient.FirstName,
+					SS:        requestData.Newclient.SS,
+					DOB:       requestData.Newclient.Dob,
+					Sexo:      requestData.Newclient.Sexo,
+					Race:      requestData.Newclient.Race,
+
+					Address: requestData.Newclient.Address,
+					State:   requestData.Newclient.State,
+					ZipCode: requestData.Newclient.ZipCode,
+
+					Phone:    requestData.Newclient.CellPhone,
+					School:   requestData.Newclient.School,
+					Lenguage: requestData.Newclient.Lenguage,
+
+					LegalGuardian:     requestData.Newclient.LegalGuardian,
+					Relationship:      requestData.Newclient.Relationship,
+					CellPhoneGuardian: requestData.Newclient.CellPhoneGuardian,
+
+					Medicaid:       requestData.Newclient.Medicalid,
+					GoldCardNumber: requestData.Newclient.GoldCardNumber,
+					Medicare:       requestData.Newclient.Medicare,
+				}
+				db.Save(&clientSCMDemografic)
+				// TCM-------------------------
+				// var tcm models.WorkerRecord
+				// db.Where("ID = ?", requestData.Newcasemanagement.Tcm).Find(&tcm)
+				clientSCMTcm := models.ClienteSCMTcm{
+					Client:      clientID,
+					Scm:         scmID,
+					FullName:    tcm.Nick,
+					Categorytcm: tcm.Credentials,
+					Signature:   tcm.Signature,
+					Active:      tcm.Active,
+				}
+				db.Save(&clientSCMTcm)
+				// Medical-------------------------
+				clientSCMMedical := models.ClientSCMMedical{
+					Client:            clientID,
+					Scm:               scmID,
+					MedicalPcp:        requestData.NewCMMedical.MedicalPcp,
+					MedicalPcpAddress: requestData.NewCMMedical.MedicalPcpAddress,
+					MedicalPcpPhone:   requestData.NewCMMedical.MedicalPcpPhone,
+
+					MedicalPsychiatrisy:        requestData.NewCMMedical.MedicalPsychiatrisy,
+					MedicalPsychiatrisyAddress: requestData.NewCMMedical.MedicalPsychiatrisyAddress,
+					MedicalPsychiatrisyPhone:   requestData.NewCMMedical.MedicalPsychiatrisyPhone,
+				}
+				db.Save(&clientSCMMedical)
+				// Mental--------------------------
+				clientSCMMental := models.ClientSCMMental{
+					Client:              clientID,
+					Scm:                 scmID,
+					MentalPrimary:       requestData.Newclient.MentalPrimary,
+					MentalPrimaryDate:   requestData.Newclient.MentalPrimaryDate,
+					MentalSecondary:     requestData.Newclient.MentalSecondary,
+					MentalSecondaryDate: requestData.Newclient.MentalSecondaryDate,
+				}
+				db.Save(&clientSCMMental)
+				// Certification---------------------
+				clientCertification := models.ClientSCMCertification{
+					Client: clientID,
+					Scm:    scmID,
+					// -- Dates TCM
+					Tcm:         int(tcm.ID),
+					Nametcm:     tcm.Nick,
+					Categorytcm: tcm.Credentials,
+					// Dates TCMS
+					Supervisor:         int(tcms.ID),
+					NameSupervisor:     tcms.Nick,
+					Categorysupervisor: tcms.Credentials,
+				}
+				db.Save(&clientCertification)
+				// Assessment------------------------
+				clientAssessment := models.ClientSCMAssessment{
+					Client: clientID,
+					Scm:    scmID,
+					// Dates TCM
+					Tcm:         int(tcm.ID),
+					Nametcm:     tcm.Nick,
+					Categorytcm: tcm.Credentials,
+					// Dates TCMS
+					Supervisor:         int(tcms.ID),
+					NameSupervisor:     tcms.Nick,
+					CategorySupervisor: tcms.Credentials,
+				}
+				db.Save(&clientAssessment)
+				// SP------------------------
+
+				clientSp := models.ClientSCMSp{
+					Client: clientID,
+					Scm:    scmID,
+					// Dates TCM
+					Tcm:         int(tcm.ID),
+					Nametcm:     tcm.Nick,
+					Categorytcm: tcm.Credentials,
+					// Dates TCMS
+					Supervisor:         int(tcms.ID),
+					NameSupervisor:     tcms.Nick,
+					CategorySupervisor: tcms.Credentials,
+				}
+				db.Save(&clientSp)
+				var sp models.ClientSCMSp
+				db.Where("scm = ?", scmID).Find(&sp)
+				// Goal1------------------------
+				goal1 := models.SpGoal1{
+					Sp: sp.ID,
+				}
+				db.Save(&goal1)
+				// Goal2------------------------
+				goal2 := models.SpGoal2{
+					Sp: sp.ID,
+				}
+				db.Save(&goal2)
+				// Goal3------------------------
+				goal3 := models.SpGoal3{
+					Sp: sp.ID,
+				}
+				db.Save(&goal3)
+				// Goal4------------------------
+				goal4 := models.SpGoal4{
+					Sp: sp.ID,
+				}
+				db.Save(&goal4)
+				// Goal5------------------------
+				goal5 := models.SpGoal5{
+					Sp: sp.ID,
+				}
+				db.Save(&goal5)
+				// Goal6------------------------
+				goal6 := models.SpGoal6{
+					Sp: sp.ID,
+				}
+				db.Save(&goal6)
+				// Goal7------------------------
+				goal7 := models.SpGoal7{
+					Sp: sp.ID,
+				}
+				db.Save(&goal7)
+				// Goal8------------------------
+				goal8 := models.SpGoal8{
+					Sp: sp.ID,
+				}
+				db.Save(&goal8)
+			}
+		}
 		var request models.RequestNewClient
 		db.Where("ID = ?", requestData.Data.ID).Delete(&request)
 		// TODO: Aqui ahi que agregar el log de la opercacion y crear una notificacion a los dos usuarios al TCM y al TCMS
