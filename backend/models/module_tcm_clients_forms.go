@@ -2,6 +2,7 @@ package models
 
 type FormRequestNewClient struct {
 	Requestnewclient struct {
+		ClientId            int    `json:"client_id"`
 		ReferringAgency     string `json:"referring_agency"`
 		ReferringPerson     string `json:"referring_person"`
 		CellPhone           string `json:"cell_phone"`
