@@ -51,6 +51,7 @@ func ClientsRequestNewClientePut(c *fiber.Ctx) error {
 
 	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
 		var request models.RequestNewClient
+		request.ClientId = strconv.Itoa(requestData.Requestnewclient.ClientId)
 		request.ReferrerID = uint(claims["ID"].(float64))
 		request.ReferringAgency = requestData.Requestnewclient.ReferringAgency
 		request.ReferringPerson = requestData.Requestnewclient.ReferringPerson
@@ -114,10 +115,10 @@ func ClientsRequestNewClientePut(c *fiber.Ctx) error {
 		// Enviar el mensaje a Telegram
 		go func() {
 			message := "User: " + claims["UID"].(string)
-			if requestData.Requestnewclient.Id == "0" {
-				message += message + ": ADD_REQUEST_NEW_CLIENT : " + requestData.Requestnewclient.FirstName + " " + requestData.Requestnewclient.LastName
+			if requestData.Requestnewclient.ClientId == 0 {
+				message += ": ADD_REQUEST_NEW_CLIENT : " + requestData.Requestnewclient.FirstName + " " + requestData.Requestnewclient.LastName
 			} else {
-				message += message + ": ADD_NEW_ADMISSION_CLIENT : " + requestData.Requestnewclient.FirstName + " " + requestData.Requestnewclient.LastName
+				message += ": ADD_NEW_ADMISSION_CLIENT : " + requestData.Requestnewclient.FirstName + " " + requestData.Requestnewclient.LastName
 			}
 			if err := Webhook(message); err != nil {
 				fmt.Println(err)

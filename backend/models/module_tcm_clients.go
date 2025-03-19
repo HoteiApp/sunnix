@@ -1510,6 +1510,7 @@ type ClientSCMSp struct {
 // --------------------------------------------
 type RequestNewClient struct {
 	gorm.Model
+	ClientId        string `json:"client_id"`   // ID of the client
 	ReferrerID      uint   `json:"referrer_id"` // ID of the user who referred this user (optional)
 	ReferringAgency string `json:"referring_agency"`
 	ReferringPerson string `json:"referring_person"`
