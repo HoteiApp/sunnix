@@ -41,7 +41,7 @@ type OutSCMSure struct {
 
 type OutClientSCMSp struct {
 	ID                  int     `json:"id"`
-	Client              uint    `json:"client_id"` // ID of the client
+	Client              int     `json:"client_id"` // ID of the client
 	Scm                 uint    `json:"scm"`
 	Developmentdate     string  `json:"developmentDate"`
 	Axiscode            string  `json:"axisCode"`

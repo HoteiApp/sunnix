@@ -56,7 +56,7 @@ type ClientServiceCaseManagement struct {
 
 type ClienteSCMTcm struct {
 	gorm.Model
-	Client      uint   `json:"client_id"` // ID of the client
+	Client      int    `json:"client_id"` // ID of the client
 	Scm         uint   `json:"scm"`
 	FullName    string `json:"full_name"`
 	Categorytcm string `json:"categoryTCM"`
@@ -66,7 +66,7 @@ type ClienteSCMTcm struct {
 
 type ClientSCMDemografic struct {
 	gorm.Model
-	Client          uint   `json:"client_id"` // ID of the client
+	Client          int    `json:"client_id"` // ID of the client
 	Scm             uint   `json:"scm"`
 	ReferringAgency string `json:"referring_agency"`
 	ReferringPerson string `json:"referring_person"`
@@ -139,7 +139,7 @@ type ClientSCMSureFilesInCloud struct {
 }
 type ClientSCMMedical struct {
 	gorm.Model
-	Client uint `json:"client_id"` // ID of the client
+	Client int  `json:"client_id"` // ID of the client
 	Scm    uint `json:"scm"`
 
 	MedicalPcp        string `json:"medical_pcp"`
@@ -153,7 +153,7 @@ type ClientSCMMedical struct {
 
 type ClientSCMMental struct {
 	gorm.Model
-	Client              uint   `json:"client_id"` // ID of the client
+	Client              int    `json:"client_id"` // ID of the client
 	Scm                 uint   `json:"scm"`
 	MentalPrimary       string `json:"mental_primary"`
 	MentalPrimaryDate   string `json:"mental_primary_date"`
@@ -163,7 +163,7 @@ type ClientSCMMental struct {
 
 type ClientSCMCertification struct {
 	gorm.Model
-	Client uint `json:"client_id"` // ID of the client
+	Client int  `json:"client_id"` // ID of the client
 	Scm    uint `json:"scm"`
 
 	Select1  bool `json:"select_1"`
@@ -205,7 +205,7 @@ type SourceInformationLdrsi struct {
 
 type ClientSCMAssessment struct {
 	gorm.Model
-	Client uint `json:"client_id"` // ID of the client
+	Client int  `json:"client_id"` // ID of the client
 	Scm    uint `json:"scm"`
 
 	Sourceinforemationclient               string `json:"sourceInforemationClient"`
@@ -1485,7 +1485,7 @@ type SpGoal8 struct {
 
 type ClientSCMSp struct {
 	gorm.Model
-	Client              uint   `json:"client_id"` // ID of the client
+	Client              int    `json:"client_id"` // ID of the client
 	Scm                 uint   `json:"scm"`
 	Developmentdate     string `json:"developmentDate"`
 	Axiscode            string `json:"axisCode"`
@@ -1510,7 +1510,7 @@ type ClientSCMSp struct {
 // --------------------------------------------
 type RequestNewClient struct {
 	gorm.Model
-	ClientId        string `json:"client_id"`   // ID of the client
+	ClientId        int    `json:"client_id"`   // ID of the client
 	ReferrerID      uint   `json:"referrer_id"` // ID of the user who referred this user (optional)
 	ReferringAgency string `json:"referring_agency"`
 	ReferringPerson string `json:"referring_person"`
