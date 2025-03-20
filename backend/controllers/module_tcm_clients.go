@@ -2046,6 +2046,12 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 	var clients []models.OutClients
 
 	var userIDs []int64
+
+	// Adicionar le usuario que esta logueado si es TCMS
+	if claims["Roll"].(string) == "TCMS" {
+		userIDs = append(userIDs, int64(claims["ID"].(float64)))
+	}
+	// Buscar todos los tcm que tiene como supervisor al usuario logueado
 	resultTCMS := core.ExtractFunctionsPlugins("ldap", "Search", "(&(supervisor="+claims["UID"].(string)+"))")
 	bytes, _ := json.Marshal(&resultTCMS)
 	var resultSearch ldap.SearchResult
@@ -2072,7 +2078,6 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 			var scm []models.OutClientSCM
 
 			if claims["Roll"].(string) == "TCMS" {
-
 				for _, cm := range cms {
 					found := false
 					for _, id := range userIDs {
@@ -2143,6 +2148,7 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 
 				clients = append(clients, models.OutClients{
 					ID:              client.ID,
+					Mr:              client.Mr,
 					ReferrerID:      client.ReferrerID,
 					ReferringAgency: client.ReferringAgency,
 					ReferringPerson: client.ReferringPerson,
