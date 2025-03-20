@@ -1839,7 +1839,14 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 		}
 
 		tcm, _ := core.GetUserFromLDAP(requestData.Newcasemanagement.Tcm)
+
+		var recordTcm models.WorkerRecord
+		db.Where("uid = ?", tcm.Uid).Find(&recordTcm)
+
 		tcms, _ := core.GetUserFromLDAP(tcm.Supervisor)
+		var recordTcms models.WorkerRecord
+		db.Where("uid = ?", tcms.Uid).Find(&recordTcms)
+
 		if requestData.Newclient.CaseManagement && clientID != 0 {
 			// Crear el registro de ClientServiceCaseManagement
 			status := "Pending"
@@ -1910,7 +1917,7 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 				clientSCMTcm := models.ClienteSCMTcm{
 					Client:      clientID,
 					Scm:         scmID,
-					FullName:    tcm.Nick,
+					FullName:    recordTcm.FullName,
 					Categorytcm: tcm.Credentials,
 					Signature:   tcm.Signature,
 					Active:      tcm.Active,
@@ -1945,11 +1952,11 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 					Scm:    scmID,
 					// -- Dates TCM
 					Tcm:         int(tcm.ID),
-					Nametcm:     tcm.Nick,
+					Nametcm:     recordTcm.FullName,
 					Categorytcm: tcm.Credentials,
 					// Dates TCMS
 					Supervisor:         int(tcms.ID),
-					NameSupervisor:     tcms.Nick,
+					NameSupervisor:     recordTcms.FullName,
 					Categorysupervisor: tcms.Credentials,
 				}
 				db.Save(&clientCertification)
@@ -1959,11 +1966,11 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 					Scm:    scmID,
 					// Dates TCM
 					Tcm:         int(tcm.ID),
-					Nametcm:     tcm.Nick,
+					Nametcm:     recordTcm.FullName,
 					Categorytcm: tcm.Credentials,
 					// Dates TCMS
 					Supervisor:         int(tcms.ID),
-					NameSupervisor:     tcms.Nick,
+					NameSupervisor:     recordTcms.FullName,
 					CategorySupervisor: tcms.Credentials,
 				}
 				db.Save(&clientAssessment)
@@ -1974,11 +1981,11 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 					Scm:    scmID,
 					// Dates TCM
 					Tcm:         int(tcm.ID),
-					Nametcm:     tcm.Nick,
+					Nametcm:     recordTcm.FullName,
 					Categorytcm: tcm.Credentials,
 					// Dates TCMS
 					Supervisor:         int(tcms.ID),
-					NameSupervisor:     tcms.Nick,
+					NameSupervisor:     recordTcms.FullName,
 					CategorySupervisor: tcms.Credentials,
 				}
 				db.Save(&clientSp)
