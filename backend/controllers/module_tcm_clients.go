@@ -2140,10 +2140,11 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 					CellPhoneGuardian: client.CellPhoneGuardian,
 					SingGuardian:      client.SingGuardian,
 
-					Medicaid:       client.Medicaid,
-					GoldCardNumber: client.GoldCardNumber,
-					Medicare:       client.Medicare,
-					Scm:            scm,
+					Medicaid:         client.Medicaid,
+					GoldCardNumber:   client.GoldCardNumber,
+					Medicare:         client.Medicare,
+					TcmTcmActiveName: client.TcmActiveName,
+					Scm:              scm,
 				})
 			} else {
 				for _, cm := range cms {
@@ -2189,10 +2190,11 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 					CellPhoneGuardian: client.CellPhoneGuardian,
 					SingGuardian:      client.SingGuardian,
 
-					Medicaid:       client.Medicaid,
-					GoldCardNumber: client.GoldCardNumber,
-					Medicare:       client.Medicare,
-					Scm:            scm,
+					Medicaid:         client.Medicaid,
+					GoldCardNumber:   client.GoldCardNumber,
+					Medicare:         client.Medicare,
+					TcmTcmActiveName: client.TcmActiveName,
+					Scm:              scm,
 				})
 			}
 
