@@ -1839,7 +1839,14 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 		}
 
 		tcm, _ := core.GetUserFromLDAP(requestData.Newcasemanagement.Tcm)
+
+		var recordTcm models.WorkerRecord
+		db.Where("uid = ?", tcm.Uid).Find(&recordTcm)
+
 		tcms, _ := core.GetUserFromLDAP(tcm.Supervisor)
+		var recordTcms models.WorkerRecord
+		db.Where("uid = ?", tcms.Uid).Find(&recordTcms)
+
 		if requestData.Newclient.CaseManagement && clientID != 0 {
 			// Crear el registro de ClientServiceCaseManagement
 			status := "Pending"
@@ -1857,7 +1864,7 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 			// }
 
 			clientServiceCaseManagement := models.ClientServiceCaseManagement{
-				Client: uint(clientID),
+				Client: clientID,
 				TCM:    int(tcm.ID), // Valor por defecto para TCM
 				Doa:    requestData.Newcasemanagement.Doa,
 				Status: status,
@@ -1910,7 +1917,7 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 				clientSCMTcm := models.ClienteSCMTcm{
 					Client:      clientID,
 					Scm:         scmID,
-					FullName:    tcm.Nick,
+					FullName:    recordTcm.FullName,
 					Categorytcm: tcm.Credentials,
 					Signature:   tcm.Signature,
 					Active:      tcm.Active,
@@ -1945,11 +1952,11 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 					Scm:    scmID,
 					// -- Dates TCM
 					Tcm:         int(tcm.ID),
-					Nametcm:     tcm.Nick,
+					Nametcm:     recordTcm.FullName,
 					Categorytcm: tcm.Credentials,
 					// Dates TCMS
 					Supervisor:         int(tcms.ID),
-					NameSupervisor:     tcms.Nick,
+					NameSupervisor:     recordTcms.FullName,
 					Categorysupervisor: tcms.Credentials,
 				}
 				db.Save(&clientCertification)
@@ -1959,11 +1966,11 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 					Scm:    scmID,
 					// Dates TCM
 					Tcm:         int(tcm.ID),
-					Nametcm:     tcm.Nick,
+					Nametcm:     recordTcm.FullName,
 					Categorytcm: tcm.Credentials,
 					// Dates TCMS
 					Supervisor:         int(tcms.ID),
-					NameSupervisor:     tcms.Nick,
+					NameSupervisor:     recordTcms.FullName,
 					CategorySupervisor: tcms.Credentials,
 				}
 				db.Save(&clientAssessment)
@@ -1974,11 +1981,11 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 					Scm:    scmID,
 					// Dates TCM
 					Tcm:         int(tcm.ID),
-					Nametcm:     tcm.Nick,
+					Nametcm:     recordTcm.FullName,
 					Categorytcm: tcm.Credentials,
 					// Dates TCMS
 					Supervisor:         int(tcms.ID),
-					NameSupervisor:     tcms.Nick,
+					NameSupervisor:     recordTcms.FullName,
 					CategorySupervisor: tcms.Credentials,
 				}
 				db.Save(&clientSp)
@@ -2046,24 +2053,32 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 	var clients []models.OutClients
 
 	var userIDs []int64
+
+	// Adicionar le usuario que esta logueado si es TCMS
+	if claims["Roll"].(string) == "TCMS" {
+		userIDs = append(userIDs, int64(claims["ID"].(float64)))
+	}
+	// Buscar todos los tcm que tiene como supervisor al usuario logueado
 	resultTCMS := core.ExtractFunctionsPlugins("ldap", "Search", "(&(supervisor="+claims["UID"].(string)+"))")
 	bytes, _ := json.Marshal(&resultTCMS)
 	var resultSearch ldap.SearchResult
 	_ = json.Unmarshal(bytes, &resultSearch)
+
 	if len(resultSearch.Entries) > 0 {
 		for _, userLdap := range resultSearch.Entries {
 			id, _ := strconv.ParseInt(userLdap.GetAttributeValue("id"), 10, 64)
 			userIDs = append(userIDs, id)
 		}
 	}
+
 	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
 		var caseManagement []models.ClientServiceCaseManagement
 		// With this query obtain only one scm from each tcm client
 		db.Select("DISTINCT client").Find(&caseManagement)
-
 		for _, val := range caseManagement {
 			var client models.Clients
 			db.Where("ID = ?", val.Client).Find(&client)
+
 			var cms []models.ClientServiceCaseManagement
 			db.Where("client = ?", client.ID).Find(&cms)
 
@@ -2087,46 +2102,46 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 							Tcm:         cm.TCM,
 						})
 
-						clients = append(clients, models.OutClients{
-							ID:              client.ID,
-							Mr:              client.Mr,
-							ReferrerID:      client.ReferrerID,
-							ReferringAgency: client.ReferringAgency,
-							ReferringPerson: client.ReferringPerson,
-							CellPhone:       client.CellPhone,
-							Fax:             client.Fax,
-							Email:           client.Email,
-							Date:            client.Date,
-
-							LastName:  client.LastName,
-							FirstName: client.FirstName,
-							SS:        client.SS,
-							DOB:       client.DOB,
-							Sexo:      client.Sexo,
-							Race:      client.Race,
-
-							Address: client.Address,
-							State:   client.State,
-							ZipCode: client.ZipCode,
-
-							Phone:    client.Phone,
-							School:   client.School,
-							Lenguage: client.Lenguage,
-
-							SingClient: client.SingClient,
-
-							LegalGuardian:     client.LegalGuardian,
-							Relationship:      client.Relationship,
-							CellPhoneGuardian: client.CellPhoneGuardian,
-							SingGuardian:      client.SingGuardian,
-
-							Medicaid:       client.Medicaid,
-							GoldCardNumber: client.GoldCardNumber,
-							Medicare:       client.Medicare,
-							Scm:            scm,
-						})
 					}
 				}
+				clients = append(clients, models.OutClients{
+					ID:              client.ID,
+					Mr:              client.Mr,
+					ReferrerID:      client.ReferrerID,
+					ReferringAgency: client.ReferringAgency,
+					ReferringPerson: client.ReferringPerson,
+					CellPhone:       client.CellPhone,
+					Fax:             client.Fax,
+					Email:           client.Email,
+					Date:            client.Date,
+
+					LastName:  client.LastName,
+					FirstName: client.FirstName,
+					SS:        client.SS,
+					DOB:       client.DOB,
+					Sexo:      client.Sexo,
+					Race:      client.Race,
+
+					Address: client.Address,
+					State:   client.State,
+					ZipCode: client.ZipCode,
+
+					Phone:    client.Phone,
+					School:   client.School,
+					Lenguage: client.Lenguage,
+
+					SingClient: client.SingClient,
+
+					LegalGuardian:     client.LegalGuardian,
+					Relationship:      client.Relationship,
+					CellPhoneGuardian: client.CellPhoneGuardian,
+					SingGuardian:      client.SingGuardian,
+
+					Medicaid:       client.Medicaid,
+					GoldCardNumber: client.GoldCardNumber,
+					Medicare:       client.Medicare,
+					Scm:            scm,
+				})
 			} else {
 				for _, cm := range cms {
 					scm = append(scm, models.OutClientSCM{
@@ -2140,6 +2155,7 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 
 				clients = append(clients, models.OutClients{
 					ID:              client.ID,
+					Mr:              client.Mr,
 					ReferrerID:      client.ReferrerID,
 					ReferringAgency: client.ReferringAgency,
 					ReferringPerson: client.ReferringPerson,

@@ -32,7 +32,7 @@ func SupervisorTCMs(c *fiber.Ctx) error {
 				ID:           uint(id),
 				Uid:          userLdap.GetAttributeValue("uid"),
 				Email:        userLdap.GetAttributeValue("mail"),
-				Nick:         userLdap.GetAttributeValue("mail"),
+				Nick:         userLdap.GetAttributeValue("cn"),
 				SecurityCode: system.StringToBool(userLdap.GetAttributeValue("securityCode")),
 				Active:       system.StringToBool(userLdap.GetAttributeValue("active")),
 				Approved:     system.StringToBool(userLdap.GetAttributeValue("approved")),
