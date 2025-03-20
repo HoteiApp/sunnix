@@ -1857,7 +1857,7 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 			// }
 
 			clientServiceCaseManagement := models.ClientServiceCaseManagement{
-				Client: uint(clientID),
+				Client: clientID,
 				TCM:    int(tcm.ID), // Valor por defecto para TCM
 				Doa:    requestData.Newcasemanagement.Doa,
 				Status: status,
@@ -2050,26 +2050,29 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 	bytes, _ := json.Marshal(&resultTCMS)
 	var resultSearch ldap.SearchResult
 	_ = json.Unmarshal(bytes, &resultSearch)
+
 	if len(resultSearch.Entries) > 0 {
 		for _, userLdap := range resultSearch.Entries {
 			id, _ := strconv.ParseInt(userLdap.GetAttributeValue("id"), 10, 64)
 			userIDs = append(userIDs, id)
 		}
 	}
+
 	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
 		var caseManagement []models.ClientServiceCaseManagement
 		// With this query obtain only one scm from each tcm client
 		db.Select("DISTINCT client").Find(&caseManagement)
-
 		for _, val := range caseManagement {
 			var client models.Clients
 			db.Where("ID = ?", val.Client).Find(&client)
+
 			var cms []models.ClientServiceCaseManagement
 			db.Where("client = ?", client.ID).Find(&cms)
 
 			var scm []models.OutClientSCM
 
 			if claims["Roll"].(string) == "TCMS" {
+
 				for _, cm := range cms {
 					found := false
 					for _, id := range userIDs {
@@ -2087,46 +2090,46 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 							Tcm:         cm.TCM,
 						})
 
-						clients = append(clients, models.OutClients{
-							ID:              client.ID,
-							Mr:              client.Mr,
-							ReferrerID:      client.ReferrerID,
-							ReferringAgency: client.ReferringAgency,
-							ReferringPerson: client.ReferringPerson,
-							CellPhone:       client.CellPhone,
-							Fax:             client.Fax,
-							Email:           client.Email,
-							Date:            client.Date,
-
-							LastName:  client.LastName,
-							FirstName: client.FirstName,
-							SS:        client.SS,
-							DOB:       client.DOB,
-							Sexo:      client.Sexo,
-							Race:      client.Race,
-
-							Address: client.Address,
-							State:   client.State,
-							ZipCode: client.ZipCode,
-
-							Phone:    client.Phone,
-							School:   client.School,
-							Lenguage: client.Lenguage,
-
-							SingClient: client.SingClient,
-
-							LegalGuardian:     client.LegalGuardian,
-							Relationship:      client.Relationship,
-							CellPhoneGuardian: client.CellPhoneGuardian,
-							SingGuardian:      client.SingGuardian,
-
-							Medicaid:       client.Medicaid,
-							GoldCardNumber: client.GoldCardNumber,
-							Medicare:       client.Medicare,
-							Scm:            scm,
-						})
 					}
 				}
+				clients = append(clients, models.OutClients{
+					ID:              client.ID,
+					Mr:              client.Mr,
+					ReferrerID:      client.ReferrerID,
+					ReferringAgency: client.ReferringAgency,
+					ReferringPerson: client.ReferringPerson,
+					CellPhone:       client.CellPhone,
+					Fax:             client.Fax,
+					Email:           client.Email,
+					Date:            client.Date,
+
+					LastName:  client.LastName,
+					FirstName: client.FirstName,
+					SS:        client.SS,
+					DOB:       client.DOB,
+					Sexo:      client.Sexo,
+					Race:      client.Race,
+
+					Address: client.Address,
+					State:   client.State,
+					ZipCode: client.ZipCode,
+
+					Phone:    client.Phone,
+					School:   client.School,
+					Lenguage: client.Lenguage,
+
+					SingClient: client.SingClient,
+
+					LegalGuardian:     client.LegalGuardian,
+					Relationship:      client.Relationship,
+					CellPhoneGuardian: client.CellPhoneGuardian,
+					SingGuardian:      client.SingGuardian,
+
+					Medicaid:       client.Medicaid,
+					GoldCardNumber: client.GoldCardNumber,
+					Medicare:       client.Medicare,
+					Scm:            scm,
+				})
 			} else {
 				for _, cm := range cms {
 					scm = append(scm, models.OutClientSCM{

@@ -47,7 +47,7 @@ type Clients struct {
 
 type ClientServiceCaseManagement struct {
 	gorm.Model
-	Client      uint   `json:"client_id"` // ID of the client
+	Client      int    `json:"client_id"` // ID of the client
 	TCM         int    `json:"tcm"`
 	Status      string `json:"status"`
 	Doa         string `json:"doa"`
