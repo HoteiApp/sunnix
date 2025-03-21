@@ -15,32 +15,6 @@ import (
 // Get all TCM of the SuPERVISOR ---------------------------------------------
 func SupervisorTCMs(c *fiber.Ctx) error {
 	claims, _ := GetClaims(c)
-	// var users []models.Users
-	// result := core.ExtractFunctionsPlugins("ldap", "Search", "(&(supervisor="+claims["UID"].(string)+"))")
-	// bytes, _ := json.Marshal(&result)
-	// var resultSearch ldap.SearchResult
-	// _ = json.Unmarshal(bytes, &resultSearch)
-	// if len(resultSearch.Entries) > 0 {
-
-	// 	for _, userLdap := range resultSearch.Entries {
-	// 		// FIXME: Aqui va los campos de la tabla de usuario exportados del LDAP
-	// 		id, _ := strconv.ParseUint(userLdap.GetAttributeValue("id"), 10, 64)
-
-	// 		users = append(users, models.Users{
-	// 			ID:           uint(id),
-	// 			Uid:          userLdap.GetAttributeValue("uid"),
-	// 			Email:        userLdap.GetAttributeValue("mail"),
-	// 			Nick:         userLdap.GetAttributeValue("cn"),
-	// 			SecurityCode: system.StringToBool(userLdap.GetAttributeValue("securityCode")),
-	// 			Active:       system.StringToBool(userLdap.GetAttributeValue("active")),
-	// 			Approved:     system.StringToBool(userLdap.GetAttributeValue("approved")),
-	// 			Global:       system.StringToBool(userLdap.GetAttributeValue("global")),
-	// 			Roll:         userLdap.GetAttributeValue("roll"),
-	// 			Credentials:  userLdap.GetAttributeValue("credentials"),
-	// 		})
-	// 	}
-
-	// }
 	var week models.Week
 	_, _ = database.WithDB(func(db *gorm.DB) interface{} {
 		return db.Where("active = ?", true).First(&week)
@@ -342,6 +316,7 @@ func SupervisorTCMs(c *fiber.Ctx) error {
 
 				clients = append(clients, models.OutClients{
 					ID:              client.ID,
+					Mr:              client.Mr,
 					ReferrerID:      client.ReferrerID,
 					ReferringAgency: client.ReferringAgency,
 					ReferringPerson: client.ReferringPerson,
@@ -372,10 +347,11 @@ func SupervisorTCMs(c *fiber.Ctx) error {
 					CellPhoneGuardian: client.CellPhoneGuardian,
 					SingGuardian:      client.SingGuardian,
 
-					Medicaid:       client.Medicaid,
-					GoldCardNumber: client.GoldCardNumber,
-					Medicare:       client.Medicare,
-					Scm:            scm,
+					Medicaid:         client.Medicaid,
+					GoldCardNumber:   client.GoldCardNumber,
+					Medicare:         client.Medicare,
+					TcmTcmActiveName: client.TcmActiveName,
+					Scm:              scm,
 				})
 			}
 			// --------------
