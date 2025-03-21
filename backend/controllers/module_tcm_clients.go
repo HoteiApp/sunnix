@@ -134,6 +134,30 @@ func ClientsRequestNewClientePut(c *fiber.Ctx) error {
 	})
 }
 
+// Delete Request Client
+func ClientsRequestNewClienteDelele(c *fiber.Ctx) error {
+	// TODO: Activar roles para saber quien puede borrar
+	// claims, _ := GetClaims(c)
+
+	id := c.Params("id")
+
+	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
+		var request models.RequestNewClient
+		return db.Where("id = ?", id).Delete(&request)
+	})
+
+	if result.(*gorm.DB).RowsAffected > 0 {
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"message": "Request Client Deleted",
+		})
+	}
+
+	return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+		"message": "Error",
+	})
+}
+
 func ClientsRequestEditClientePost(c *fiber.Ctx) error {
 	// claims, _ := GetClaims(c)
 	var requestData models.FormRequestEditClient
