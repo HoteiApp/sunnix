@@ -1793,6 +1793,16 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 	}
 
 	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
+
+		tcm, _ := core.GetUserFromLDAP(requestData.Newcasemanagement.Tcm)
+
+		var recordTcm models.WorkerRecord
+		db.Where("uid = ?", tcm.Uid).Find(&recordTcm)
+
+		tcms, _ := core.GetUserFromLDAP(tcm.Supervisor)
+		var recordTcms models.WorkerRecord
+		db.Where("uid = ?", tcms.Uid).Find(&recordTcms)
+
 		var client models.Clients
 		if requestData.Newclient.ClientId == 0 {
 			client.Mr = requestData.Newclient.Mr
@@ -1826,6 +1836,8 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 			client.GoldCardNumber = requestData.Newclient.GoldCardNumber
 			client.Medicare = requestData.Newclient.Medicare
 
+			client.TcmActiveName = recordTcm.FullName
+
 			db.Save(&client)
 			if db.Error != nil {
 				return false
@@ -1837,15 +1849,6 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 		if requestData.Newclient.ClientId == 0 {
 			clientID = int(client.ID)
 		}
-
-		tcm, _ := core.GetUserFromLDAP(requestData.Newcasemanagement.Tcm)
-
-		var recordTcm models.WorkerRecord
-		db.Where("uid = ?", tcm.Uid).Find(&recordTcm)
-
-		tcms, _ := core.GetUserFromLDAP(tcm.Supervisor)
-		var recordTcms models.WorkerRecord
-		db.Where("uid = ?", tcms.Uid).Find(&recordTcms)
 
 		if requestData.Newclient.CaseManagement && clientID != 0 {
 			// Crear el registro de ClientServiceCaseManagement
@@ -2104,44 +2107,47 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 
 					}
 				}
-				clients = append(clients, models.OutClients{
-					ID:              client.ID,
-					Mr:              client.Mr,
-					ReferrerID:      client.ReferrerID,
-					ReferringAgency: client.ReferringAgency,
-					ReferringPerson: client.ReferringPerson,
-					CellPhone:       client.CellPhone,
-					Fax:             client.Fax,
-					Email:           client.Email,
-					Date:            client.Date,
+				if len(scm) > 0 {
+					clients = append(clients, models.OutClients{
+						ID:              client.ID,
+						Mr:              client.Mr,
+						ReferrerID:      client.ReferrerID,
+						ReferringAgency: client.ReferringAgency,
+						ReferringPerson: client.ReferringPerson,
+						CellPhone:       client.CellPhone,
+						Fax:             client.Fax,
+						Email:           client.Email,
+						Date:            client.Date,
 
-					LastName:  client.LastName,
-					FirstName: client.FirstName,
-					SS:        client.SS,
-					DOB:       client.DOB,
-					Sexo:      client.Sexo,
-					Race:      client.Race,
+						LastName:  client.LastName,
+						FirstName: client.FirstName,
+						SS:        client.SS,
+						DOB:       client.DOB,
+						Sexo:      client.Sexo,
+						Race:      client.Race,
 
-					Address: client.Address,
-					State:   client.State,
-					ZipCode: client.ZipCode,
+						Address: client.Address,
+						State:   client.State,
+						ZipCode: client.ZipCode,
 
-					Phone:    client.Phone,
-					School:   client.School,
-					Lenguage: client.Lenguage,
+						Phone:    client.Phone,
+						School:   client.School,
+						Lenguage: client.Lenguage,
 
-					SingClient: client.SingClient,
+						SingClient: client.SingClient,
 
-					LegalGuardian:     client.LegalGuardian,
-					Relationship:      client.Relationship,
-					CellPhoneGuardian: client.CellPhoneGuardian,
-					SingGuardian:      client.SingGuardian,
+						LegalGuardian:     client.LegalGuardian,
+						Relationship:      client.Relationship,
+						CellPhoneGuardian: client.CellPhoneGuardian,
+						SingGuardian:      client.SingGuardian,
 
-					Medicaid:       client.Medicaid,
-					GoldCardNumber: client.GoldCardNumber,
-					Medicare:       client.Medicare,
-					Scm:            scm,
-				})
+						Medicaid:         client.Medicaid,
+						GoldCardNumber:   client.GoldCardNumber,
+						Medicare:         client.Medicare,
+						TcmTcmActiveName: client.TcmActiveName,
+						Scm:              scm,
+					})
+				}
 			} else {
 				for _, cm := range cms {
 					scm = append(scm, models.OutClientSCM{
@@ -2186,10 +2192,11 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 					CellPhoneGuardian: client.CellPhoneGuardian,
 					SingGuardian:      client.SingGuardian,
 
-					Medicaid:       client.Medicaid,
-					GoldCardNumber: client.GoldCardNumber,
-					Medicare:       client.Medicare,
-					Scm:            scm,
+					Medicaid:         client.Medicaid,
+					GoldCardNumber:   client.GoldCardNumber,
+					Medicare:         client.Medicare,
+					TcmTcmActiveName: client.TcmActiveName,
+					Scm:              scm,
 				})
 			}
 
