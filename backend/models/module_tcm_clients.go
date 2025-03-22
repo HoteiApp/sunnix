@@ -16,8 +16,8 @@ type Clients struct {
 	LastName  string `json:"last_name"`
 	FirstName string `json:"first_name"`
 	// TODO: Monitorizar si funciona
-	// SS       string `json:"ss" gorm:"uniqueIndex:idx_ss,length:255"`
-	SS string `json:"ss" gorm:"type:varchar(255);uniqueIndex:idx_ss"`
+	// SS string `json:"ss" gorm:"type:varchar(255);uniqueIndex:idx_ss"`
+	SS string `json:"ss" gorm:"type:varchar(255)"`
 
 	DOB  string `json:"dob"`
 	Sexo string `json:"sexo"`
@@ -79,7 +79,7 @@ type ClientSCMDemografic struct {
 
 	LastName  string `json:"last_name"`
 	FirstName string `json:"first_name"`
-	SS        string `json:"ss" gorm:"type:varchar(255);uniqueIndex:idx_ss"`
+	SS        string `json:"ss" gorm:"type:varchar(255)"`
 	DOB       string `json:"dob"`
 	Sexo      string `json:"sexo"`
 	Race      string `json:"race"`
