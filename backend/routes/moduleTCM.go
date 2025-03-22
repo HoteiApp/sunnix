@@ -45,6 +45,8 @@ func ModuleTCMRoutes(app *fiber.App) error {
 	clients.Post("/requestEditSCMAssessment", controllers.ClientsRequestEditSCMAssessmentPost).Name("EditSCMAssessment")          //ok
 	clients.Post("/requestEditSCMSpInitial", controllers.ClientsRequestEditSCMSpPost).Name("EditSCMSp")                           //ok
 
+	clients.Delete("/delnewreqclient/:id", controllers.ClientsRequestNewClienteDelele).Name("ClientsRequestNewClienteDelele") //ok
+
 	clients.Get("/list/all", controllers.ClientsListAllGet).Name("ClientsListAllGet") //ok
 	clients.Get("/list/:id", controllers.ClientGet).Name("ClientsGet")                //ok
 

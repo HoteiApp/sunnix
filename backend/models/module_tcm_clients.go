@@ -16,8 +16,8 @@ type Clients struct {
 	LastName  string `json:"last_name"`
 	FirstName string `json:"first_name"`
 	// TODO: Monitorizar si funciona
-	// SS       string `json:"ss" gorm:"uniqueIndex:idx_ss,length:255"`
-	SS string `json:"ss" gorm:"type:varchar(255);uniqueIndex:idx_ss"`
+	// SS string `json:"ss" gorm:"type:varchar(255);uniqueIndex:idx_ss"`
+	SS string `json:"ss" gorm:"type:varchar(255)"`
 
 	DOB  string `json:"dob"`
 	Sexo string `json:"sexo"`
@@ -43,11 +43,13 @@ type Clients struct {
 	GoldCardNumber string `json:"gold_card_number"`
 	Medicare       string `json:"medicare" gorm:"type:varchar(255);uniqueIndex:idx_medicare"`
 	// Medicare       string `json:"medicare" gorm:"type:longtext;uniqueIndex:idx_medicare,length:255"`
+
+	TcmActiveName string `json:"tcm_active_name"`
 }
 
 type ClientServiceCaseManagement struct {
 	gorm.Model
-	Client      uint   `json:"client_id"` // ID of the client
+	Client      int    `json:"client_id"` // ID of the client
 	TCM         int    `json:"tcm"`
 	Status      string `json:"status"`
 	Doa         string `json:"doa"`
@@ -56,7 +58,7 @@ type ClientServiceCaseManagement struct {
 
 type ClienteSCMTcm struct {
 	gorm.Model
-	Client      uint   `json:"client_id"` // ID of the client
+	Client      int    `json:"client_id"` // ID of the client
 	Scm         uint   `json:"scm"`
 	FullName    string `json:"full_name"`
 	Categorytcm string `json:"categoryTCM"`
@@ -66,7 +68,7 @@ type ClienteSCMTcm struct {
 
 type ClientSCMDemografic struct {
 	gorm.Model
-	Client          uint   `json:"client_id"` // ID of the client
+	Client          int    `json:"client_id"` // ID of the client
 	Scm             uint   `json:"scm"`
 	ReferringAgency string `json:"referring_agency"`
 	ReferringPerson string `json:"referring_person"`
@@ -77,7 +79,7 @@ type ClientSCMDemografic struct {
 
 	LastName  string `json:"last_name"`
 	FirstName string `json:"first_name"`
-	SS        string `json:"ss" gorm:"type:varchar(255);uniqueIndex:idx_ss"`
+	SS        string `json:"ss" gorm:"type:varchar(255)"`
 	DOB       string `json:"dob"`
 	Sexo      string `json:"sexo"`
 	Race      string `json:"race"`
@@ -139,7 +141,7 @@ type ClientSCMSureFilesInCloud struct {
 }
 type ClientSCMMedical struct {
 	gorm.Model
-	Client uint `json:"client_id"` // ID of the client
+	Client int  `json:"client_id"` // ID of the client
 	Scm    uint `json:"scm"`
 
 	MedicalPcp        string `json:"medical_pcp"`
@@ -153,7 +155,7 @@ type ClientSCMMedical struct {
 
 type ClientSCMMental struct {
 	gorm.Model
-	Client              uint   `json:"client_id"` // ID of the client
+	Client              int    `json:"client_id"` // ID of the client
 	Scm                 uint   `json:"scm"`
 	MentalPrimary       string `json:"mental_primary"`
 	MentalPrimaryDate   string `json:"mental_primary_date"`
@@ -163,7 +165,7 @@ type ClientSCMMental struct {
 
 type ClientSCMCertification struct {
 	gorm.Model
-	Client uint `json:"client_id"` // ID of the client
+	Client int  `json:"client_id"` // ID of the client
 	Scm    uint `json:"scm"`
 
 	Select1  bool `json:"select_1"`
@@ -205,7 +207,7 @@ type SourceInformationLdrsi struct {
 
 type ClientSCMAssessment struct {
 	gorm.Model
-	Client uint `json:"client_id"` // ID of the client
+	Client int  `json:"client_id"` // ID of the client
 	Scm    uint `json:"scm"`
 
 	Sourceinforemationclient               string `json:"sourceInforemationClient"`
@@ -1485,7 +1487,7 @@ type SpGoal8 struct {
 
 type ClientSCMSp struct {
 	gorm.Model
-	Client              uint   `json:"client_id"` // ID of the client
+	Client              int    `json:"client_id"` // ID of the client
 	Scm                 uint   `json:"scm"`
 	Developmentdate     string `json:"developmentDate"`
 	Axiscode            string `json:"axisCode"`
@@ -1510,7 +1512,7 @@ type ClientSCMSp struct {
 // --------------------------------------------
 type RequestNewClient struct {
 	gorm.Model
-	ClientId        string `json:"client_id"`   // ID of the client
+	ClientId        int    `json:"client_id"`   // ID of the client
 	ReferrerID      uint   `json:"referrer_id"` // ID of the user who referred this user (optional)
 	ReferringAgency string `json:"referring_agency"`
 	ReferringPerson string `json:"referring_person"`
