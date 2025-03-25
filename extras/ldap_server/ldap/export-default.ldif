@@ -23,7 +23,7 @@ uid: user1
 givenName: Usuario
 lastName: Apellido1 Apellido2
 cn: Nombre1 Apellido1 Apellido2
-secundaryEmail: nombre1apellido2@sunissup.com 
+secondaryMail: secondaryMail@dominio.com
 objectclass: inetOrgPerson
 objectclass: top
 objectclass: person
