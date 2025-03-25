@@ -1860,7 +1860,7 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 			client.GoldCardNumber = requestData.Newclient.GoldCardNumber
 			client.Medicare = requestData.Newclient.Medicare
 
-			client.TcmActiveName = recordTcm.FullName
+			client.TcmActive = recordTcm.Uid
 
 			db.Save(&client)
 			if db.Error != nil {
@@ -2111,6 +2111,12 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 
 			var scm []models.OutClientSCM
 
+			// Obtener el usuario de LDAP del TCM
+			tcm, err_tcm := core.GetUserFromLDAP(client.TcmActive)
+			if err_tcm != nil {
+				tcm.Nick = ""
+			}
+
 			if claims["Roll"].(string) == "TCMS" {
 				for _, cm := range cms {
 					found := false
@@ -2132,6 +2138,7 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 					}
 				}
 				if len(scm) > 0 {
+
 					clients = append(clients, models.OutClients{
 						ID:              client.ID,
 						Mr:              client.Mr,
@@ -2165,11 +2172,11 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 						CellPhoneGuardian: client.CellPhoneGuardian,
 						SingGuardian:      client.SingGuardian,
 
-						Medicaid:         client.Medicaid,
-						GoldCardNumber:   client.GoldCardNumber,
-						Medicare:         client.Medicare,
-						TcmTcmActiveName: client.TcmActiveName,
-						Scm:              scm,
+						Medicaid:       client.Medicaid,
+						GoldCardNumber: client.GoldCardNumber,
+						Medicare:       client.Medicare,
+						TcmActive:      tcm.Nick,
+						Scm:            scm,
 					})
 				}
 			} else {
@@ -2181,6 +2188,11 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 						ClosingDate: cm.ClosingDate,
 						Tcm:         cm.TCM,
 					})
+				}
+
+				tcms, err_tcms := core.GetUserFromLDAP(tcm.Supervisor)
+				if err_tcms != nil {
+					tcms.Nick = ""
 				}
 
 				clients = append(clients, models.OutClients{
@@ -2216,11 +2228,12 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 					CellPhoneGuardian: client.CellPhoneGuardian,
 					SingGuardian:      client.SingGuardian,
 
-					Medicaid:         client.Medicaid,
-					GoldCardNumber:   client.GoldCardNumber,
-					Medicare:         client.Medicare,
-					TcmTcmActiveName: client.TcmActiveName,
-					Scm:              scm,
+					Medicaid:       client.Medicaid,
+					GoldCardNumber: client.GoldCardNumber,
+					Medicare:       client.Medicare,
+					TcmActive:      tcm.Nick,
+					TcmsActive:     tcms.Nick,
+					Scm:            scm,
 				})
 			}
 
