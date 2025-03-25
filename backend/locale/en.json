@@ -12,5 +12,7 @@
     "changepassword_ok_001": "Password was changed successfully",
     "changepassword_err_001": "You must enter a password",
     "changepassword_err_002": "The password you provided matches the current one",
+    "changepassword_err_003": "The password coincides with the previous",
+    "changepassword_err_004": "The current password is not valid",
     "global_info_002": ""
 }

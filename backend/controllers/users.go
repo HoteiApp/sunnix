@@ -248,31 +248,32 @@ func ChangePassword(c *fiber.Ctx) error {
 		return err
 	}
 
-	password := data["password"]
+	password := data["current"]
+	passwordNew := data["password"]
 
-	if password == "" {
+	if password == "" || passwordNew == "" {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
 			"ok":      "false",
 			"message": core.GetTextMessage("changepassword_err_001"),
 		})
 	}
-	// userInfo := GetUserInfo(claims["UID"].(string))
-	// if password == userInfo.User.Password {
-	// 	return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-	// 		"ok":      "false",
-	// 		"message": core.GetTextMessage("changepassword_err_002"),
-	// 	})
-	// }
+	if password == passwordNew {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"ok":      "false",
+			"message": core.GetTextMessage("changepassword_err_003"),
+		})
+	}
+
+	resultLogin := core.ExtractFunctionsPlugins("ldap", "Login", claims["UID"].(string), password)
+
+	if !resultLogin.(bool) {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"ok":      "false",
+			"message": core.GetTextMessage("changepassword_err_004"),
+		})
+	}
 
 	result := core.ExtractFunctionsPlugins("ldap", "ChangePasswordAccount", claims["UID"], password)
-
-	// result, _ := database.WithDB(func(db *gorm.DB) interface{} {
-	// 	var user models.Users
-	// 	db.Where("id = ?", claims["ID"].(float64)).Find(&user)
-	// 	user.Password = password
-	// 	user.ChangePassword = false
-	// 	return db.Save(&user)
-	// })
 
 	if result.(bool) {
 		core.ExtractFunctionsPlugins("ldap", "ModifyAccount", claims["UID"],
@@ -284,7 +285,7 @@ func ChangePassword(c *fiber.Ctx) error {
 			LoggedIn:    claims["UID"].(string),
 			Username:    claims["UID"].(string),
 			Client:      0,
-			Description: "Information saved correctly",
+			Description: core.GetTextMessage("changepassword_ok_001"),
 		}
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"ok":      "true",
