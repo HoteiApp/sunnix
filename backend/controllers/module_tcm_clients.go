@@ -2079,6 +2079,7 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 func ClientsNewClienteToXlsxPut(c *fiber.Ctx) error {
 	// claims, _ := GetClaims(c)
 	// Abrir el archivo Excel
+
 	excelFile, err := excelize.OpenFile("./data/database.xlsx")
 	if err != nil {
 		log.Fatal(err)
