@@ -347,11 +347,11 @@ func SupervisorTCMs(c *fiber.Ctx) error {
 					CellPhoneGuardian: client.CellPhoneGuardian,
 					SingGuardian:      client.SingGuardian,
 
-					Medicaid:         client.Medicaid,
-					GoldCardNumber:   client.GoldCardNumber,
-					Medicare:         client.Medicare,
-					TcmTcmActiveName: client.TcmActiveName,
-					Scm:              scm,
+					Medicaid:       client.Medicaid,
+					GoldCardNumber: client.GoldCardNumber,
+					Medicare:       client.Medicare,
+					TcmActive:      client.TcmActive,
+					Scm:            scm,
 				})
 			}
 			// --------------

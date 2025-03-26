@@ -44,7 +44,7 @@ type Clients struct {
 	Medicare       string `json:"medicare" gorm:"type:varchar(255);uniqueIndex:idx_medicare"`
 	// Medicare       string `json:"medicare" gorm:"type:longtext;uniqueIndex:idx_medicare,length:255"`
 
-	TcmActiveName string `json:"tcm_active_name"`
+	TcmActive string `json:"tcm_active"`
 }
 
 type ClientServiceCaseManagement struct {

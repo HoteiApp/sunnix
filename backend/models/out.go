@@ -3,6 +3,7 @@ package models
 type ActiveUser struct {
 	User            Users
 	Record          WorkerRecord
+	Avatar          string
 	Signature       string
 	WeekActive      Week
 	FortnightActive Fortnight

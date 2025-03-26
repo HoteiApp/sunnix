@@ -134,8 +134,32 @@ func S3UploadFile(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusConflict).JSON(fiber.Map{"message": "Error"})
 }
 
+// Subir los ficheros
+func S3UploadAvatar(c *fiber.Ctx) error {
+	form, _ := c.MultipartForm()
+	for key, _ := range form.File {
+		files := form.File[key]
+		for _, file := range files {
+			openfile, _ := file.Open()
+			defer openfile.Close()
+
+			// Leer el contenido del archivo en un []byte
+			fileBytes, _ := io.ReadAll(openfile)
+			keyName := strings.Replace(strings.Replace(key, "-", "/", -1), "%20", " ", -1)
+			cutExt := strings.Split(file.Filename, ".")
+			key := keyName + "." + cutExt[1]
+			objects := core.ExtractFunctionsPlugins("s3", "UploadFileInByte", key, false, fileBytes)
+			if objects.(bool) {
+				return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Upload avatar"})
+			}
+		}
+	}
+	// Devuelve la lista de objetos como JSON
+	return c.Status(fiber.StatusConflict).JSON(fiber.Map{"message": "Error to upload file"})
+}
+
 // Subir los ficheros de las auth
-func S3Upload(c *fiber.Ctx) error {
+func S3UploadPDF(c *fiber.Ctx) error {
 	var req PDFRequestUpload
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
