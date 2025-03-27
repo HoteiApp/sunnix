@@ -406,7 +406,10 @@ type OutClients struct {
 	GoldCardNumber string `json:"gold_card_number"`
 	Medicare       string `json:"medicare"`
 
-	TcmTcmActiveName string `json:"tcm_active_name"`
+	TcmActive  string `json:"tcm_active"`
+	TcmPhoto   string `json:"tcm_photo"`
+	TcmsActive string `json:"tcms_active"`
+	TcmsPhoto  string `json:"tcms_photo"`
 
 	Scm []OutClientSCM `json:"scm"`
 }
