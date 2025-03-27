@@ -185,6 +185,21 @@ func GetUserInfo(uid string) models.ActiveUser {
 			var fortnight models.Fortnight
 			db.Where("active = ?", true).First(&fortnight)
 			active.FortnightActive = fortnight
+
+			// Avatar
+			// objectsUrl := core.ExtractFunctionsPlugins("s3", "PresignedURL", "records/"+uid+"/", "60")
+			objectsUrl := core.ExtractFunctionsPlugins("s3", "ListeFilesInFolder", "records/"+uid+"/")
+
+			// var extractDocs []models.ExtractDocs
+			// num := 0
+			url := ""
+			for _, doc := range objectsUrl.([]map[string]string) {
+				if strings.Contains(doc["Key"], "avatar") {
+					url = doc["URL"]
+					active.Avatar = url
+				}
+			}
+
 		}
 
 		return active

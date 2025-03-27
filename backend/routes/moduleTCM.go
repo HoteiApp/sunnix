@@ -50,8 +50,9 @@ func ModuleTCMRoutes(app *fiber.App) error {
 	clients.Get("/list/all", controllers.ClientsListAllGet).Name("ClientsListAllGet") //ok
 	clients.Get("/list/:id", controllers.ClientGet).Name("ClientsGet")                //ok
 
-	clients.Get("/scm/:id", controllers.ClientSCMGet).Name("ClientsSCMGet")            // ok
-	clients.Put("/add", controllers.ClientsNewClientePut).Name("ClientsNewClientePut") //ok
+	clients.Get("/scm/:id", controllers.ClientSCMGet).Name("ClientsSCMGet")                              // ok
+	clients.Put("/add", controllers.ClientsNewClientePut).Name("ClientsNewClientePut")                   //ok
+	clients.Get("/addtoxlsx", controllers.ClientsNewClienteToXlsxPut).Name("ClientsNewClienteToXlsxPut") //ok
 
 	service := clients.Group("service")
 	service.Get("/SCMactive/:id", controllers.ClientGetServiceSCMactive).Name("ClientGetServiceSCMactive") //ok
@@ -105,7 +106,8 @@ func ModuleTCMRoutes(app *fiber.App) error {
 	s3 := tcm.Group("/s3")
 	s3.Get("/", controllers.S3List).Name("S3List")
 	s3.Post("/getdocs", controllers.S3GetDocs).Name("S3GetDocs")
-	s3.Post("/uploadPDF", controllers.S3Upload).Name("S3Upload")
+	s3.Post("/uploadAvatar/:file", controllers.S3UploadAvatar).Name("S3UploadAvatar")
+	s3.Post("/uploadPDF", controllers.S3UploadPDF).Name("S3UploadPDF")
 	s3.Post("/uploadEvalMisc", controllers.S3UploadEvalMisc).Name("S3UploadEvalMisc")
 	s3.Post("/downloadZip", controllers.S3DownloadZip).Name("S3DownloadZip")
 	s3.Post("/downloadPdf", controllers.S3DownloadPDF).Name("S3DownloadPDF")
