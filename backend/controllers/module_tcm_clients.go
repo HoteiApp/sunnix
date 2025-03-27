@@ -2210,7 +2210,14 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 			if err_tcm != nil {
 				tcm.Nick = ""
 			}
-
+			// Avatar TCM
+			objectsUrl := core.ExtractFunctionsPlugins("s3", "ListeFilesInFolder", "records/"+tcm.Uid+"/")
+			tcmPhoto := ""
+			for _, doc := range objectsUrl.([]map[string]string) {
+				if strings.Contains(doc["Key"], "avatar") {
+					tcmPhoto = doc["URL"]
+				}
+			}
 			if claims["Roll"].(string) == "TCMS" {
 				for _, cm := range cms {
 					found := false
@@ -2270,6 +2277,7 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 						GoldCardNumber: client.GoldCardNumber,
 						Medicare:       client.Medicare,
 						TcmActive:      tcm.Nick,
+						TcmPhoto:       tcmPhoto,
 						Scm:            scm,
 					})
 				}
@@ -2288,7 +2296,14 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 				if err_tcms != nil {
 					tcms.Nick = ""
 				}
-
+				// Avatar TCMS
+				objectsUrl := core.ExtractFunctionsPlugins("s3", "ListeFilesInFolder", "records/"+tcms.Uid+"/")
+				tcmsPhoto := ""
+				for _, doc := range objectsUrl.([]map[string]string) {
+					if strings.Contains(doc["Key"], "avatar") {
+						tcmsPhoto = doc["URL"]
+					}
+				}
 				clients = append(clients, models.OutClients{
 					ID:              client.ID,
 					Mr:              client.Mr,
@@ -2326,7 +2341,9 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 					GoldCardNumber: client.GoldCardNumber,
 					Medicare:       client.Medicare,
 					TcmActive:      tcm.Nick,
+					TcmPhoto:       tcmPhoto,
 					TcmsActive:     tcms.Nick,
+					TcmsPhoto:      tcmsPhoto,
 					Scm:            scm,
 				})
 			}
