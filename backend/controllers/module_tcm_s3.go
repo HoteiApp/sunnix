@@ -146,16 +146,15 @@ func S3UploadAvatar(c *fiber.Ctx) error {
 			// Leer el contenido del archivo en un []byte
 			fileBytes, _ := io.ReadAll(openfile)
 			keyName := strings.Replace(strings.Replace(key, "-", "/", -1), "%20", " ", -1)
-			cutExt := strings.Split(file.Filename, ".")
-			key := keyName + "." + cutExt[1]
+			key := keyName + ".png"
 			objects := core.ExtractFunctionsPlugins("s3", "UploadFileInByte", key, false, fileBytes)
 			if objects.(bool) {
-				return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Upload avatar"})
+				return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Upload Photo"})
 			}
 		}
 	}
 	// Devuelve la lista de objetos como JSON
-	return c.Status(fiber.StatusConflict).JSON(fiber.Map{"message": "Error to upload file"})
+	return c.Status(fiber.StatusConflict).JSON(fiber.Map{"message": "Error to upload photo"})
 }
 
 // Subir los ficheros de las auth

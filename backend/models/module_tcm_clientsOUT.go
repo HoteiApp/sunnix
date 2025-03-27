@@ -407,7 +407,9 @@ type OutClients struct {
 	Medicare       string `json:"medicare"`
 
 	TcmActive  string `json:"tcm_active"`
+	TcmPhoto   string `json:"tcm_photo"`
 	TcmsActive string `json:"tcms_active"`
+	TcmsPhoto  string `json:"tcms_photo"`
 
 	Scm []OutClientSCM `json:"scm"`
 }
