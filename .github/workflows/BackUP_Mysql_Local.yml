@@ -1,0 +1,205 @@
+name: Backup MySQL Local
+on:
+  schedule:
+    - cron: '0 * * * *'     # Backup cada hora
+  workflow_dispatch:
+    inputs:
+      enviar_notificacion:
+        description: 'Enviar notificación del resultado'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  IP_ADDRESS_PRO: ${{ vars.IP_ADDRESS_PRO }}
+  BMYSQL_ENV_FILE_PRO: ${{ vars.BMYSQL_ENV_FILE_PRO || '/opt/sunissUp/.env' }}
+  BMYSQL_BACKUP_DIR_PRO: ${{ vars.BMYSQL_BACKUP_DIR_PRO || '/mnt/backups/mysql' }}
+  SSH_PRIVATE_KEY_PRO: ${{ secrets.SSH_PRIVATE_KEY_PRO }}
+  USER_NAME_PRO: ${{ vars.USER_NAME_PRO || 'root' }}
+  BMYSQL_RETENTION_HOURLY: ${{ vars.BMYSQL_RETENTION_HOURLY || '10' }} 
+  BMYSQL_NOTIFICAR_HORARIO: ${{ vars.BMYSQL_NOTIFICAR_HORARIO  || 'false' }}
+  BMYSQL_LOG_DIR: ${{ vars.BMYSQL_LOG_DIR || '/var/log/backups' }}
+
+
+jobs:
+  backup_solo_local:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar variables de entorno (básicas)
+        run: |
+          if [ -z "$IP_ADDRESS_PRO" ] || [ -z "$BMYSQL_ENV_FILE_PRO" ] || [ -z "$BMYSQL_BACKUP_DIR_PRO" ] || [ -z "$SSH_PRIVATE_KEY_PRO" ] || [ -z "$USER_NAME_PRO" ]; then
+            echo "Error: Faltan variables de entorno requeridas"
+            exit 1
+          fi
+          
+          if [ -z "$BMYSQL_RETENTION_HOURLY" ]; then
+            echo "BMYSQL_RETENTION_HOURLY=24" >> $GITHUB_ENV
+          fi
+
+      - name: Configurar clave SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY_PRO" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $IP_ADDRESS_PRO >> ~/.ssh/known_hosts
+
+      - name: Ejecutar backup de MySQL (solo local)
+        id: backup_local
+        run: |
+          echo '# Definir variables de entorno' > script.sh
+          echo 'BACKUP_DIR="'"$BMYSQL_BACKUP_DIR_PRO"'"' >> script.sh
+          echo 'ENV_FILE="'"$BMYSQL_ENV_FILE_PRO"'"' >> script.sh
+          echo 'RETENTION_COUNT='"${BMYSQL_RETENTION_HOURLY:-24}" >> script.sh
+          echo 'TIMESTAMP=$(date +"%Y%m%d-%I%M%S%p")' >> script.sh
+          echo 'LOG_DIR="'"$BMYSQL_LOG_DIR"'"' >> script.sh
+          echo 'LOG_FILE="$LOG_DIR/backup_mysql-hourly-${TIMESTAMP}.log"' >> script.sh
+          
+          echo 'echo "=== INICIANDO PROCESO DE BACKUP HORARIO (SOLO LOCAL) ==="' >> script.sh
+          echo 'echo "Usando archivo de configuración: $ENV_FILE" | tee -a "$LOG_FILE"' >> script.sh
+          echo 'echo "Directorio de backup: $BACKUP_DIR" | tee -a "$LOG_FILE"' >> script.sh
+          echo 'echo "Retención de backups horarios: $RETENTION_COUNT" | tee -a "$LOG_FILE"' >> script.sh
+          
+          echo '# Crear directorios necesarios' >> script.sh
+          echo 'sudo mkdir -p "$BACKUP_DIR/hourly"' >> script.sh
+          echo 'sudo chown $USER:$USER "$BACKUP_DIR/hourly"' >> script.sh
+          echo 'sudo chmod 755 "$BACKUP_DIR/hourly"' >> script.sh
+          
+          echo '# Crear directorio de logs' >> script.sh
+          echo 'if [ ! -d "$LOG_DIR" ]; then' >> script.sh
+          echo '  sudo mkdir -p "$LOG_DIR"' >> script.sh
+          echo 'fi' >> script.sh
+          echo 'sudo chown $USER:$USER "$LOG_DIR"' >> script.sh
+          
+          echo '# Extraer credenciales de MySQL' >> script.sh
+          echo 'DB_HOST=$(grep "^sunissUp.db.mysql.Host=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> script.sh
+          echo 'DB_PORT=$(grep "^sunissUp.db.mysql.Port=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> script.sh
+          echo 'DB_USER=$(grep "^sunissUp.db.mysql.Username=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> script.sh
+          echo 'DB_NAME=$(grep "^sunissUp.db.mysql.DB=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> script.sh
+          echo 'DB_PASS_ENC=$(grep "^sunissUp.db.mysql.Password=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> script.sh
+          
+          echo '# Decodificar contraseña' >> script.sh
+          echo 'PADDING_LENGTH=$((4 - ${#DB_PASS_ENC} % 4))' >> script.sh
+          echo 'if [ $PADDING_LENGTH -ne 4 ]; then' >> script.sh
+          echo '  DB_PASS_ENC="${DB_PASS_ENC}$(printf "=%.0s" $(seq 1 $PADDING_LENGTH))"' >> script.sh
+          echo 'fi' >> script.sh
+          echo 'DB_PASS=$(echo -n "$DB_PASS_ENC" | base64 --decode)' >> script.sh
+          
+          echo '# Crear archivo de configuración temporal para MySQL' >> script.sh
+          echo 'MYSQL_CNF=$(mktemp)' >> script.sh
+          echo 'chmod 600 "$MYSQL_CNF"' >> script.sh
+          echo 'cat > "$MYSQL_CNF" << EOF' >> script.sh
+          echo '[client]' >> script.sh
+          echo 'host="$DB_HOST"' >> script.sh
+          echo 'port="$DB_PORT"' >> script.sh
+          echo 'user="$DB_USER"' >> script.sh
+          echo 'password="$DB_PASS"' >> script.sh
+          echo 'protocol=TCP' >> script.sh
+          echo 'EOF' >> script.sh
+
+          echo '# Realizar backup' >> script.sh
+          echo 'BACKUP_FILE="$BACKUP_DIR/hourly/${DB_NAME}_hourly_${TIMESTAMP}.sql"' >> script.sh
+          echo 'if mysqldump --defaults-extra-file="$MYSQL_CNF" "$DB_NAME" > "$BACKUP_FILE" 2>> "$LOG_FILE"; then' >> script.sh
+          echo '  # Verificar integridad de la base de datos' >> script.sh
+          echo '  echo "Verificando integridad de la base de datos..." | tee -a "$LOG_FILE"' >> script.sh
+          echo '  if mysqlcheck --defaults-extra-file="$MYSQL_CNF" --check "$DB_NAME" >> "$LOG_FILE" 2>&1; then' >> script.sh
+          echo '    echo "Verificación de integridad completada exitosamente" | tee -a "$LOG_FILE"' >> script.sh
+          echo '    BACKUP_STATUS="exitoso"' >> script.sh
+          echo '  else' >> script.sh
+          echo '    echo "ADVERTENCIA: La verificación de integridad falló" | tee -a "$LOG_FILE"' >> script.sh
+          echo '    BACKUP_STATUS="advertencia"' >> script.sh
+          echo '  fi' >> script.sh
+          echo 'else' >> script.sh
+          echo '  BACKUP_STATUS="fallido"' >> script.sh
+          echo '  exit 1' >> script.sh
+          echo 'fi' >> script.sh
+          
+          echo '# Limpiar backups antiguos' >> script.sh
+          echo 'if [ -d "$BACKUP_DIR/hourly" ]; then' >> script.sh
+          echo '  FILES_TO_KEEP=$RETENTION_COUNT' >> script.sh
+          echo '  TOTAL_FILES=$(ls -1 "$BACKUP_DIR/hourly"/${DB_NAME}_hourly_*.sql 2>/dev/null | wc -l)' >> script.sh
+          echo '  if [ $TOTAL_FILES -gt $FILES_TO_KEEP ]; then' >> script.sh
+          echo '    for FILE in $(ls -t "$BACKUP_DIR/hourly"/${DB_NAME}_hourly_*.sql | tail -n +$((FILES_TO_KEEP + 1))); do' >> script.sh
+          echo '      rm -f "$FILE"' >> script.sh
+          echo '    done' >> script.sh
+          echo '  fi' >> script.sh
+          echo 'fi' >> script.sh
+          
+          echo '# Limpiar archivo de configuración temporal' >> script.sh
+          echo 'rm -f "$MYSQL_CNF"' >> script.sh
+          
+          chmod +x script.sh
+          ssh $USER_NAME_PRO@$IP_ADDRESS_PRO "/bin/bash -s" < script.sh > output.log 2>&1
+          
+          if [ $? -eq 0 ]; then
+            echo "STATUS=exitoso" >> "$GITHUB_OUTPUT"
+          else
+            echo "STATUS=fallido" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+      - name: Notificar resultado
+        if: always() && (env.BMYSQL_NOTIFICAR_HORARIO == 'true' || github.event.inputs.enviar_notificacion == 'true')
+        run: |
+          FECHA=$(date '+%Y-%m-%d %H:%M:%S %p')
+          
+          # Construir mensaje detallado
+          MENSAJE="=== REPORTE DE BACKUP HORARIO LOCAL ===\n"
+          MENSAJE+="Fecha: $FECHA\n\n"
+          
+          # Estado del backup local
+          if [[ "${{ steps.backup_local.outputs.STATUS }}" == "exitoso" ]]; then
+            MENSAJE+="Backup Horario Local: Exitoso ($IP_ADDRESS_PRO)\n"
+          else
+            MENSAJE+="Backup Horario Local: Fallido ($IP_ADDRESS_PRO)\n"
+          fi
+          
+          # Guardar mensaje en archivo en el servidor
+          echo -e "$MENSAJE" | ssh $USER_NAME_PRO@$IP_ADDRESS_PRO "cat > $BMYSQL_BACKUP_DIR_PRO/mensaje_local.txt"
+          
+          # Comentado temporalmente el envío de notificación
+          # curl -X POST https://api.sunissup.com/webhook \
+          #   -H "Content-Type: application/json" \
+          #   -d "{
+          #     \"action\": \"MySQL Backup Horario - Local\",
+          #     \"service\": \"mysql\",
+          #     \"user\": \"$USER_NAME_PRO\",
+          #     \"message\": \"$MENSAJE\"
+          #   }"
+
+
+          
+  
+# ====================================
+# DOCUMENTACIÓN DE VARIABLES
+# ====================================
+# IP_ADDRESS_PRO: Dirección IP del servidor de producción
+#   Default: None (Requerido)
+#
+# BMYSQL_ENV_FILE_PRO: Ruta al archivo .env en el servidor
+#   Default: /opt/sunissUp/.env
+#
+# BMYSQL_BACKUP_DIR_PRO: Directorio donde se almacenarán los backups
+#   Default: /mnt/backups/mysql
+#
+# SSH_PRIVATE_KEY_PRO: Clave SSH para conectar al servidor (secret)
+#   Default: None (Requerido)
+#
+# USER_NAME_PRO: Usuario para la conexión SSH
+#   Default: root
+#
+# BMYSQL_RETENTION_HOURLY: Número de backups horarios a mantener
+#   Default: 24 (1 día de backups)
+#
+# BMYSQL_NOTIFICAR_HORARIO: Enviar notificación del resultado
+#   Default: false
+#
+# BMYSQL_LOG_DIR: Directorio donde se almacenarán los logs
+#   Default: /var/log/backups
+#
+# ====================================
+# NOTAS:
+# - Las variables pueden configurarse en GitHub (Settings > Secrets and variables > Actions)
+# - Los valores por defecto se usan si la variable no está definida
+# - Las variables marcadas como (Requerido) deben configurarse obligatoriamente
+# ====================================
+          
