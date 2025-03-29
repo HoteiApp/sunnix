@@ -42,7 +42,6 @@ func S3UploadFile(c *fiber.Ctx) error {
 			// Leer el contenido del archivo en un []byte
 			fileBytes, _ := io.ReadAll(openfile)
 			keyName := strings.Replace(strings.Replace(key, "-", "/", -1), "%20", " ", -1)
-			// fmt.Println(keyName)
 			objects := core.ExtractFunctionsPlugins("s3", "UploadFileInByte", keyName+".pdf", false, fileBytes)
 
 			if objects.(bool) {
@@ -103,28 +102,30 @@ func S3UploadFile(c *fiber.Ctx) error {
 					}
 				}
 				// Si el tipo de fichero que se desa subir es para un INSURANCE
-				if part[3] == "insurance" {
-					var file models.ClientSCMSureFilesInCloud
-					_, _ = database.WithDB(func(db *gorm.DB) interface{} {
-						db.Where("scm = ? and sure = ?", part[2], part[4]).First(&file)
-						if part[5] == "Auth Request" {
-							file.Auth = true
-						}
-						if part[5] == "Certification" {
-							file.Certification = true
-						}
-						if part[5] == "Assessment" {
-							file.Assessment = true
-						}
-						if part[5] == "Service Plan" {
-							file.Sp = true
-						}
-						if part[5] == "Evaluation" {
-							file.Evaluation = true
-						}
-						db.Save(&file)
-						return true
-					})
+				if len(part) > 3 {
+					if part[3] == "insurance" {
+						var file models.ClientSCMSureFilesInCloud
+						_, _ = database.WithDB(func(db *gorm.DB) interface{} {
+							db.Where("scm = ? and sure = ?", part[2], part[4]).First(&file)
+							if part[5] == "Auth Request" {
+								file.Auth = true
+							}
+							if part[5] == "Certification" {
+								file.Certification = true
+							}
+							if part[5] == "Assessment" {
+								file.Assessment = true
+							}
+							if part[5] == "Service Plan" {
+								file.Sp = true
+							}
+							if part[5] == "Evaluation" {
+								file.Evaluation = true
+							}
+							db.Save(&file)
+							return true
+						})
+					}
 				}
 
 				return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Upload ok"})
@@ -134,8 +135,31 @@ func S3UploadFile(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusConflict).JSON(fiber.Map{"message": "Error"})
 }
 
+// Subir los ficheros
+func S3UploadAvatar(c *fiber.Ctx) error {
+	form, _ := c.MultipartForm()
+	for key, _ := range form.File {
+		files := form.File[key]
+		for _, file := range files {
+			openfile, _ := file.Open()
+			defer openfile.Close()
+
+			// Leer el contenido del archivo en un []byte
+			fileBytes, _ := io.ReadAll(openfile)
+			keyName := strings.Replace(strings.Replace(key, "-", "/", -1), "%20", " ", -1)
+			key := keyName + ".png"
+			objects := core.ExtractFunctionsPlugins("s3", "UploadFileInByte", key, false, fileBytes)
+			if objects.(bool) {
+				return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Upload Photo"})
+			}
+		}
+	}
+	// Devuelve la lista de objetos como JSON
+	return c.Status(fiber.StatusConflict).JSON(fiber.Map{"message": "Error to upload photo"})
+}
+
 // Subir los ficheros de las auth
-func S3Upload(c *fiber.Ctx) error {
+func S3UploadPDF(c *fiber.Ctx) error {
 	var req PDFRequestUpload
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).SendString(err.Error())

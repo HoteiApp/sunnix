@@ -1,0 +1,5 @@
+/vendor/
+database.xlsx
+.vscode/
+.env
+*.xlsx
