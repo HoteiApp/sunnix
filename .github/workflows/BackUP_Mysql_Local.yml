@@ -154,17 +154,17 @@ jobs:
           fi
           
           # Guardar mensaje en archivo en el servidor
-          echo -e "$MENSAJE" | ssh $USER_NAME_PRO@$IP_ADDRESS_PRO "cat > $BMYSQL_BACKUP_DIR_PRO/mensaje_local.txt"
+          # echo -e "$MENSAJE" | ssh $USER_NAME_PRO@$IP_ADDRESS_PRO "cat > $BMYSQL_BACKUP_DIR_PRO/mensaje_local.txt"
           
-          # Comentado temporalmente el envío de notificación
-          # curl -X POST https://api.sunissup.com/webhook \
-          #   -H "Content-Type: application/json" \
-          #   -d "{
-          #     \"action\": \"MySQL Backup Horario - Local\",
-          #     \"service\": \"mysql\",
-          #     \"user\": \"$USER_NAME_PRO\",
-          #     \"message\": \"$MENSAJE\"
-          #   }"
+
+           curl -X POST https://api.sunissup.com/webhook \
+             -H "Content-Type: application/json" \
+             -d "{
+               \"action\": \"MySQL Backup Horario - Local\",
+               \"service\": \"mysql\",
+               \"user\": \"$USER_NAME_PRO\",
+               \"message\": \"$MENSAJE\"
+             }"
 
 
           
