@@ -1,7 +1,7 @@
 name: Backup MySQL Local
 on:
-  schedule:
-    - cron: '0 * * * *'     # Backup cada hora
+#  schedule:
+#    - cron: '0 * * * *'     # Backup cada hora
   workflow_dispatch:
     inputs:
       enviar_notificacion:
