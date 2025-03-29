@@ -1,7 +1,7 @@
 name: Backup MySQL Local
 on:
-#  schedule:
-#    - cron: '0 * * * *'     # Backup cada hora
+  schedule:
+    - cron: '0 * * * *'     # Backup cada hora
   workflow_dispatch:
     inputs:
       enviar_notificacion:
@@ -11,11 +11,11 @@ on:
         type: boolean
 
 env:
-  IP_ADDRESS_PRO: ${{ vars.IP_ADDRESS_PRO }}
+  IP_ADDRESS_BD: ${{ vars.IP_ADDRESS_BD }}
   BMYSQL_ENV_FILE_PRO: ${{ vars.BMYSQL_ENV_FILE_PRO || '/opt/sunissUp/.env' }}
   BMYSQL_BACKUP_DIR_PRO: ${{ vars.BMYSQL_BACKUP_DIR_PRO || '/mnt/backups/mysql' }}
-  SSH_PRIVATE_KEY_PRO: ${{ secrets.SSH_PRIVATE_KEY_PRO }}
-  USER_NAME_PRO: ${{ vars.USER_NAME_PRO || 'root' }}
+  SSH_PRIVATE_KEY_BD: ${{ secrets.SSH_PRIVATE_KEY_BD }}
+  USER_NAME_BD: ${{ vars.USER_NAME_BD || 'root' }}
   BMYSQL_RETENTION_HOURLY: ${{ vars.BMYSQL_RETENTION_HOURLY || '10' }} 
   BMYSQL_NOTIFICAR_HORARIO: ${{ vars.BMYSQL_NOTIFICAR_HORARIO  || 'false' }}
   BMYSQL_LOG_DIR: ${{ vars.BMYSQL_LOG_DIR || '/var/log/backups' }}
@@ -27,7 +27,7 @@ jobs:
     steps:
       - name: Verificar variables de entorno (básicas)
         run: |
-          if [ -z "$IP_ADDRESS_PRO" ] || [ -z "$BMYSQL_ENV_FILE_PRO" ] || [ -z "$BMYSQL_BACKUP_DIR_PRO" ] || [ -z "$SSH_PRIVATE_KEY_PRO" ] || [ -z "$USER_NAME_PRO" ]; then
+          if [ -z "$IP_ADDRESS_BD" ] || [ -z "$BMYSQL_ENV_FILE_PRO" ] || [ -z "$BMYSQL_BACKUP_DIR_PRO" ] || [ -z "$SSH_PRIVATE_KEY_BD" ] || [ -z "$USER_NAME_BD" ]; then
             echo "Error: Faltan variables de entorno requeridas"
             exit 1
           fi
@@ -39,9 +39,9 @@ jobs:
       - name: Configurar clave SSH
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY_PRO" > ~/.ssh/id_rsa
+          echo "$SSH_PRIVATE_KEY_BD" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H $IP_ADDRESS_PRO >> ~/.ssh/known_hosts
+          ssh-keyscan -H $IP_ADDRESS_BD >> ~/.ssh/known_hosts
 
       - name: Ejecutar backup de MySQL (solo local)
         id: backup_local
@@ -128,7 +128,7 @@ jobs:
           echo 'rm -f "$MYSQL_CNF"' >> script.sh
           
           chmod +x script.sh
-          ssh $USER_NAME_PRO@$IP_ADDRESS_PRO "/bin/bash -s" < script.sh > output.log 2>&1
+          ssh $USER_NAME_BD@$IP_ADDRESS_BD "/bin/bash -s" < script.sh > output.log 2>&1
           
           if [ $? -eq 0 ]; then
             echo "STATUS=exitoso" >> "$GITHUB_OUTPUT"
@@ -148,23 +148,23 @@ jobs:
           
           # Estado del backup local
           if [[ "${{ steps.backup_local.outputs.STATUS }}" == "exitoso" ]]; then
-            MENSAJE+="Backup Horario Local: Exitoso ($IP_ADDRESS_PRO)\n"
+            MENSAJE+="Backup Horario Local: Exitoso ($IP_ADDRESS_BD)\n"
           else
-            MENSAJE+="Backup Horario Local: Fallido ($IP_ADDRESS_PRO)\n"
+            MENSAJE+="Backup Horario Local: Fallido ($IP_ADDRESS_BD)\n"
           fi
           
           # Guardar mensaje en archivo en el servidor
-          # echo -e "$MENSAJE" | ssh $USER_NAME_PRO@$IP_ADDRESS_PRO "cat > $BMYSQL_BACKUP_DIR_PRO/mensaje_local.txt"
+          echo -e "$MENSAJE" | ssh $USER_NAME_BD@$IP_ADDRESS_BD "sudo sh -c 'cat > $BMYSQL_BACKUP_DIR_PRO/mensaje_local.txt'"
           
-
-           curl -X POST https://api.sunissup.com/webhook \
-             -H "Content-Type: application/json" \
-             -d "{
-               \"action\": \"MySQL Backup Horario - Local\",
-               \"service\": \"mysql\",
-               \"user\": \"$USER_NAME_PRO\",
-               \"message\": \"$MENSAJE\"
-             }"
+          # Comentado temporalmente el envío de notificación
+          # curl -X POST https://api.sunissup.com/webhook \
+          #   -H "Content-Type: application/json" \
+          #   -d "{
+          #     \"action\": \"MySQL Backup Horario - Local\",
+          #     \"service\": \"mysql\",
+          #     \"user\": \"$USER_NAME_BD\",
+          #     \"message\": \"$MENSAJE\"
+          #   }"
 
 
           
@@ -172,7 +172,7 @@ jobs:
 # ====================================
 # DOCUMENTACIÓN DE VARIABLES
 # ====================================
-# IP_ADDRESS_PRO: Dirección IP del servidor de producción
+# IP_ADDRESS_BD: Dirección IP del servidor de producción
 #   Default: None (Requerido)
 #
 # BMYSQL_ENV_FILE_PRO: Ruta al archivo .env en el servidor
@@ -181,10 +181,10 @@ jobs:
 # BMYSQL_BACKUP_DIR_PRO: Directorio donde se almacenarán los backups
 #   Default: /mnt/backups/mysql
 #
-# SSH_PRIVATE_KEY_PRO: Clave SSH para conectar al servidor (secret)
+# SSH_PRIVATE_KEY_BD: Clave SSH para conectar al servidor (secret)
 #   Default: None (Requerido)
 #
-# USER_NAME_PRO: Usuario para la conexión SSH
+# USER_NAME_BD: Usuario para la conexión SSH
 #   Default: root
 #
 # BMYSQL_RETENTION_HOURLY: Número de backups horarios a mantener
