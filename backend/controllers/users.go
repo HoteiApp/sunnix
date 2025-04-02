@@ -267,13 +267,14 @@ func ChangePassword(c *fiber.Ctx) error {
 	resultLogin := core.ExtractFunctionsPlugins("ldap", "Login", claims["UID"].(string), password)
 
 	if !resultLogin.(bool) {
+
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
 			"ok":      "false",
 			"message": core.GetTextMessage("changepassword_err_004"),
 		})
 	}
 
-	result := core.ExtractFunctionsPlugins("ldap", "ChangePasswordAccount", claims["UID"], password)
+	result := core.ExtractFunctionsPlugins("ldap", "ChangePasswordAccount", claims["UID"], passwordNew)
 
 	if result.(bool) {
 		core.ExtractFunctionsPlugins("ldap", "ModifyAccount", claims["UID"],
