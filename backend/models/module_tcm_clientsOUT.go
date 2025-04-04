@@ -413,6 +413,7 @@ type OutClients struct {
 
 	Scm []OutClientSCM `json:"scm"`
 }
+
 type OutClientsSupervise struct {
 	ID uint `json:"id"` // ID of the user who referred this user (optional)
 
@@ -466,4 +467,11 @@ type OutClientsNotesWeekActive struct {
 	Sure           string             `json:"sure"`
 	Notes          []NotesOut         `json:"notes"`
 	Scm            OutClientSCMActive `json:"scm"`
+}
+
+// -----------
+
+type OutClientsPaginator struct {
+	Clients    []OutClients `json:"clients"`
+	Pagination Pagination   `json:"pagination"`
 }
