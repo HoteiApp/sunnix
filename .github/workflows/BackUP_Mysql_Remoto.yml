@@ -1,0 +1,771 @@
+name: Backup MySQL Completo - Remoto
+on:
+  schedule:
+    - cron: '0 5 * * *'  # 05:00 UTC = 00:00 (medianoche) en La Habana (UTC-5)    
+  workflow_dispatch:
+    inputs:
+      importar_remoto:
+        description: 'Import backup to remote server'
+        required: false
+        default: false
+        type: boolean
+      reiniciar_servicio:
+        description: 'Restart service sunissup after import'
+        required: false
+        default: false
+        type: boolean
+      enviar_notificacion:
+        description: 'Send notification of the result'
+        required: false
+        default: false
+        type: boolean
+      copiar_a_pro:
+        description: 'Copy backup to PRO server'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  IP_ADDRESS_BD: ${{ vars.IP_ADDRESS_BD }}
+  USER_NAME_BD: ${{ vars.USER_NAME_BD }}
+  SSH_PRIVATE_KEY_BD: ${{ secrets.SSH_PRIVATE_KEY_BD }}  
+  BMYSQL_ENV_FILE_BD: ${{ vars.BMYSQL_ENV_FILE_BD || '/opt/sunissUp/.env' }}
+  BMYSQL_BACKUP_DIR_BD: ${{ vars.BMYSQL_BACKUP_DIR_BD || '/mnt/backups/mysql' }}
+  BMYSQL_RETENTION_BD: ${{ vars.BMYSQL_RETENTION_BD || '7' }}
+
+
+  IP_ADDRESS_TEST: ${{ vars.IP_ADDRESS_TEST }}
+  USER_NAME_TEST: ${{ vars.USER_NAME_TEST }}
+  SSH_PRIVATE_KEY_TEST: ${{ secrets.SSH_PRIVATE_KEY_TEST }}  
+  BMYSQL_ENV_FILE_TEST: ${{ vars.BMYSQL_ENV_FILE_TEST || '/opt/sunissUp/.env' }}
+  BMYSQL_BACKUP_DIR_TEST: ${{ vars.BMYSQL_BACKUP_DIR_TEST || '/mnt/backups/mysql' }}
+  BMYSQL_RETENTION_TEST: ${{ vars.BMYSQL_RETENTION_TEST || '7' }}
+  BMYSQL_IMPORT_TEST: ${{ vars.BMYSQL_IMPORT_TEST || 'false' }}
+
+  IP_ADDRESS_PRO: ${{ vars.IP_ADDRESS_PRO }}
+  USER_NAME_PRO: ${{ vars.USER_NAME_PRO }}
+  SSH_PRIVATE_KEY_PRO: ${{ secrets.SSH_PRIVATE_KEY_PRO }}  
+  BMYSQL_BACKUP_DIR_PRO: ${{ vars.BMYSQL_BACKUP_DIR_PRO || '/home/admin/backups/mysql' }}
+  BMYSQL_RETENTION_PRO: ${{ vars.BMYSQL_RETENTION_PRO || '3' }}
+  BMYSQL_COPY_TO_PRO: ${{ vars.BMYSQL_COPY_TO_PRO || 'true' }}
+  
+  BMYSQL_NOTIFICAR_COMPLETO: ${{ vars.BMYSQL_NOTIFICAR_COMPLETO || 'true'  }}  
+  BMYSQL_RESTART_SERVICE: ${{ vars.BMYSQL_RESTART_SERVICE || 'true' }}
+  BMYSQL_LOG_DIR: ${{ vars.BMYSQL_LOG_DIR || '/var/log/backups' }}  
+  BACKUP_GPG_PRIVATE_KEY: ${{ secrets.BACKUP_GPG_PRIVATE_KEY }} 
+  BACKUP_GPG_PUBLIC_KEY: ${{ secrets.BACKUP_GPG_PUBLIC_KEY }}
+  BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
+
+  TZ: America/Havana  
+
+jobs:
+  backup_completo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar variables
+        id: verificar
+        run: |
+          if [ -z "$IP_ADDRESS_BD" ] || [ -z "$BMYSQL_ENV_FILE_BD" ] || [ -z "$BMYSQL_BACKUP_DIR_BD" ] || [ -z "$SSH_PRIVATE_KEY_BD" ] || [ -z "$USER_NAME_BD" ] || [ -z "$IP_ADDRESS_TEST" ] || [ -z "$BMYSQL_ENV_FILE_TEST" ] || [ -z "$BMYSQL_BACKUP_DIR_TEST" ] || [ -z "$SSH_PRIVATE_KEY_TEST" ] || [ -z "$USER_NAME_TEST" ]; then
+            echo "Error: Faltan variables de entorno"
+            exit 1
+          fi
+          
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "BMYSQL_IMPORT_TEST=${{ github.event.inputs.importar_remoto }}" >> $GITHUB_ENV
+            echo "BMYSQL_RESTART_SERVICE=${{ github.event.inputs.reiniciar_servicio }}" >> $GITHUB_ENV
+            echo "BMYSQL_NOTIFICAR_COMPLETO=${{ github.event.inputs.enviar_notificacion }}" >> $GITHUB_ENV
+            echo "BMYSQL_COPY_TO_PRO=${{ github.event.inputs.copiar_a_pro }}" >> $GITHUB_ENV
+          fi
+          
+          # Verificar variables de retención
+          if [ -z "$BMYSQL_RETENTION_BD" ]; then
+            echo "BMYSQL_RETENTION_BD=7" >> $GITHUB_ENV
+            echo "Usando valor predeterminado para retención local: 7"
+          fi
+          if [ -z "$BMYSQL_RETENTION_TEST" ]; then
+            echo "BMYSQL_RETENTION_TEST=7" >> $GITHUB_ENV
+            echo "Usando valor predeterminado para retención remota: 7"
+          fi
+
+      - name: Configurar SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY_BD" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $IP_ADDRESS_BD >> ~/.ssh/known_hosts
+
+      - name: Ejecutar backup completo
+        id: backup
+        run: |
+          # Crear el script línea por línea sin usar heredoc
+          echo '#!/bin/bash' > script.sh
+          
+          echo '# Verificar variables' >> script.sh
+          echo 'if [ -z "$BMYSQL_ENV_FILE" ]; then' >> script.sh
+          echo '  echo "Error: BMYSQL_ENV_FILE no está definido"' >> script.sh
+          echo '  exit 1' >> script.sh
+          echo 'fi' >> script.sh
+          
+          echo 'if [ ! -f "$BMYSQL_ENV_FILE" ]; then' >> script.sh
+          echo '  echo "Error: El archivo $BMYSQL_ENV_FILE no existe"' >> script.sh
+          echo '  exit 1' >> script.sh
+          echo 'fi' >> script.sh
+          
+          echo '# Definir variables' >> script.sh
+          echo 'BACKUP_DIR="${BMYSQL_BACKUP_DIR_BD:-/var/backups/mysql}"' >> script.sh
+          echo 'ENV_FILE="${BMYSQL_ENV_FILE}"' >> script.sh
+          echo 'RETENTION_COUNT=${BMYSQL_RETENTION_BD:-7}' >> script.sh
+          echo 'TIMESTAMP=$(date +"%Y%m%d-%I%M%S%p")' >> script.sh
+          echo 'LOG_DIR="'"$BMYSQL_LOG_DIR"'"' >> script.sh
+          echo 'LOG_FILE="$LOG_DIR/backup_mysql-${TIMESTAMP}.log"' >> script.sh
+          
+          echo '# Crear directorios necesarios' >> script.sh
+          echo 'echo "=== INICIANDO PROCESO DE BACKUP ===" | tee -a "$LOG_FILE"' >> script.sh
+          echo 'mkdir -p "$LOG_DIR"' >> script.sh
+          echo 'chmod 755 "$LOG_DIR"' >> script.sh
+          
+          echo '# Crear archivo de log' >> script.sh
+          echo 'touch "$LOG_FILE"' >> script.sh
+          echo 'chmod 644 "$LOG_FILE"' >> script.sh
+          
+          echo '# Extraer credenciales' >> script.sh
+          echo 'echo "Extrayendo credenciales..." | tee -a "$LOG_FILE"' >> script.sh
+          echo 'DB_HOST=$(grep "^sunissUp.db.mysql.Host=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> script.sh
+          echo 'DB_PORT=$(grep "^sunissUp.db.mysql.Port=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> script.sh
+          echo 'DB_USER=$(grep "^sunissUp.db.mysql.Username=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> script.sh
+          echo 'DB_NAME=$(grep "^sunissUp.db.mysql.DB=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> script.sh
+          echo 'DB_PASS_ENC=$(grep "^sunissUp.db.mysql.Password=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> script.sh
+          
+          echo '# Decodificar contraseña' >> script.sh
+          echo 'PADDING_LENGTH=$((4 - ${#DB_PASS_ENC} % 4))' >> script.sh
+          echo 'if [ $PADDING_LENGTH -ne 4 ]; then' >> script.sh
+          echo '  DB_PASS_ENC="${DB_PASS_ENC}$(printf "=%.0s" $(seq 1 $PADDING_LENGTH))"' >> script.sh
+          echo 'fi' >> script.sh
+          echo 'DB_PASS=$(echo -n "$DB_PASS_ENC" | base64 --decode)' >> script.sh
+          
+          echo '# Crear archivo de configuración temporal para MySQL' >> script.sh
+          echo 'MYSQL_CNF=$(mktemp)' >> script.sh
+          echo 'chmod 600 "$MYSQL_CNF"' >> script.sh
+          echo 'cat > "$MYSQL_CNF" << EOF' >> script.sh
+          echo '[client]' >> script.sh
+          echo 'host="$DB_HOST"' >> script.sh
+          echo 'port="$DB_PORT"' >> script.sh
+          echo 'user="$DB_USER"' >> script.sh
+          echo 'password="$DB_PASS"' >> script.sh
+          echo 'protocol=TCP' >> script.sh
+          echo 'EOF' >> script.sh
+
+          echo '# Realizar backup' >> script.sh
+          echo 'BACKUP_FILE="$BACKUP_DIR/${DB_NAME}_${TIMESTAMP}.sql"' >> script.sh
+          echo 'echo "Iniciando backup..." | tee -a "$LOG_FILE"' >> script.sh
+          echo 'if mysqldump --defaults-extra-file="$MYSQL_CNF" "$DB_NAME" > "$BACKUP_FILE" 2>> "$LOG_FILE"; then' >> script.sh
+          echo '  echo "Backup completado exitosamente" | tee -a "$LOG_FILE"' >> script.sh
+          echo '  # Verificar integridad' >> script.sh
+          echo '  echo "Verificando integridad de la base de datos..." | tee -a "$LOG_FILE"' >> script.sh
+          echo '  if mysqlcheck --defaults-extra-file="$MYSQL_CNF" --check "$DB_NAME" >> "$LOG_FILE" 2>&1; then' >> script.sh
+          echo '    echo "Verificación de integridad completada exitosamente" | tee -a "$LOG_FILE"' >> script.sh
+          echo '    echo "STATUS:exitoso"' >> script.sh
+          echo '    echo "FILE:$BACKUP_FILE"' >> script.sh
+          echo '  else' >> script.sh
+          echo '    echo "ADVERTENCIA: La verificación de integridad falló" | tee -a "$LOG_FILE"' >> script.sh
+          echo '    echo "STATUS:advertencia"' >> script.sh
+          echo '    echo "FILE:$BACKUP_FILE"' >> script.sh
+          echo '  fi' >> script.sh
+          echo 'else' >> script.sh
+          echo '  echo "Error al realizar el backup" | tee -a "$LOG_FILE"' >> script.sh
+          echo '  echo "STATUS:fallido"' >> script.sh
+          echo '  exit 1' >> script.sh
+          echo 'fi' >> script.sh
+          
+          echo '# Limpiar archivo de configuración temporal' >> script.sh
+          echo 'rm -f "$MYSQL_CNF"' >> script.sh
+          
+          echo '# Limpiar backups antiguos' >> script.sh
+          echo 'echo "Limpiando backups antiguos..." | tee -a "$LOG_FILE"' >> script.sh
+          echo 'cd "$BACKUP_DIR"' >> script.sh
+          echo 'TOTAL_FILES=$(ls -1 ${DB_NAME}_*.gpg 2>/dev/null | wc -l)' >> script.sh
+          echo 'if [ $TOTAL_FILES -gt $RETENTION_COUNT ]; then' >> script.sh
+          echo '  echo "Encontrados $TOTAL_FILES archivos, manteniendo los $RETENTION_COUNT más recientes" | tee -a "$LOG_FILE"' >> script.sh
+          echo '  ls -t ${DB_NAME}_*.gpg | tail -n +$(($RETENTION_COUNT + 1)) | xargs -r rm -f' >> script.sh
+          echo '  echo "Se eliminaron $(($TOTAL_FILES - $RETENTION_COUNT)) backups antiguos" | tee -a "$LOG_FILE"' >> script.sh
+          echo 'else' >> script.sh
+          echo '  echo "El número de backups ($TOTAL_FILES) no excede el límite de retención ($RETENTION_COUNT)" | tee -a "$LOG_FILE"' >> script.sh
+          echo 'fi' >> script.sh
+          
+          chmod +x script.sh
+          
+          # Ejecutar el script y capturar la salida
+          OUTPUT=$(ssh $USER_NAME_BD@$IP_ADDRESS_BD \
+            "BMYSQL_ENV_FILE='$BMYSQL_ENV_FILE_BD' BMYSQL_BACKUP_DIR_BD='$BMYSQL_BACKUP_DIR_BD' /bin/bash -s" < script.sh)
+          
+          # Procesar la salida para obtener el estado y el archivo
+          BACKUP_STATUS=$(echo "$OUTPUT" | grep "STATUS:" | cut -d':' -f2)
+          BACKUP_FILE=$(echo "$OUTPUT" | grep "FILE:" | cut -d':' -f2)
+          
+          # Configurar GPG y cifrar en el servidor directamente
+          echo "Configurando GPG y cifrando backup en el servidor..."
+          echo "$BACKUP_GPG_PUBLIC_KEY" | ssh $USER_NAME_BD@$IP_ADDRESS_BD "
+            # Crear directorio temporal seguro
+            TEMP_DIR=\$(mktemp -d)
+            chmod 700 \$TEMP_DIR
+            
+            # Guardar clave pública
+            base64 -d > \$TEMP_DIR/public.key
+            
+            # Importar clave pública
+            gpg --import \$TEMP_DIR/public.key
+            
+            # Cifrar el backup
+            gpg --trust-model always --encrypt --recipient-file \$TEMP_DIR/public.key '$BACKUP_FILE'
+            
+            # Eliminar archivo sin cifrar y directorio temporal
+            rm -f '$BACKUP_FILE'
+            rm -rf \$TEMP_DIR
+            
+            # El archivo cifrado ahora es BACKUP_FILE.gpg
+            echo 'STATUS:exitoso'
+            echo 'FILE:${BACKUP_FILE}.gpg'
+          "
+          
+          # Guardar en GITHUB_OUTPUT
+          echo "BACKUP_STATUS=$BACKUP_STATUS" >> $GITHUB_OUTPUT
+          echo "BACKUP_FILE=$BACKUP_FILE" >> $GITHUB_OUTPUT
+
+      - name: Configurar SSH Remoto
+        if: success()
+        run: |
+          mkdir -p ~/.ssh/remote
+          echo "$SSH_PRIVATE_KEY_TEST" > ~/.ssh/remote/id_rsa
+          chmod 600 ~/.ssh/remote/id_rsa
+          ssh-keyscan -H $IP_ADDRESS_TEST >> ~/.ssh/known_hosts
+
+      - name: Preparar servidor remoto
+        if: success()
+        run: |
+          # Verificar que las variables necesarias estén definidas
+          if [ -z "$BMYSQL_BACKUP_DIR_TEST" ]; then
+            echo "Error: BMYSQL_BACKUP_DIR_TEST no está definido"
+            exit 1
+          fi
+          
+          # Crear script de preparación
+          cat > prepare_remote.sh << EOF
+          #!/bin/bash
+          
+          # Definir variables
+          BACKUP_DIR="$BMYSQL_BACKUP_DIR_TEST"
+          RETENTION_COUNT="$BMYSQL_RETENTION_TEST"
+          
+          echo "Preparando servidor remoto..."
+          echo "Directorio de backup: \$BACKUP_DIR"
+          echo "Retención de backups: \$RETENTION_COUNT días"
+          
+          # Crear directorio si no existe
+          mkdir -p "\$BACKUP_DIR"
+          chmod 755 "\$BACKUP_DIR"
+          
+          # Limpiar backups antiguos (buscando archivos .gpg)
+          if [ -d "\$BACKUP_DIR" ]; then
+            TOTAL_FILES=\$(ls -1 "\$BACKUP_DIR"/*.gpg 2>/dev/null | wc -l)
+            if [ \$TOTAL_FILES -gt \$RETENTION_COUNT ]; then
+              echo "Limpiando backups antiguos..."
+              ls -t "\$BACKUP_DIR"/*.gpg | tail -n +\$((\$RETENTION_COUNT + 1)) | xargs rm -f
+              echo "Se eliminaron \$((\$TOTAL_FILES - \$RETENTION_COUNT)) backups antiguos"
+            else
+              echo "No hay backups antiguos para eliminar"
+            fi
+          else
+            echo "El directorio de backup no existe o no es accesible"
+            exit 1
+          fi
+          EOF
+          
+          chmod +x prepare_remote.sh
+          
+          echo "Transfiriendo script al servidor remoto..."
+          scp -i ~/.ssh/remote/id_rsa prepare_remote.sh $USER_NAME_TEST@$IP_ADDRESS_TEST:/tmp/
+          
+          echo "Ejecutando script de preparación..."
+          ssh -i ~/.ssh/remote/id_rsa $USER_NAME_TEST@$IP_ADDRESS_TEST "bash /tmp/prepare_remote.sh"
+
+      - name: Copiar backup a servidor remoto
+        if: success()
+        id: copia_remota
+        run: |
+          # Crear script para obtener el último backup
+          echo '#!/bin/bash' > get_backup.sh
+          echo 'BACKUP_DIR="${BMYSQL_BACKUP_DIR_BD}"' >> get_backup.sh
+          echo 'ENV_FILE="${BMYSQL_ENV_FILE}"' >> get_backup.sh
+          
+          echo '# Obtener nombre de la base de datos' >> get_backup.sh
+          echo 'DB_NAME=$(grep "^sunissUp.db.mysql.DB=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> get_backup.sh
+          
+          echo '# Encontrar el backup más reciente (ahora buscando .gpg)' >> get_backup.sh
+          echo 'LATEST_BACKUP=$(ls -t "$BACKUP_DIR"/${DB_NAME}_*.gpg | head -1)' >> get_backup.sh
+          echo 'if [ -f "$LATEST_BACKUP" ]; then' >> get_backup.sh
+          echo '  echo "FILE:$LATEST_BACKUP"' >> get_backup.sh
+          echo '  echo "NAME:$DB_NAME"' >> get_backup.sh
+          echo 'else' >> get_backup.sh
+          echo '  echo "ERROR:No se encontró archivo de backup"' >> get_backup.sh
+          echo '  exit 1' >> get_backup.sh
+          echo 'fi' >> get_backup.sh
+          
+          chmod +x get_backup.sh
+          
+          # Ejecutar script en servidor de producción
+          OUTPUT=$(ssh $USER_NAME_BD@$IP_ADDRESS_BD \
+            "BMYSQL_ENV_FILE='$BMYSQL_ENV_FILE_BD' BMYSQL_BACKUP_DIR_BD='$BMYSQL_BACKUP_DIR_BD' /bin/bash -s" < get_backup.sh)
+          
+          # Procesar la salida
+          if echo "$OUTPUT" | grep -q "ERROR:"; then
+            echo "Error: $(echo "$OUTPUT" | grep "ERROR:" | cut -d':' -f2-)"
+            exit 1
+          fi
+          
+          # Obtener ruta del archivo y nombre de la base de datos
+          BACKUP_FILE=$(echo "$OUTPUT" | grep "FILE:" | cut -d':' -f2-)
+          DB_NAME=$(echo "$OUTPUT" | grep "NAME:" | cut -d':' -f2-)
+          
+          # Copiar el archivo cifrado al runner temporalmente
+          echo "Copiando archivo cifrado al runner..."
+          # El archivo ya tiene la extensión .gpg desde el servidor de origen
+          scp $USER_NAME_BD@$IP_ADDRESS_BD:"$BACKUP_FILE" .
+          
+          # Obtener solo el nombre del archivo (ya incluye .gpg)
+          BACKUP_FILENAME=$(basename "$BACKUP_FILE")
+          
+          # Copiar desde el runner al servidor de testing
+          echo "Copiando archivo cifrado al servidor TEST..."
+          scp -i ~/.ssh/remote/id_rsa "$BACKUP_FILENAME" $USER_NAME_TEST@$IP_ADDRESS_TEST:"$BMYSQL_BACKUP_DIR_TEST/"
+          TEST_STATUS=$?
+          
+          # Verificar estado de la copia
+          if [ $TEST_STATUS -eq 0 ]; then
+            echo "REMOTE_FILE=$BACKUP_FILENAME" >> $GITHUB_OUTPUT
+            echo "COPY_STATUS=exitoso" >> $GITHUB_OUTPUT
+            echo "Copia a TEST completada exitosamente"
+          else
+            echo "Error al copiar el archivo a TEST"
+            rm -f "$BACKUP_FILENAME"  # Limpiar en caso de error
+            exit 1
+          fi
+
+      - name: Configurar SSH PRO
+        if: success() && env.BMYSQL_COPY_TO_PRO == 'true'
+        run: |
+          mkdir -p ~/.ssh/pro
+          echo "$SSH_PRIVATE_KEY_PRO" > ~/.ssh/pro/id_rsa
+          chmod 600 ~/.ssh/pro/id_rsa
+          ssh-keyscan -H $IP_ADDRESS_PRO >> ~/.ssh/known_hosts
+
+      - name: Copiar backup a servidor PRO
+        if: success() && env.BMYSQL_COPY_TO_PRO == 'true'
+        id: copia_pro
+        continue-on-error: true
+        run: |
+          # Obtener nombre del archivo del paso anterior
+          BACKUP_FILENAME="${{ steps.copia_remota.outputs.REMOTE_FILE }}"
+          
+          # Verificar que el archivo existe en el runner
+          if [ ! -f "$BACKUP_FILENAME" ]; then
+            echo "Error: Archivo $BACKUP_FILENAME no encontrado en el runner"
+            exit 1
+          fi
+          
+          # Verificar y crear directorio en servidor PRO si no existe
+          echo "Verificando directorio en servidor PRO..."
+          ssh -i ~/.ssh/pro/id_rsa $USER_NAME_PRO@$IP_ADDRESS_PRO "sudo mkdir -p $BMYSQL_BACKUP_DIR_PRO && sudo chmod 755 $BMYSQL_BACKUP_DIR_PRO && sudo chown $USER_NAME_PRO:$USER_NAME_PRO $BMYSQL_BACKUP_DIR_PRO"
+          
+          # Limpiar backups antiguos en PRO
+          echo "Limpiando backups antiguos en PRO..."
+          ssh -i ~/.ssh/pro/id_rsa $USER_NAME_PRO@$IP_ADDRESS_PRO "
+            cd $BMYSQL_BACKUP_DIR_PRO
+            TOTAL_FILES=\$(ls -1 *.gpg 2>/dev/null | wc -l)
+            if [ \$TOTAL_FILES -gt $BMYSQL_RETENTION_PRO ]; then
+              echo \"Encontrados \$TOTAL_FILES archivos, manteniendo los $BMYSQL_RETENTION_PRO más recientes\"
+              ls -t *.gpg | tail -n +\$(($BMYSQL_RETENTION_PRO + 1)) | xargs -r rm -f
+              echo \"Se eliminaron \$((\$TOTAL_FILES - $BMYSQL_RETENTION_PRO)) backups antiguos del servidor PRO\"
+            else
+              echo \"El número de backups (\$TOTAL_FILES) no excede el límite de retención ($BMYSQL_RETENTION_PRO)\"
+            fi"
+          
+          # Copiar el archivo cifrado al servidor PRO
+          echo "Copiando archivo cifrado al servidor PRO..."
+          scp -i ~/.ssh/pro/id_rsa "$BACKUP_FILENAME" $USER_NAME_PRO@$IP_ADDRESS_PRO:"$BMYSQL_BACKUP_DIR_PRO/"
+          PRO_STATUS=$?
+          
+          # Limpiar archivo del runner después de todas las copias
+          rm -f "$BACKUP_FILENAME"
+          
+          if [ $PRO_STATUS -eq 0 ]; then
+            echo "COPY_PRO_STATUS=exitoso" >> $GITHUB_OUTPUT
+            echo "Copia a PRO completada exitosamente"
+          else
+            echo "COPY_PRO_STATUS=fallido" >> $GITHUB_OUTPUT
+            echo "Error al copiar el archivo a PRO"
+          fi
+
+      - name: Importar en servidor remoto
+        if: success() && env.BMYSQL_IMPORT_TEST == 'true'
+        id: importar
+        continue-on-error: true
+        run: |
+          # Crear el script línea por línea sin usar heredoc
+          echo '#!/bin/bash' > import.sh
+          
+          echo '# Verificar variables' >> import.sh
+          echo 'if [ -z "$BMYSQL_ENV_FILE_TEST" ] || [ ! -f "$BMYSQL_ENV_FILE_TEST" ]; then' >> import.sh
+          echo '  echo "ERROR:Archivo de configuración no encontrado: $BMYSQL_ENV_FILE_TEST"' >> import.sh
+          echo '  exit 1' >> import.sh
+          echo 'fi' >> import.sh
+          
+          echo '# Variables de entorno' >> import.sh
+          echo 'ENV_FILE="$BMYSQL_ENV_FILE_TEST"' >> import.sh
+          echo 'BACKUP_DIR="$BMYSQL_BACKUP_DIR_TEST"' >> import.sh
+          echo 'BACKUP_FILE="$BACKUP_DIR/$REMOTE_FILE"' >> import.sh
+          echo 'TIMESTAMP=$(date +"%Y%m%d-%I%M%S%p")' >> import.sh
+          
+          echo '# Verificar archivo de backup' >> import.sh
+          echo 'if [ ! -f "$BACKUP_FILE" ]; then' >> import.sh
+          echo '  echo "ERROR:Archivo de backup no encontrado: $BACKUP_FILE"' >> import.sh
+          echo '  exit 1' >> import.sh
+          echo 'fi' >> import.sh
+          
+          echo '# Extraer credenciales' >> import.sh
+          echo 'echo "Extrayendo credenciales..."' >> import.sh
+          echo 'DB_HOST=$(grep "^sunissUp.db.mysql.Host=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> import.sh
+          echo 'DB_PORT=$(grep "^sunissUp.db.mysql.Port=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> import.sh
+          echo 'DB_USER=$(grep "^sunissUp.db.mysql.Username=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> import.sh
+          echo 'DB_NAME=$(grep "^sunissUp.db.mysql.DB=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> import.sh
+          echo 'DB_PASS_ENC=$(grep "^sunissUp.db.mysql.Password=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> import.sh
+          
+          echo '# Decodificar contraseña' >> import.sh
+          echo 'PADDING_LENGTH=$((4 - ${#DB_PASS_ENC} % 4))' >> import.sh
+          echo 'if [ $PADDING_LENGTH -ne 4 ]; then' >> import.sh
+          echo '  DB_PASS_ENC="${DB_PASS_ENC}$(printf "=%.0s" $(seq 1 $PADDING_LENGTH))"' >> import.sh
+          echo 'fi' >> import.sh
+          echo 'DB_PASS=$(echo -n "$DB_PASS_ENC" | base64 --decode)' >> import.sh
+          
+          echo '# Crear archivo de configuración temporal para MySQL' >> import.sh
+          echo 'MYSQL_CNF=$(mktemp)' >> import.sh
+          echo 'chmod 600 "$MYSQL_CNF"' >> import.sh
+          echo 'echo "[client]" > "$MYSQL_CNF"' >> import.sh
+          echo 'echo "host=\"$DB_HOST\"" >> "$MYSQL_CNF"' >> import.sh
+          echo 'echo "port=\"$DB_PORT\"" >> "$MYSQL_CNF"' >> import.sh
+          echo 'echo "user=\"$DB_USER\"" >> "$MYSQL_CNF"' >> import.sh
+          echo 'echo "password=\"$DB_PASS\"" >> "$MYSQL_CNF"' >> import.sh
+          echo 'echo "protocol=TCP" >> "$MYSQL_CNF"' >> import.sh
+          
+          echo '# Crear backup de seguridad antes de importar' >> import.sh
+          echo 'echo "Creando backup de seguridad antes de importar..."' >> import.sh
+          echo 'LOCAL_BACKUP="$BACKUP_DIR/before_import_${DB_NAME}_${TIMESTAMP}.sql"' >> import.sh
+          echo 'if mysqldump --defaults-extra-file="$MYSQL_CNF" "$DB_NAME" > "$LOCAL_BACKUP" 2>/dev/null; then' >> import.sh
+          echo '  echo "Backup de seguridad creado exitosamente: $LOCAL_BACKUP"' >> import.sh
+          echo '  echo "Cifrando backup de seguridad..."' >> import.sh
+          echo '  echo "$BACKUP_GPG_PUBLIC_KEY" | base64 -d | gpg --batch --yes --import 2>/dev/null' >> import.sh
+          echo '  gpg --batch --yes --trust-model always --recipient "sunnix@sunissup.com" --encrypt "$LOCAL_BACKUP"' >> import.sh
+          echo '  if [ -f "${LOCAL_BACKUP}.gpg" ]; then' >> import.sh
+          echo '    rm -f "$LOCAL_BACKUP"' >> import.sh
+          echo '    LOCAL_BACKUP="${LOCAL_BACKUP}.gpg"' >> import.sh
+          echo '    echo "Backup de seguridad cifrado exitosamente: $LOCAL_BACKUP"' >> import.sh
+          echo '  else' >> import.sh
+          echo '    echo "ERROR: Fallo al cifrar el backup de seguridad"' >> import.sh
+          echo '    exit 1' >> import.sh
+          echo '  fi' >> import.sh
+          echo 'else' >> import.sh
+          echo '  echo "ERROR:No se pudo crear el backup de seguridad"' >> import.sh
+          echo '  exit 1' >> import.sh
+          echo 'fi' >> import.sh
+          
+          echo '# Borrar datos existentes' >> import.sh
+          echo 'echo "Borrando datos de la base de datos actual..."' >> import.sh
+          echo 'TABLES=$(mysql --defaults-extra-file="$MYSQL_CNF" -N -e "SHOW TABLES FROM \`$DB_NAME\`" "$DB_NAME" 2>/dev/null | tr "\n" " ")' >> import.sh
+          echo 'if [ -n "$TABLES" ]; then' >> import.sh
+          echo '  echo "Desactivando restricciones de clave foránea..."' >> import.sh
+          echo '  mysql --defaults-extra-file="$MYSQL_CNF" "$DB_NAME" -e "SET FOREIGN_KEY_CHECKS = 0;" 2>/dev/null' >> import.sh
+          echo '  echo "Borrando todas las tablas..."' >> import.sh
+          echo '  for TABLE in $TABLES; do' >> import.sh
+          echo '    echo "Borrando tabla: $TABLE"' >> import.sh
+          echo '    mysql --defaults-extra-file="$MYSQL_CNF" "$DB_NAME" -e "DROP TABLE \`$TABLE\`;" 2>/dev/null' >> import.sh
+          echo '  done' >> import.sh
+          echo '  echo "Restricciones de clave foránea activadas..."' >> import.sh
+          echo '  mysql --defaults-extra-file="$MYSQL_CNF" "$DB_NAME" -e "SET FOREIGN_KEY_CHECKS = 1;" 2>/dev/null' >> import.sh
+          echo '  echo "Todas las tablas han sido borradas"' >> import.sh
+          echo 'else' >> import.sh
+          echo '  echo "No se encontraron tablas para borrar"' >> import.sh
+          echo 'fi' >> import.sh
+          
+          echo '# Descifrar el backup antes de importar' >> import.sh
+          echo 'echo "Descifrando backup..."' >> import.sh
+          echo 'echo "$BACKUP_GPG_PRIVATE_KEY" | base64 -d | gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_GPG_PASSPHRASE" --import 2>/dev/null' >> import.sh
+          echo 'if gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_GPG_PASSPHRASE" --decrypt "$BACKUP_FILE" > "${BACKUP_FILE%.gpg}"; then' >> import.sh
+          echo '  BACKUP_FILE="${BACKUP_FILE%.gpg}"' >> import.sh
+          echo '  echo "Archivo descifrado exitosamente: $BACKUP_FILE"' >> import.sh
+          echo 'else' >> import.sh
+          echo '  echo "ERROR: Fallo al descifrar el backup"' >> import.sh
+          echo '  exit 1' >> import.sh
+          echo 'fi' >> import.sh
+          
+          echo '# Importar backup' >> import.sh
+          echo 'echo "Importando backup..."' >> import.sh
+          echo 'if mysql --defaults-extra-file="$MYSQL_CNF" --force "$DB_NAME" < "$BACKUP_FILE" 2>/dev/null; then' >> import.sh
+          echo '  echo "STATUS:exitoso"' >> import.sh
+          echo '  echo "FILE:$BACKUP_FILE"' >> import.sh
+          echo '  echo "BACKUP_SEGURIDAD:$LOCAL_BACKUP"' >> import.sh
+          echo '  echo "Limpiando archivo SQL temporal..."' >> import.sh
+          echo '  rm -f "$BACKUP_FILE"' >> import.sh
+          echo 'else' >> import.sh
+          echo '  echo "Error al importar el backup. Intentando restaurar backup de seguridad..."' >> import.sh
+          echo '  if gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_GPG_PASSPHRASE" --decrypt "$LOCAL_BACKUP" > "${LOCAL_BACKUP%.gpg}" 2>/dev/null; then' >> import.sh
+          echo '    RESTORE_FILE="${LOCAL_BACKUP%.gpg}"' >> import.sh
+          echo '    if mysql --defaults-extra-file="$MYSQL_CNF" "$DB_NAME" < "$RESTORE_FILE" 2>/dev/null; then' >> import.sh
+          echo '      echo "Restauración del backup de seguridad exitosa"' >> import.sh
+          echo '      echo "STATUS:restaurado"' >> import.sh
+          echo '      echo "FILE:$LOCAL_BACKUP"' >> import.sh
+          echo '      rm -f "$RESTORE_FILE"' >> import.sh
+          echo '    else' >> import.sh
+          echo '      echo "ERROR:Falló la importación y la restauración del backup de seguridad"' >> import.sh
+          echo '      rm -f "$RESTORE_FILE"' >> import.sh
+          echo '      exit 1' >> import.sh
+          echo '    fi' >> import.sh
+          echo '  else' >> import.sh
+          echo '    echo "ERROR:No se pudo descifrar el backup de seguridad"' >> import.sh
+          echo '    exit 1' >> import.sh
+          echo '  fi' >> import.sh
+          echo 'fi' >> import.sh
+          
+          echo '# Limpiar archivos temporales' >> import.sh
+          echo 'rm -f "$MYSQL_CNF"' >> import.sh
+          
+          chmod +x import.sh
+          
+          # Transferir y ejecutar el script en el servidor remoto
+          scp -i ~/.ssh/remote/id_rsa import.sh $USER_NAME_TEST@$IP_ADDRESS_TEST:/tmp/
+          OUTPUT=$(ssh -i ~/.ssh/remote/id_rsa $USER_NAME_TEST@$IP_ADDRESS_TEST \
+            "BACKUP_GPG_PRIVATE_KEY='$BACKUP_GPG_PRIVATE_KEY' \
+             BACKUP_GPG_PASSPHRASE='$BACKUP_GPG_PASSPHRASE' \
+             BACKUP_GPG_PUBLIC_KEY='$BACKUP_GPG_PUBLIC_KEY' \
+             BMYSQL_ENV_FILE_TEST='$BMYSQL_ENV_FILE_TEST' \
+             BMYSQL_BACKUP_DIR_TEST='$BMYSQL_BACKUP_DIR_TEST' \
+             REMOTE_FILE='${{ steps.copia_remota.outputs.REMOTE_FILE }}' \
+             bash /tmp/import.sh")
+          
+          # Procesar la salida
+          if echo "$OUTPUT" | grep -q "ERROR:"; then
+            echo "Error: $(echo "$OUTPUT" | grep "ERROR:" | cut -d':' -f2-)"
+            exit 1
+          fi
+          
+          IMPORT_STATUS=$(echo "$OUTPUT" | grep "STATUS:" | cut -d':' -f2)
+          BACKUP_FILE=$(echo "$OUTPUT" | grep "FILE:" | cut -d':' -f2)
+          BACKUP_SEGURIDAD=$(echo "$OUTPUT" | grep "BACKUP_SEGURIDAD:" | cut -d':' -f2)
+          
+          # Guardar información en GITHUB_OUTPUT
+          echo "IMPORT_STATUS=$IMPORT_STATUS" >> $GITHUB_OUTPUT
+          echo "BACKUP_FILE=$BACKUP_FILE" >> $GITHUB_OUTPUT
+          echo "BACKUP_SEGURIDAD=$BACKUP_SEGURIDAD" >> $GITHUB_OUTPUT
+          
+          if [ "$IMPORT_STATUS" = "exitoso" ]; then
+            echo "Importación completada exitosamente"
+            echo "Archivo importado: $BACKUP_FILE"
+            echo "Backup de seguridad: $BACKUP_SEGURIDAD"
+          elif [ "$IMPORT_STATUS" = "restaurado" ]; then
+            echo "Se restauró el backup de seguridad después de un error en la importación"
+            echo "Backup restaurado: $BACKUP_FILE"
+          else
+            echo "Error durante la importación"
+            exit 1
+          fi
+
+      - name: Reiniciar servicio sunissup
+        if: success() && env.BMYSQL_IMPORT_TEST == 'true' && env.BMYSQL_RESTART_SERVICE == 'true'
+        id: restart_service
+        continue-on-error: true
+        run: |
+          echo '#!/bin/bash' > restart.sh
+          
+          echo 'echo "Deteniendo servicio sunissup..."' >> restart.sh
+          echo 'systemctl stop sunissup' >> restart.sh
+          echo 'sleep 5' >> restart.sh
+          
+          echo 'echo "Iniciando servicio sunissup..."' >> restart.sh
+          echo 'systemctl start sunissup' >> restart.sh
+          echo 'sleep 5' >> restart.sh
+          
+          echo '# Verificar estado del servicio' >> restart.sh
+          echo 'if systemctl is-active --quiet sunissup; then' >> restart.sh
+          echo '  echo "STATUS:exitoso"' >> restart.sh
+          echo 'else' >> restart.sh
+          echo '  echo "Error al iniciar el servicio:"' >> restart.sh
+          echo '  systemctl status sunissup --no-pager' >> restart.sh
+          echo '  echo "STATUS:fallido"' >> restart.sh
+          echo '  exit 1' >> restart.sh
+          echo 'fi' >> restart.sh
+          
+          chmod +x restart.sh
+          
+          # Ejecutar script en servidor remoto
+          OUTPUT=$(ssh -i ~/.ssh/remote/id_rsa $USER_NAME_TEST@$IP_ADDRESS_TEST "bash -s" < restart.sh)
+          
+          # Procesar la salida
+          RESTART_STATUS=$(echo "$OUTPUT" | grep "STATUS:" | cut -d':' -f2)
+          
+          # Guardar en GITHUB_OUTPUT
+          echo "RESTART_STATUS=$RESTART_STATUS" >> $GITHUB_OUTPUT
+
+      - name: Notificar resultado
+        if: always() && env.BMYSQL_NOTIFICAR_COMPLETO == 'true'
+        run: |
+          FECHA=$(date '+%Y-%m-%d %H:%M:%S %p')
+          
+          # Construir mensaje detallado
+          MENSAJE="=== REPORTE DE BACKUP ===\n"
+          MENSAJE+="Fecha: $FECHA\n\n"
+          
+          # Estado del backup local
+          if [[ "${{ steps.backup.outputs.BACKUP_STATUS }}" == "exitoso" ]]; then
+            MENSAJE+="Backup Completo Servidor Local - ($IP_ADDRESS_BD): Exitoso\n"
+          else
+            MENSAJE+="Backup Completo Servidor Local - ($IP_ADDRESS_BD): Fallido\n"
+          fi
+          
+          # Estado de la copia remota
+          if [[ "${{ steps.copia_remota.outcome }}" == "success" ]]; then
+            MENSAJE+="Copia al servidor TEST - ($IP_ADDRESS_TEST): Exitosa\n"
+            
+            if [[ "${{ env.BMYSQL_COPY_TO_PRO }}" == "true" ]]; then
+              if [[ "${{ steps.copia_pro.outputs.COPY_PRO_STATUS }}" == "exitoso" ]]; then
+                MENSAJE+="Copia al servidor PRO - ($IP_ADDRESS_PRO): Exitosa\n"
+              else
+                MENSAJE+="Copia al servidor PRO - ($IP_ADDRESS_PRO): Fallida (error de conexión/permisos)\n"
+              fi
+            else
+              MENSAJE+="Copia al servidor PRO - ($IP_ADDRESS_PRO): Omitida por configuración\n"
+            fi
+          else
+            MENSAJE+="Copia a servidor TEST: Fallida\n"
+          fi
+          
+          # Estado de la importación (solo si está habilitada)
+          if [[ "${{ env.BMYSQL_IMPORT_TEST }}" == "true" ]]; then
+            MENSAJE+="Importación en servidor TEST: "
+            
+            if [[ "${{ steps.importar.outputs.IMPORT_STATUS }}" == "exitoso" ]]; then
+              MENSAJE+="Exitosa\n"
+              # Verificar estado del backup de seguridad
+              if [[ -n "${{ steps.importar.outputs.BACKUP_SEGURIDAD }}" ]]; then
+                MENSAJE+="↳ Creado backup de la base de datos local: Exitoso\n"
+              else
+                MENSAJE+="↳ Creado backup de la base de datos local: Fallido\n"
+              fi
+              MENSAJE+="↳ Vaciada la base de datos local: Exitoso\n"
+              MENSAJE+="↳ Importada la base de datos TEST: Exitoso\n"
+              
+              # Agregar estado del reinicio del servicio
+              if [[ "${{ env.BMYSQL_RESTART_SERVICE }}" == "true" ]]; then
+                if [[ "${{ steps.restart_service.outputs.RESTART_STATUS }}" == "exitoso" ]]; then
+                  MENSAJE+="↳ Iniciado el servicio sunissup: Exitoso\n"
+                else
+                  MENSAJE+="↳ Iniciado el servicio sunissup: Fallido\n"
+                fi
+              fi
+            elif [[ "${{ steps.importar.outputs.IMPORT_STATUS }}" == "restaurado" ]]; then
+              MENSAJE+="Fallida\n"
+              MENSAJE+="↳ Creado backup de la base de datos local: Exitoso\n"
+              MENSAJE+="↳ Vaciada la base de datos local: Exitoso\n"
+              MENSAJE+="↳ Importada la base de datos TEST: Fallido (Restaurado backup de seguridad)\n"
+            else
+              MENSAJE+="Fallida\n"
+              if [[ -n "${{ steps.importar.outputs.BACKUP_SEGURIDAD }}" ]]; then
+                MENSAJE+="↳ Creado backup de la base de datos local: Exitoso\n"
+              else
+                MENSAJE+="↳ Creado backup de la base de datos local: Fallido\n"
+              fi
+              MENSAJE+="↳ Vaciada la base de datos local: Fallido\n"
+              MENSAJE+="↳ Importada la base de datos TEST: Fallido\n"
+            fi
+          else
+            MENSAJE+="Importación en servidor TEST: Omitida por configuración\n"
+          fi
+          
+          # Guardar mensaje en archivo en el servidor de producción
+          echo -e "$MENSAJE" | ssh $USER_NAME_BD@$IP_ADDRESS_BD "sudo sh -c 'cat > $BMYSQL_BACKUP_DIR_BD/mensaje_bd.txt'"
+          
+          # Comentado temporalmente el envío de notificación
+          # curl -X POST https://api.sunissup.com/webhook \
+          #   -H "Content-Type: application/json" \
+          #   -d "{
+          #     \"action\": \"MySQL Full Backup - TEST\",
+          #     \"service\": \"mysql\",
+          #     \"user\": \"$USER_NAME_BD\",
+          #     \"message\": \"$MENSAJE\"
+          #   }"
+
+# ====================================
+# DOCUMENTACIÓN DE VARIABLES
+# ====================================
+# Variables del Servidor de Producción (PRO)
+# ----------------------------------------
+# IP_ADDRESS_BD: Dirección IP del servidor de producción
+#   Default: None (Requerido)
+#
+# USER_NAME_BD: Usuario para la conexión SSH al servidor de producción
+#   Default: None (Requerido)
+#
+# SSH_PRIVATE_KEY_BD: Clave SSH para conectar al servidor de producción (secret)
+#   Default: None (Requerido)
+#
+# BMYSQL_ENV_FILE_BD: Ruta al archivo .env en el servidor de producción
+#   Default: /opt/sunissUp/.env
+#
+# BMYSQL_BACKUP_DIR_BD: Directorio donde se almacenarán los backups en producción
+#   Default: /mnt/backups/mysql
+#
+# BMYSQL_RETENTION_BD: Número de backups a mantener en producción
+#   Default: 7
+#
+# Variables del Servidor de Pruebas (TEST)
+# --------------------------------------
+# IP_ADDRESS_TEST: Dirección IP del servidor de pruebas
+#   Default: None (Requerido)
+#
+# USER_NAME_TEST: Usuario para la conexión SSH al servidor de pruebas
+#   Default: None (Requerido)
+#
+# SSH_PRIVATE_KEY_TEST: Clave SSH para conectar al servidor de pruebas (secret)
+#   Default: None (Requerido)
+#
+# BMYSQL_ENV_FILE_TEST: Ruta al archivo .env en el servidor de pruebas
+#   Default: /opt/sunissUp/.env
+#
+# BMYSQL_BACKUP_DIR_TEST: Directorio donde se almacenarán los backups en pruebas
+#   Default: /mnt/backups/mysql
+#
+# BMYSQL_RETENTION_TEST: Número de backups a mantener en pruebas
+#   Default: 7
+#
+# BMYSQL_IMPORT_TEST: Habilitar importación automática en servidor de pruebas
+#   Default: false
+#
+# Variables Generales
+# -----------------
+# BMYSQL_NOTIFICAR_COMPLETO: Enviar notificación del resultado
+#   Default: true
+#
+# BMYSQL_RESTART_SERVICE: Reiniciar servicio sunissup después de importar
+#   Default: true
+#
+# BMYSQL_LOG_DIR: Directorio donde se almacenarán los logs
+#   Default: /var/log/backups
+#
+# BMYSQL_COPY_TO_PRO: Habilitar copia al servidor PRO
+#   Default: false
+#
+# ====================================
+# NOTAS:
+# - Las variables pueden configurarse en GitHub (Settings > Secrets and variables > Actions)
+# - Los valores por defecto se usan si la variable no está definida
+# - Las variables marcadas como (Requerido) deben configurarse obligatoriamente
+# - Las variables de tipo "secret" deben configurarse en la sección Secrets
+# ====================================
+          
