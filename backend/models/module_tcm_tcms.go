@@ -14,3 +14,10 @@ type OutTCMS struct {
 	Info    WorkerRecord `json:"info"`
 	ListTcm []OutTCM     `json:"list_tcm"`
 }
+
+type OutListTCMS struct {
+	ID       int          `json:"id"`
+	User     Users        `json:"user"`
+	Info     WorkerRecord `json:"info"`
+	TotlaTcm int          `json:"total_tcm"`
+}
