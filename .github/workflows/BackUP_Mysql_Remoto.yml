@@ -100,6 +100,13 @@ jobs:
           # Crear el script línea por línea sin usar heredoc
           echo '#!/bin/bash' > script.sh
           
+          echo '# Verificar y crear directorios con permisos adecuados' >> script.sh
+          echo 'if [ ! -d "$BMYSQL_BACKUP_DIR_BD" ]; then' >> script.sh
+          echo '  sudo mkdir -p "$BMYSQL_BACKUP_DIR_BD"' >> script.sh
+          echo 'fi' >> script.sh
+          echo 'sudo chown -R $USER:$USER "$BMYSQL_BACKUP_DIR_BD"' >> script.sh
+          echo 'sudo chmod -R 755 "$BMYSQL_BACKUP_DIR_BD"' >> script.sh
+          
           echo '# Verificar variables' >> script.sh
           echo 'if [ -z "$BMYSQL_ENV_FILE" ]; then' >> script.sh
           echo '  echo "Error: BMYSQL_ENV_FILE no está definido"' >> script.sh
