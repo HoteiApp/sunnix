@@ -689,17 +689,17 @@ jobs:
           fi
           
           # Guardar mensaje en archivo en el servidor de producción
-          echo -e "$MENSAJE" | ssh $USER_NAME_BD@$IP_ADDRESS_BD "sudo sh -c 'cat > $BMYSQL_BACKUP_DIR_BD/mensaje_bd.txt'"
+          # echo -e "$MENSAJE" | ssh $USER_NAME_BD@$IP_ADDRESS_BD "sudo sh -c 'cat > $BMYSQL_BACKUP_DIR_BD/mensaje_bd.txt'"
           
           # Comentado temporalmente el envío de notificación
-          # curl -X POST https://api.sunissup.com/webhook \
-          #   -H "Content-Type: application/json" \
-          #   -d "{
-          #     \"action\": \"MySQL Full Backup - TEST\",
-          #     \"service\": \"mysql\",
-          #     \"user\": \"$USER_NAME_BD\",
-          #     \"message\": \"$MENSAJE\"
-          #   }"
+           curl -X POST https://api.sunissup.com/webhook \
+             -H "Content-Type: application/json" \
+             -d "{
+               \"action\": \"MySQL Full Backup - TEST\",
+               \"service\": \"mysql\",
+               \"user\": \"$USER_NAME_BD\",
+               \"message\": \"$MENSAJE\"
+             }"
 
 # ====================================
 # DOCUMENTACIÓN DE VARIABLES
