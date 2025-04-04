@@ -2183,199 +2183,199 @@ func ClientsNewClienteToXlsxPut(c *fiber.Ctx) error {
 	})
 }
 
-func ClientsListAllGet1(c *fiber.Ctx) error {
-	claims, _ := GetClaims(c)
-	var clients []models.OutClients
+// func ClientsListAllGet1(c *fiber.Ctx) error {
+// 	claims, _ := GetClaims(c)
+// 	var clients []models.OutClients
 
-	var userIDs []int64
+// 	var userIDs []int64
 
-	// Adicionar le usuario que esta logueado si es TCMS
-	if claims["Roll"].(string) == "TCMS" {
-		userIDs = append(userIDs, int64(claims["ID"].(float64)))
-	}
-	// Buscar todos los tcm que tiene como supervisor al usuario logueado
-	resultTCMS := core.ExtractFunctionsPlugins("ldap", "Search", "(&(supervisor="+claims["UID"].(string)+"))")
-	bytes, _ := json.Marshal(&resultTCMS)
-	var resultSearch ldap.SearchResult
-	_ = json.Unmarshal(bytes, &resultSearch)
+// 	// Adicionar le usuario que esta logueado si es TCMS
+// 	if claims["Roll"].(string) == "TCMS" {
+// 		userIDs = append(userIDs, int64(claims["ID"].(float64)))
+// 	}
+// 	// Buscar todos los tcm que tiene como supervisor al usuario logueado
+// 	resultTCMS := core.ExtractFunctionsPlugins("ldap", "Search", "(&(supervisor="+claims["UID"].(string)+"))")
+// 	bytes, _ := json.Marshal(&resultTCMS)
+// 	var resultSearch ldap.SearchResult
+// 	_ = json.Unmarshal(bytes, &resultSearch)
 
-	if len(resultSearch.Entries) > 0 {
-		for _, userLdap := range resultSearch.Entries {
-			id, _ := strconv.ParseInt(userLdap.GetAttributeValue("id"), 10, 64)
-			userIDs = append(userIDs, id)
-		}
-	}
+// 	if len(resultSearch.Entries) > 0 {
+// 		for _, userLdap := range resultSearch.Entries {
+// 			id, _ := strconv.ParseInt(userLdap.GetAttributeValue("id"), 10, 64)
+// 			userIDs = append(userIDs, id)
+// 		}
+// 	}
 
-	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
-		var caseManagement []models.ClientServiceCaseManagement
-		// With this query obtain only one scm from each tcm client
+// 	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
+// 		var caseManagement []models.ClientServiceCaseManagement
+// 		// With this query obtain only one scm from each tcm client
 
-		db.Select("DISTINCT client").Find(&caseManagement)
+// 		db.Select("DISTINCT client").Find(&caseManagement)
 
-		// rest, _ := core.Paginate(db.Select("DISTINCT client").Find(&caseManagement), &caseManagement, c)
+// 		// rest, _ := core.Paginate(db.Select("DISTINCT client").Find(&caseManagement), &caseManagement, c)
 
-		for _, val := range caseManagement {
-			var client models.Clients
-			db.Where("ID = ?", val.Client).Find(&client)
+// 		for _, val := range caseManagement {
+// 			var client models.Clients
+// 			db.Where("ID = ?", val.Client).Find(&client)
 
-			var cms []models.ClientServiceCaseManagement
-			db.Where("client = ?", client.ID).Find(&cms)
+// 			var cms []models.ClientServiceCaseManagement
+// 			db.Where("client = ?", client.ID).Find(&cms)
 
-			var scm []models.OutClientSCM
+// 			var scm []models.OutClientSCM
 
-			// Obtener el usuario de LDAP del TCM
-			tcm, err_tcm := core.GetUserFromLDAP(client.TcmActive)
-			if err_tcm != nil {
-				tcm.Nick = ""
-			}
-			// Avatar TCM
-			objectsUrl := core.ExtractFunctionsPlugins("s3", "ListeFilesInFolder", "records/"+tcm.Uid+"/")
-			tcmPhoto := ""
-			for _, doc := range objectsUrl.([]map[string]string) {
-				if strings.Contains(doc["Key"], "avatar") {
-					tcmPhoto = doc["URL"]
-				}
-			}
-			if claims["Roll"].(string) == "TCMS" {
-				for _, cm := range cms {
-					found := false
-					for _, id := range userIDs {
-						if id == int64(cm.TCM) {
-							found = true
-							break
-						}
-					}
-					if found {
-						scm = append(scm, models.OutClientSCM{
-							ID:          int(cm.ID),
-							Status:      cm.Status,
-							Doa:         cm.Doa,
-							ClosingDate: cm.ClosingDate,
-							Tcm:         cm.TCM,
-						})
+// 			// Obtener el usuario de LDAP del TCM
+// 			tcm, err_tcm := core.GetUserFromLDAP(client.TcmActive)
+// 			if err_tcm != nil {
+// 				tcm.Nick = ""
+// 			}
+// 			// Avatar TCM
+// 			objectsUrl := core.ExtractFunctionsPlugins("s3", "ListeFilesInFolder", "records/"+tcm.Uid+"/")
+// 			tcmPhoto := ""
+// 			for _, doc := range objectsUrl.([]map[string]string) {
+// 				if strings.Contains(doc["Key"], "avatar") {
+// 					tcmPhoto = doc["URL"]
+// 				}
+// 			}
+// 			if claims["Roll"].(string) == "TCMS" {
+// 				for _, cm := range cms {
+// 					found := false
+// 					for _, id := range userIDs {
+// 						if id == int64(cm.TCM) {
+// 							found = true
+// 							break
+// 						}
+// 					}
+// 					if found {
+// 						scm = append(scm, models.OutClientSCM{
+// 							ID:          int(cm.ID),
+// 							Status:      cm.Status,
+// 							Doa:         cm.Doa,
+// 							ClosingDate: cm.ClosingDate,
+// 							Tcm:         cm.TCM,
+// 						})
 
-					}
-				}
-				if len(scm) > 0 {
-					clients = append(clients, models.OutClients{
-						ID:              client.ID,
-						Mr:              client.Mr,
-						ReferrerID:      client.ReferrerID,
-						ReferringAgency: client.ReferringAgency,
-						ReferringPerson: client.ReferringPerson,
-						CellPhone:       client.CellPhone,
-						Fax:             client.Fax,
-						Email:           client.Email,
-						Date:            client.Date,
+// 					}
+// 				}
+// 				if len(scm) > 0 {
+// 					clients = append(clients, models.OutClients{
+// 						ID:              client.ID,
+// 						Mr:              client.Mr,
+// 						ReferrerID:      client.ReferrerID,
+// 						ReferringAgency: client.ReferringAgency,
+// 						ReferringPerson: client.ReferringPerson,
+// 						CellPhone:       client.CellPhone,
+// 						Fax:             client.Fax,
+// 						Email:           client.Email,
+// 						Date:            client.Date,
 
-						LastName:  client.LastName,
-						FirstName: client.FirstName,
-						SS:        client.SS,
-						DOB:       client.DOB,
-						Sexo:      client.Sexo,
-						Race:      client.Race,
+// 						LastName:  client.LastName,
+// 						FirstName: client.FirstName,
+// 						SS:        client.SS,
+// 						DOB:       client.DOB,
+// 						Sexo:      client.Sexo,
+// 						Race:      client.Race,
 
-						Address: client.Address,
-						State:   client.State,
-						ZipCode: client.ZipCode,
+// 						Address: client.Address,
+// 						State:   client.State,
+// 						ZipCode: client.ZipCode,
 
-						Phone:    client.Phone,
-						School:   client.School,
-						Lenguage: client.Lenguage,
+// 						Phone:    client.Phone,
+// 						School:   client.School,
+// 						Lenguage: client.Lenguage,
 
-						SingClient: client.SingClient,
+// 						SingClient: client.SingClient,
 
-						LegalGuardian:     client.LegalGuardian,
-						Relationship:      client.Relationship,
-						CellPhoneGuardian: client.CellPhoneGuardian,
-						SingGuardian:      client.SingGuardian,
+// 						LegalGuardian:     client.LegalGuardian,
+// 						Relationship:      client.Relationship,
+// 						CellPhoneGuardian: client.CellPhoneGuardian,
+// 						SingGuardian:      client.SingGuardian,
 
-						Medicaid:       client.Medicaid,
-						GoldCardNumber: client.GoldCardNumber,
-						Medicare:       client.Medicare,
-						TcmActive:      tcm.Nick,
-						TcmPhoto:       tcmPhoto,
-						Scm:            scm,
-					})
-				}
-			} else {
-				for _, cm := range cms {
-					scm = append(scm, models.OutClientSCM{
-						ID:          int(cm.ID),
-						Status:      cm.Status,
-						Doa:         cm.Doa,
-						ClosingDate: cm.ClosingDate,
-						Tcm:         cm.TCM,
-					})
-				}
+// 						Medicaid:       client.Medicaid,
+// 						GoldCardNumber: client.GoldCardNumber,
+// 						Medicare:       client.Medicare,
+// 						TcmActive:      tcm.Nick,
+// 						TcmPhoto:       tcmPhoto,
+// 						Scm:            scm,
+// 					})
+// 				}
+// 			} else {
+// 				for _, cm := range cms {
+// 					scm = append(scm, models.OutClientSCM{
+// 						ID:          int(cm.ID),
+// 						Status:      cm.Status,
+// 						Doa:         cm.Doa,
+// 						ClosingDate: cm.ClosingDate,
+// 						Tcm:         cm.TCM,
+// 					})
+// 				}
 
-				tcms, err_tcms := core.GetUserFromLDAP(tcm.Supervisor)
-				if err_tcms != nil {
-					tcms.Nick = ""
-				}
-				// Avatar TCMS
-				objectsUrl := core.ExtractFunctionsPlugins("s3", "ListeFilesInFolder", "records/"+tcms.Uid+"/")
-				tcmsPhoto := ""
-				for _, doc := range objectsUrl.([]map[string]string) {
-					if strings.Contains(doc["Key"], "avatar") {
-						tcmsPhoto = doc["URL"]
-					}
-				}
-				clients = append(clients, models.OutClients{
-					ID:              client.ID,
-					Mr:              client.Mr,
-					ReferrerID:      client.ReferrerID,
-					ReferringAgency: client.ReferringAgency,
-					ReferringPerson: client.ReferringPerson,
-					CellPhone:       client.CellPhone,
-					Fax:             client.Fax,
-					Email:           client.Email,
-					Date:            client.Date,
+// 				tcms, err_tcms := core.GetUserFromLDAP(tcm.Supervisor)
+// 				if err_tcms != nil {
+// 					tcms.Nick = ""
+// 				}
+// 				// Avatar TCMS
+// 				objectsUrl := core.ExtractFunctionsPlugins("s3", "ListeFilesInFolder", "records/"+tcms.Uid+"/")
+// 				tcmsPhoto := ""
+// 				for _, doc := range objectsUrl.([]map[string]string) {
+// 					if strings.Contains(doc["Key"], "avatar") {
+// 						tcmsPhoto = doc["URL"]
+// 					}
+// 				}
+// 				clients = append(clients, models.OutClients{
+// 					ID:              client.ID,
+// 					Mr:              client.Mr,
+// 					ReferrerID:      client.ReferrerID,
+// 					ReferringAgency: client.ReferringAgency,
+// 					ReferringPerson: client.ReferringPerson,
+// 					CellPhone:       client.CellPhone,
+// 					Fax:             client.Fax,
+// 					Email:           client.Email,
+// 					Date:            client.Date,
 
-					LastName:  client.LastName,
-					FirstName: client.FirstName,
-					SS:        client.SS,
-					DOB:       client.DOB,
-					Sexo:      client.Sexo,
-					Race:      client.Race,
+// 					LastName:  client.LastName,
+// 					FirstName: client.FirstName,
+// 					SS:        client.SS,
+// 					DOB:       client.DOB,
+// 					Sexo:      client.Sexo,
+// 					Race:      client.Race,
 
-					Address: client.Address,
-					State:   client.State,
-					ZipCode: client.ZipCode,
+// 					Address: client.Address,
+// 					State:   client.State,
+// 					ZipCode: client.ZipCode,
 
-					Phone:    client.Phone,
-					School:   client.School,
-					Lenguage: client.Lenguage,
+// 					Phone:    client.Phone,
+// 					School:   client.School,
+// 					Lenguage: client.Lenguage,
 
-					SingClient: client.SingClient,
+// 					SingClient: client.SingClient,
 
-					LegalGuardian:     client.LegalGuardian,
-					Relationship:      client.Relationship,
-					CellPhoneGuardian: client.CellPhoneGuardian,
-					SingGuardian:      client.SingGuardian,
+// 					LegalGuardian:     client.LegalGuardian,
+// 					Relationship:      client.Relationship,
+// 					CellPhoneGuardian: client.CellPhoneGuardian,
+// 					SingGuardian:      client.SingGuardian,
 
-					Medicaid:       client.Medicaid,
-					GoldCardNumber: client.GoldCardNumber,
-					Medicare:       client.Medicare,
-					TcmActive:      tcm.Nick,
-					TcmPhoto:       tcmPhoto,
+// 					Medicaid:       client.Medicaid,
+// 					GoldCardNumber: client.GoldCardNumber,
+// 					Medicare:       client.Medicare,
+// 					TcmActive:      tcm.Nick,
+// 					TcmPhoto:       tcmPhoto,
 
-					TcmsActive: tcms.Nick,
-					TcmsPhoto:  tcmsPhoto,
+// 					TcmsActive: tcms.Nick,
+// 					TcmsPhoto:  tcmsPhoto,
 
-					Scm: scm,
-				})
-			}
+// 					Scm: scm,
+// 				})
+// 			}
 
-		}
+// 		}
 
-		return clients
-	})
+// 		return clients
+// 	})
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"clients": result.([]models.OutClients),
-	})
-}
+// 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+// 		"clients": result.([]models.OutClients),
+// 	})
+// }
 
 // --------------------------
 // --------------------------
@@ -2385,7 +2385,7 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 	claims, _ := GetClaims(c)
 
 	// 1. Obtener todos los IDs de usuarios relevantes (TCMS y sus supervisados)
-	userIDs, err := getUserIDs(claims)
+	userIDs, err := core.GetUserIDs(claims)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error obteniendo usuarios"})
 	}
@@ -2396,27 +2396,6 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"clients": clients})
-}
-
-// Función auxiliar para obtener IDs de usuarios
-func getUserIDs(claims jwt.MapClaims) ([]int64, error) {
-	var userIDs []int64
-
-	if claims["Roll"].(string) == "TCMS" {
-		userIDs = append(userIDs, int64(claims["ID"].(float64)))
-	}
-
-	resultTCMS := core.ExtractFunctionsPlugins("ldap", "Search", "(&(supervisor="+claims["UID"].(string)+"))")
-	bytes, _ := json.Marshal(&resultTCMS)
-	var resultSearch ldap.SearchResult
-	_ = json.Unmarshal(bytes, &resultSearch)
-
-	for _, userLdap := range resultSearch.Entries {
-		id, _ := strconv.ParseInt(userLdap.GetAttributeValue("id"), 10, 64)
-		userIDs = append(userIDs, id)
-	}
-
-	return userIDs, nil
 }
 
 // batchGetUserFromLDAP obtiene múltiples usuarios de LDAP en una sola operación
@@ -2468,22 +2447,6 @@ func batchGetUserFromLDAP(uids []string) (map[string]models.Users, []string, err
 	return users, uids, nil
 }
 
-// batchGetAvatars obtiene múltiples avatares de S3 en una sola operación
-func batchGetAvatars(uids []string) (map[string]string, error) {
-	// Implementación que lista todos los avatares en una sola llamada a S3
-	avatars := make(map[string]string)
-	for _, uid := range uids {
-		objectsUrl := core.ExtractFunctionsPlugins("s3", "ListeFilesInFolder", "records/"+uid+"/")
-		for _, doc := range objectsUrl.([]map[string]string) {
-			if strings.Contains(doc["Key"], "avatar") {
-				avatars[uid] = doc["URL"]
-				break
-			}
-		}
-	}
-	return avatars, nil
-}
-
 // Función optimizada para obtener clientes paginados
 func getPaginatedClients(c *fiber.Ctx, claims jwt.MapClaims, userIDs []int64) ([]models.OutClients, error) {
 	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
@@ -2491,6 +2454,7 @@ func getPaginatedClients(c *fiber.Ctx, claims jwt.MapClaims, userIDs []int64) ([
 		var caseManagement []models.ClientServiceCaseManagement
 		db.Select("DISTINCT client").Find(&caseManagement)
 		// pagination, _ := core.Paginate(db.Select("DISTINCT client").Find(&caseManagement), &caseManagement, c)
+		// TODO: Esto no funciono porque como se ponen mas datos en la consulta, el paginado no funciona bien.
 		// 1. Obtener solo los clientes necesarios (paginados)
 		// paginator, err := core.Paginate(db.Select("DISTINCT client"), caseManagement, c)
 		// if err != nil {
@@ -2539,7 +2503,7 @@ func getPaginatedClients(c *fiber.Ctx, claims jwt.MapClaims, userIDs []int64) ([
 		tcmUIDs = append(tcmUIDs, uidsnew...)
 		// 7. Obtener avatares en lote
 		// Implementar batchGetAvatars(tcmUIDs) - versión optimizada
-		avatarUrls, err := batchGetAvatars(tcmUIDs)
+		avatarUrls, err := core.BatchGetAvatars(tcmUIDs)
 		if err != nil {
 			return err
 		}
@@ -2620,7 +2584,6 @@ func getPaginatedClients(c *fiber.Ctx, claims jwt.MapClaims, userIDs []int64) ([
 				GoldCardNumber: client.GoldCardNumber,
 				Medicare:       client.Medicare,
 
-				// ...
 				TcmActive: tcmInfo.Nick,
 				TcmPhoto:  tcmPhoto,
 				Scm:       filteredSCMs,

@@ -421,3 +421,38 @@ func CoreGetTCMS(c *fiber.Ctx) error {
 		"tcms": result.([]models.OutTCMS),
 	})
 }
+
+// Funtion mejorada para listar los TCMs supervisores porque la anterior no estaba optimizada
+func CoreGetListTCMS(c *fiber.Ctx) error {
+	result, err := database.WithDB(func(db *gorm.DB) interface{} {
+		var tcms []models.OutListTCMS
+		// Query the database for all users
+		listTcms := core.GetUsersFromLDAP("(&(roll=tcms)(active=True))")
+		for k, supervisor := range listTcms {
+			userInfo := core.GetWorkerRecord(supervisor.Uid)
+			userData := GetUserInfo(supervisor.Uid)
+			// --
+			tcm := core.GetUsersFromLDAP("(&(roll=tcm)(supervisor=" + supervisor.Uid + "))")
+
+			// -------
+			tcms = append(tcms, models.OutListTCMS{
+				ID:       k + 1,
+				User:     userData.User,
+				Info:     userInfo,
+				TotlaTcm: len(tcm),
+			})
+		}
+
+		return tcms
+	})
+	if err != nil {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"message": "Error",
+		})
+	}
+
+	// Return the list of users
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"tcms": result.([]models.OutListTCMS),
+	})
+}
