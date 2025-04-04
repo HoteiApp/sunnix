@@ -2,11 +2,13 @@ package core
 
 import (
 	"encoding/json"
+	"strconv"
 
 	"github.com/HoteiApp/sunnix/backend/database"
 	"github.com/HoteiApp/sunnix/backend/models"
 	"github.com/HoteiApp/sunnix/backend/system"
 	"github.com/go-ldap/ldap/v3"
+	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
 )
 
@@ -35,6 +37,27 @@ func CheckEmail(email string) bool {
 	}
 
 	return false
+}
+
+// Función auxiliar para obtener IDs de usuarios
+func GetUserIDs(claims jwt.MapClaims) ([]int64, error) {
+	var userIDs []int64
+
+	if claims["Roll"].(string) == "TCMS" {
+		userIDs = append(userIDs, int64(claims["ID"].(float64)))
+	}
+
+	resultTCMS := ExtractFunctionsPlugins("ldap", "Search", "(&(supervisor="+claims["UID"].(string)+"))")
+	bytes, _ := json.Marshal(&resultTCMS)
+	var resultSearch ldap.SearchResult
+	_ = json.Unmarshal(bytes, &resultSearch)
+
+	for _, userLdap := range resultSearch.Entries {
+		id, _ := strconv.ParseInt(userLdap.GetAttributeValue("id"), 10, 64)
+		userIDs = append(userIDs, id)
+	}
+
+	return userIDs, nil
 }
 
 // func GetUserFromLDAP(uid string) (*models.Users, error) {
