@@ -98,6 +98,7 @@ func ModuleTCMRoutes(app *fiber.App) error {
 	payments.Put("/add", controllers.ModuleTcmPaymentAdd).Name("ModuleTcmPaymentAdd")
 	// TCMS
 	tcms := tcm.Group("/tcms")
+	tcms.Get("/list", controllers.CoreGetListTCMS).Name("CoreGetListTCMS")
 	tcms.Get("/all", controllers.CoreGetTCMS).Name("CoreGetTCMS")
 	// PDF
 	pdf := tcm.Group("/pdf")
