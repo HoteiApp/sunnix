@@ -14,6 +14,7 @@ import (
 	"github.com/HoteiApp/sunnix/backend/models"
 	"github.com/go-ldap/ldap/v3"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jinzhu/copier"
 	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
@@ -2134,29 +2135,42 @@ func ClientsNewClienteToXlsxPut(c *fiber.Ctx) error {
 			continue // Saltar la fila de encabezado si lo deseas
 		}
 
+		uidTCM := ""
+		// TODO Crear un mapa con los datos que lleva una admision para poderlo guardar en la base de datos
 		// fmt.Printf("\nFila %d:\n", rowIdx+1)
 		for colIdx, colCell := range row {
+
 			// Mostrar solo columnas que tienen encabezado (para evitar índices fuera de rango)
 			if colIdx < len(headers) {
+
 				if colIdx == 5 {
 					if colCell == "ACTIVE" {
 						clientsActive++
+
 					} else if colCell == "CLOSED" {
 						clientsClosed++
 					} else {
 						clientsNoOpend++
 					}
 				}
+
+				// TCM
+				if colIdx == 6 {
+					uidTCM = colCell
+				}
+
 				if colIdx == 2 {
 					if regex.MatchString(colCell) {
 						// fmt.Printf("  %s contiene un número seguido de un '-' y otro número del 1 al 5\n", headers[colIdx])
-						fmt.Printf("  %s: %s\n", headers[colIdx], colCell)
+						// fmt.Printf("  %s: %s\n", headers[colIdx], colCell)
 					}
 				}
 			} // else {
 			// 	fmt.Printf("  Columna %d: %s\n", colIdx+1, colCell)
 			// }
 		}
+
+		fmt.Println(uidTCM)
 	}
 
 	fmt.Printf("\nTotal de filas procesadas: %d\n", len(rows)-1) // Restamos 1 por los encabezados
@@ -2169,7 +2183,7 @@ func ClientsNewClienteToXlsxPut(c *fiber.Ctx) error {
 	})
 }
 
-func ClientsListAllGet(c *fiber.Ctx) error {
+func ClientsListAllGet1(c *fiber.Ctx) error {
 	claims, _ := GetClaims(c)
 	var clients []models.OutClients
 
@@ -2195,7 +2209,11 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
 		var caseManagement []models.ClientServiceCaseManagement
 		// With this query obtain only one scm from each tcm client
+
 		db.Select("DISTINCT client").Find(&caseManagement)
+
+		// rest, _ := core.Paginate(db.Select("DISTINCT client").Find(&caseManagement), &caseManagement, c)
+
 		for _, val := range caseManagement {
 			var client models.Clients
 			db.Where("ID = ?", val.Client).Find(&client)
@@ -2239,7 +2257,6 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 					}
 				}
 				if len(scm) > 0 {
-
 					clients = append(clients, models.OutClients{
 						ID:              client.ID,
 						Mr:              client.Mr,
@@ -2342,9 +2359,11 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 					Medicare:       client.Medicare,
 					TcmActive:      tcm.Nick,
 					TcmPhoto:       tcmPhoto,
-					TcmsActive:     tcms.Nick,
-					TcmsPhoto:      tcmsPhoto,
-					Scm:            scm,
+
+					TcmsActive: tcms.Nick,
+					TcmsPhoto:  tcmsPhoto,
+
+					Scm: scm,
 				})
 			}
 
@@ -2357,6 +2376,273 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 		"clients": result.([]models.OutClients),
 	})
 }
+
+// --------------------------
+// --------------------------
+// --------------------------
+
+func ClientsListAllGet(c *fiber.Ctx) error {
+	claims, _ := GetClaims(c)
+
+	// 1. Obtener todos los IDs de usuarios relevantes (TCMS y sus supervisados)
+	userIDs, err := getUserIDs(claims)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error obteniendo usuarios"})
+	}
+	// 2. Obtener clientes paginados con sus datos relacionados en una sola consulta
+	clients, err := getPaginatedClients(c, claims, userIDs)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"clients": clients})
+}
+
+// Función auxiliar para obtener IDs de usuarios
+func getUserIDs(claims jwt.MapClaims) ([]int64, error) {
+	var userIDs []int64
+
+	if claims["Roll"].(string) == "TCMS" {
+		userIDs = append(userIDs, int64(claims["ID"].(float64)))
+	}
+
+	resultTCMS := core.ExtractFunctionsPlugins("ldap", "Search", "(&(supervisor="+claims["UID"].(string)+"))")
+	bytes, _ := json.Marshal(&resultTCMS)
+	var resultSearch ldap.SearchResult
+	_ = json.Unmarshal(bytes, &resultSearch)
+
+	for _, userLdap := range resultSearch.Entries {
+		id, _ := strconv.ParseInt(userLdap.GetAttributeValue("id"), 10, 64)
+		userIDs = append(userIDs, id)
+	}
+
+	return userIDs, nil
+}
+
+// batchGetUserFromLDAP obtiene múltiples usuarios de LDAP en una sola operación
+func batchGetUserFromLDAP(uids []string) (map[string]models.Users, []string, error) {
+	if len(uids) == 0 {
+		return nil, nil, nil
+	}
+	// Crear el filtro LDAP dinámico para los UIDs
+	filter := "(|"
+	for _, uid := range uids {
+		filter += "(uid=" + uid + ")"
+	}
+	filter += ")"
+	// Realizar la consulta LDAP
+	resultTCMS := core.ExtractFunctionsPlugins("ldap", "Search", filter)
+	bytes, _ := json.Marshal(&resultTCMS)
+	var resultSearch ldap.SearchResult
+	_ = json.Unmarshal(bytes, &resultSearch)
+	// Mapear los resultados a un mapa de usuarios
+	users := make(map[string]models.Users)
+	for _, entry := range resultSearch.Entries {
+		id, _ := strconv.ParseUint(entry.GetAttributeValue("id"), 10, 64)
+
+		resultSupervisor := core.ExtractFunctionsPlugins("ldap", "Search", "(&(uid="+entry.GetAttributeValue("supervisor")+"))")
+		bytess, _ := json.Marshal(&resultSupervisor)
+		var resultSearchSupervisor ldap.SearchResult
+		_ = json.Unmarshal(bytess, &resultSearchSupervisor)
+
+		tcms := ""
+		for _, entrySup := range resultSearchSupervisor.Entries {
+			tcms = entrySup.GetAttributeValue("cn") // Asignar el nombre del supervisor
+		}
+
+		user := models.Users{
+			ID:             uint(id), // Asegúrate de que el ID sea un string o ajusta el tipo según tu modelo
+			Uid:            entry.GetAttributeValue("uid"),
+			Nick:           entry.GetAttributeValue("cn"),
+			Email:          entry.GetAttributeValue("mail"),
+			Supervisor:     entry.GetAttributeValue("supervisor"),
+			SupervisorName: tcms, // Asignar el nombre del supervisor obtenido
+			// Agregar otros atributos según sea necesario
+		}
+		if !core.SliceContains(uids, entry.GetAttributeValue("supervisor")) {
+			uids = append(uids, entry.GetAttributeValue("supervisor"))
+		}
+		users[user.Uid] = user
+	}
+
+	return users, uids, nil
+}
+
+// batchGetAvatars obtiene múltiples avatares de S3 en una sola operación
+func batchGetAvatars(uids []string) (map[string]string, error) {
+	// Implementación que lista todos los avatares en una sola llamada a S3
+	avatars := make(map[string]string)
+	for _, uid := range uids {
+		objectsUrl := core.ExtractFunctionsPlugins("s3", "ListeFilesInFolder", "records/"+uid+"/")
+		for _, doc := range objectsUrl.([]map[string]string) {
+			if strings.Contains(doc["Key"], "avatar") {
+				avatars[uid] = doc["URL"]
+				break
+			}
+		}
+	}
+	return avatars, nil
+}
+
+// Función optimizada para obtener clientes paginados
+func getPaginatedClients(c *fiber.Ctx, claims jwt.MapClaims, userIDs []int64) ([]models.OutClients, error) {
+	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
+		var clients []models.OutClients
+		var caseManagement []models.ClientServiceCaseManagement
+		db.Select("DISTINCT client").Find(&caseManagement)
+		// pagination, _ := core.Paginate(db.Select("DISTINCT client").Find(&caseManagement), &caseManagement, c)
+		// 1. Obtener solo los clientes necesarios (paginados)
+		// paginator, err := core.Paginate(db.Select("DISTINCT client"), caseManagement, c)
+		// if err != nil {
+		// 	return map[string]interface{}{"error": err.Error()}
+		// }
+
+		// 2. Obtener todos los IDs de clientes de una vez
+		// items := pagination.Items.(*[]models.ClientServiceCaseManagement)
+
+		clientIDs := make([]int64, len(caseManagement))
+		for i, cm := range caseManagement {
+			clientIDs[i] = int64(cm.Client)
+		}
+
+		// 3. Precargar todos los clientes necesarios en una sola consulta
+		var dbClients []models.Clients
+		if err := db.Where("id IN (?)", clientIDs).Find(&dbClients).Error; err != nil {
+			return map[string]interface{}{"error": err.Error()}
+		}
+
+		// 4. Precargar todos los SCMs en una sola consulta
+		var allSCMs []models.ClientServiceCaseManagement
+		if err := db.Where("client IN (?)", clientIDs).Find(&allSCMs).Error; err != nil {
+			return map[string]interface{}{"error": err.Error()}
+		}
+
+		// 5. Organizar SCMs por cliente para acceso rápido
+		scmsByClient := make(map[int64][]models.ClientServiceCaseManagement)
+		for _, scm := range allSCMs {
+			scmsByClient[int64(scm.Client)] = append(scmsByClient[int64(scm.Client)], scm)
+		}
+
+		// 6. Obtener información de TCMs y en lotes
+		tcmUIDs := make([]string, 0)
+		for _, client := range dbClients {
+			if !core.SliceContains(tcmUIDs, client.TcmActive) {
+				tcmUIDs = append(tcmUIDs, client.TcmActive)
+			}
+		}
+
+		// Implementar batchGetUserFromLDAP(tcmUIDs) - versión optimizada que hace una sola llamada
+		tcmInfos, uidsnew, err := batchGetUserFromLDAP(tcmUIDs)
+		if err != nil {
+			return map[string]interface{}{"error": err.Error()}
+		}
+		tcmUIDs = append(tcmUIDs, uidsnew...)
+		// 7. Obtener avatares en lote
+		// Implementar batchGetAvatars(tcmUIDs) - versión optimizada
+		avatarUrls, err := batchGetAvatars(tcmUIDs)
+		if err != nil {
+			return err
+		}
+
+		// 8. Construir la respuesta
+		for _, client := range dbClients {
+			tcmInfo := tcmInfos[client.TcmActive]
+			tcmPhoto := avatarUrls[client.TcmActive]
+
+			var filteredSCMs []models.OutClientSCM
+			scms := scmsByClient[int64(client.ID)]
+
+			if claims["Roll"].(string) == "TCMS" {
+				for _, scm := range scms {
+					for _, id := range userIDs {
+						if id == int64(scm.TCM) {
+							filteredSCMs = append(filteredSCMs, models.OutClientSCM{
+								ID:          int(scm.ID),
+								Status:      scm.Status,
+								Doa:         scm.Doa,
+								ClosingDate: scm.ClosingDate,
+								Tcm:         scm.TCM,
+							})
+							break
+						}
+					}
+				}
+
+				if len(filteredSCMs) == 0 {
+					continue
+				}
+			} else {
+				for _, scm := range scms {
+					filteredSCMs = append(filteredSCMs, models.OutClientSCM{
+						ID:          int(scm.ID),
+						Status:      scm.Status,
+						Doa:         scm.Doa,
+						ClosingDate: scm.ClosingDate,
+						Tcm:         scm.TCM,
+					})
+				}
+			}
+
+			outClient := models.OutClients{
+				ID:              client.ID,
+				Mr:              client.Mr,
+				ReferrerID:      client.ReferrerID,
+				ReferringAgency: client.ReferringAgency,
+				ReferringPerson: client.ReferringPerson,
+				CellPhone:       client.CellPhone,
+				Fax:             client.Fax,
+				Email:           client.Email,
+				Date:            client.Date,
+
+				LastName:  client.LastName,
+				FirstName: client.FirstName,
+				SS:        client.SS,
+				DOB:       client.DOB,
+				Sexo:      client.Sexo,
+				Race:      client.Race,
+
+				Address: client.Address,
+				State:   client.State,
+				ZipCode: client.ZipCode,
+
+				Phone:    client.Phone,
+				School:   client.School,
+				Lenguage: client.Lenguage,
+
+				SingClient: client.SingClient,
+
+				LegalGuardian:     client.LegalGuardian,
+				Relationship:      client.Relationship,
+				CellPhoneGuardian: client.CellPhoneGuardian,
+				SingGuardian:      client.SingGuardian,
+
+				Medicaid:       client.Medicaid,
+				GoldCardNumber: client.GoldCardNumber,
+				Medicare:       client.Medicare,
+
+				// ...
+				TcmActive: tcmInfo.Nick,
+				TcmPhoto:  tcmPhoto,
+				Scm:       filteredSCMs,
+			}
+
+			if claims["Roll"].(string) != "TCMS" {
+				outClient.TcmsActive = tcmInfo.SupervisorName
+				outClient.TcmsPhoto = avatarUrls[tcmInfo.Supervisor]
+			}
+
+			clients = append(clients, outClient)
+		}
+
+		return clients
+	})
+
+	return result.([]models.OutClients), nil
+}
+
+// --------------------------
+// --------------------------
+// --------------------------
 
 func ClientGet(c *fiber.Ctx) error {
 	id := c.Params("id")

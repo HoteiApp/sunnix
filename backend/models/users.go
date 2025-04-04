@@ -29,6 +29,7 @@ type Users struct {
 	Record uint `json:"record"`
 	// If it is tcm, specify the supervisor id
 	Supervisor     string  `json:"supervisor"`
+	SupervisorName string  `json:"supervisor_name"`
 	FixedPay       bool    `json:"fixed_pay"`
 	PaymentByUnits float64 `json:"payment_by_units" gorm:"default:7.28"`
 	Rent           float64 `json:"rent" gorm:"default:0"`

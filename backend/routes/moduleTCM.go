@@ -52,7 +52,7 @@ func ModuleTCMRoutes(app *fiber.App) error {
 
 	clients.Get("/scm/:id", controllers.ClientSCMGet).Name("ClientsSCMGet")                              // ok
 	clients.Put("/add", controllers.ClientsNewClientePut).Name("ClientsNewClientePut")                   //ok
-	clients.Get("/addtoxlsx", controllers.ClientsNewClienteToXlsxPut).Name("ClientsNewClienteToXlsxPut") //ok
+	clients.Get("/addtoxlsx", controllers.ClientsNewClienteToXlsxPut).Name("ClientsNewClienteToXlsxPut") //TODO POR TERMINAR
 
 	service := clients.Group("service")
 	service.Get("/SCMactive/:id", controllers.ClientGetServiceSCMactive).Name("ClientGetServiceSCMactive") //ok
