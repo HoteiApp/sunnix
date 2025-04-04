@@ -268,15 +268,16 @@ jobs:
           echo "Retención de backups: \$RETENTION_COUNT días"
           
           # Crear directorio si no existe
-          mkdir -p "\$BACKUP_DIR"
-          chmod 755 "\$BACKUP_DIR"
+          sudo mkdir -p "\$BACKUP_DIR"
+          sudo chown $USER_NAME_TEST:$USER_NAME_TEST "\$BACKUP_DIR"
+          sudo chmod 755 "\$BACKUP_DIR"
           
           # Limpiar backups antiguos (buscando archivos .gpg)
           if [ -d "\$BACKUP_DIR" ]; then
             TOTAL_FILES=\$(ls -1 "\$BACKUP_DIR"/*.gpg 2>/dev/null | wc -l)
             if [ \$TOTAL_FILES -gt \$RETENTION_COUNT ]; then
               echo "Limpiando backups antiguos..."
-              ls -t "\$BACKUP_DIR"/*.gpg | tail -n +\$((\$RETENTION_COUNT + 1)) | xargs rm -f
+              ls -t "\$BACKUP_DIR"/*.gpg | tail -n +\$((\$RETENTION_COUNT + 1)) | xargs sudo rm -f
               echo "Se eliminaron \$((\$TOTAL_FILES - \$RETENTION_COUNT)) backups antiguos"
             else
               echo "No hay backups antiguos para eliminar"
@@ -340,6 +341,9 @@ jobs:
           
           # Obtener solo el nombre del archivo (ya incluye .gpg)
           BACKUP_FILENAME=$(basename "$BACKUP_FILE")
+          
+          # Asegurar que el directorio destino existe y tiene los permisos correctos
+          ssh -i ~/.ssh/remote/id_rsa $USER_NAME_TEST@$IP_ADDRESS_TEST "sudo mkdir -p '$BMYSQL_BACKUP_DIR_TEST' && sudo chown $USER_NAME_TEST:$USER_NAME_TEST '$BMYSQL_BACKUP_DIR_TEST' && sudo chmod 755 '$BMYSQL_BACKUP_DIR_TEST'"
           
           # Copiar desde el runner al servidor de testing
           echo "Copiando archivo cifrado al servidor TEST..."
@@ -431,6 +435,11 @@ jobs:
           echo 'BACKUP_DIR="$BMYSQL_BACKUP_DIR_TEST"' >> import.sh
           echo 'BACKUP_FILE="$BACKUP_DIR/$REMOTE_FILE"' >> import.sh
           echo 'TIMESTAMP=$(date +"%Y%m%d-%I%M%S%p")' >> import.sh
+          
+          echo '# Asegurar que el directorio existe y tiene los permisos correctos' >> import.sh
+          echo 'sudo mkdir -p "$BACKUP_DIR"' >> import.sh
+          echo 'sudo chown $USER:$USER "$BACKUP_DIR"' >> import.sh
+          echo 'sudo chmod 755 "$BACKUP_DIR"' >> import.sh
           
           echo '# Verificar archivo de backup' >> import.sh
           echo 'if [ ! -f "$BACKUP_FILE" ]; then' >> import.sh
