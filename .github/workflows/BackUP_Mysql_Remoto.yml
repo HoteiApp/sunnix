@@ -361,12 +361,18 @@ jobs:
           echo 'DB_NAME=$(grep "^sunissUp.db.mysql.DB=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> get_backup.sh
           
           echo '# Encontrar el backup más reciente (ahora buscando .gpg)' >> get_backup.sh
-          echo 'LATEST_BACKUP=$(sudo ls -t "$BACKUP_DIR"/${DB_NAME}_*.gpg | head -1)' >> get_backup.sh
-          echo 'if [ -f "$LATEST_BACKUP" ]; then' >> get_backup.sh
-          echo '  echo "FILE:$LATEST_BACKUP"' >> get_backup.sh
-          echo '  echo "NAME:$DB_NAME"' >> get_backup.sh
+          echo 'if [ -d "$BACKUP_DIR" ]; then' >> get_backup.sh
+          echo '  # Usar find con sudo para buscar archivos' >> get_backup.sh
+          echo '  LATEST_BACKUP=$(sudo find "$BACKUP_DIR" -maxdepth 1 -name "${DB_NAME}_*.gpg" -type f -printf "%T@ %p\n" 2>/dev/null | sort -nr | head -1 | cut -d" " -f2-)' >> get_backup.sh
+          echo '  if [ -n "$LATEST_BACKUP" ] && [ -f "$LATEST_BACKUP" ]; then' >> get_backup.sh
+          echo '    echo "FILE:$LATEST_BACKUP"' >> get_backup.sh
+          echo '    echo "NAME:$DB_NAME"' >> get_backup.sh
+          echo '  else' >> get_backup.sh
+          echo '    echo "ERROR:No se encontraron archivos de backup en $BACKUP_DIR"' >> get_backup.sh
+          echo '    exit 1' >> get_backup.sh
+          echo '  fi' >> get_backup.sh
           echo 'else' >> get_backup.sh
-          echo '  echo "ERROR:No se encontró archivo de backup"' >> get_backup.sh
+          echo '  echo "ERROR:El directorio $BACKUP_DIR no existe"' >> get_backup.sh
           echo '  exit 1' >> get_backup.sh
           echo 'fi' >> get_backup.sh
           
