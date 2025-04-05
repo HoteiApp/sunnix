@@ -389,6 +389,7 @@ jobs:
           # Copiar el archivo cifrado al runner temporalmente
           echo "Copiando archivo cifrado al runner..."
           # El archivo ya tiene la extensión .gpg desde el servidor de origen
+          ssh $USER_NAME_BD@$IP_ADDRESS_BD "sudo chmod 644 \"$BACKUP_FILE\""
           scp $USER_NAME_BD@$IP_ADDRESS_BD:"$BACKUP_FILE" .
           
           # Obtener solo el nombre del archivo (ya incluye .gpg)
@@ -396,7 +397,8 @@ jobs:
           
           # Copiar desde el runner al servidor de testing
           echo "Copiando archivo cifrado al servidor TEST..."
-          scp -i ~/.ssh/remote/id_rsa "$BACKUP_FILENAME" $USER_NAME_TEST@$IP_ADDRESS_TEST:"$BMYSQL_BACKUP_DIR_TEST/"
+          scp -i ~/.ssh/remote/id_rsa "$BACKUP_FILENAME" $USER_NAME_TEST@$IP_ADDRESS_TEST:/tmp/
+          ssh -i ~/.ssh/remote/id_rsa $USER_NAME_TEST@$IP_ADDRESS_TEST "sudo mv /tmp/$BACKUP_FILENAME '$BMYSQL_BACKUP_DIR_TEST/' && sudo chown $USER_NAME_TEST:$USER_NAME_TEST '$BMYSQL_BACKUP_DIR_TEST/$BACKUP_FILENAME' && sudo chmod 644 '$BMYSQL_BACKUP_DIR_TEST/$BACKUP_FILENAME'"
           TEST_STATUS=$?
           
           # Verificar estado de la copia
