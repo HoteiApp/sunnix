@@ -321,8 +321,8 @@ jobs:
           echo "Retención de backups: \$RETENTION_COUNT días"
           
           # Crear directorio si no existe
-          mkdir -p "\$BACKUP_DIR"
-          chmod 755 "\$BACKUP_DIR"
+          sudo mkdir -p "\$BACKUP_DIR"
+          sudo chmod 755 "\$BACKUP_DIR"
           
           # Limpiar backups antiguos (buscando archivos .gpg)
           if [ -d "\$BACKUP_DIR" ]; then
