@@ -354,33 +354,66 @@ jobs:
         run: |
           # Crear script para obtener el último backup
           echo '#!/bin/bash' > get_backup.sh
+          echo 'set -x' >> get_backup.sh  # Activar modo debug
           echo 'BACKUP_DIR="${BMYSQL_BACKUP_DIR_BD}"' >> get_backup.sh
           echo 'ENV_FILE="${BMYSQL_ENV_FILE}"' >> get_backup.sh
           
-          echo '# Obtener nombre de la base de datos' >> get_backup.sh
-          echo 'DB_NAME=$(grep "^sunissUp.db.mysql.DB=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> get_backup.sh
+          echo 'echo "Debug: Verificando variables..."' >> get_backup.sh
+          echo 'echo "BACKUP_DIR=$BACKUP_DIR"' >> get_backup.sh
+          echo 'echo "ENV_FILE=$ENV_FILE"' >> get_backup.sh
           
-          echo '# Encontrar el backup más reciente (ahora buscando .gpg)' >> get_backup.sh
-          echo 'if [ -d "$BACKUP_DIR" ]; then' >> get_backup.sh
-          echo '  # Usar find con sudo para buscar archivos' >> get_backup.sh
-          echo '  LATEST_BACKUP=$(sudo find "$BACKUP_DIR" -maxdepth 1 -name "${DB_NAME}_*.gpg" -type f -printf "%T@ %p\n" 2>/dev/null | sort -nr | head -1 | cut -d" " -f2-)' >> get_backup.sh
-          echo '  if [ -n "$LATEST_BACKUP" ] && [ -f "$LATEST_BACKUP" ]; then' >> get_backup.sh
+          echo '# Verificar si el directorio existe' >> get_backup.sh
+          echo 'if sudo test -d "$BACKUP_DIR"; then' >> get_backup.sh
+          echo '  echo "Debug: Directorio $BACKUP_DIR existe"' >> get_backup.sh
+          echo '  echo "Debug: Listando contenido del directorio:"' >> get_backup.sh
+          echo '  sudo ls -la "$BACKUP_DIR"' >> get_backup.sh
+          echo 'else' >> get_backup.sh
+          echo '  echo "Debug: El directorio $BACKUP_DIR NO existe"' >> get_backup.sh
+          echo '  exit 1' >> get_backup.sh
+          echo 'fi' >> get_backup.sh
+          
+          echo '# Obtener nombre de la base de datos' >> get_backup.sh
+          echo 'if [ ! -f "$ENV_FILE" ]; then' >> get_backup.sh
+          echo '  echo "Debug: Archivo ENV $ENV_FILE no existe"' >> get_backup.sh
+          echo '  exit 1' >> get_backup.sh
+          echo 'fi' >> get_backup.sh
+          
+          echo 'DB_NAME=$(grep "^sunissUp.db.mysql.DB=" "$ENV_FILE" | cut -d "=" -f2 | sed "s/\"//g")' >> get_backup.sh
+          echo 'echo "Debug: DB_NAME=$DB_NAME"' >> get_backup.sh
+          
+          echo '# Encontrar el backup más reciente' >> get_backup.sh
+          echo 'echo "Debug: Buscando archivos de backup..."' >> get_backup.sh
+          echo 'PATTERN="${DB_NAME}_*.gpg"' >> get_backup.sh
+          echo 'echo "Debug: Patrón de búsqueda: $PATTERN"' >> get_backup.sh
+          
+          echo 'cd "$BACKUP_DIR" || exit 1' >> get_backup.sh
+          echo 'LATEST_BACKUP=$(sudo find . -maxdepth 1 -name "$PATTERN" -type f -printf "%T@ %p\n" 2>/dev/null | sort -nr | head -1 | cut -d" " -f2-)' >> get_backup.sh
+          echo 'if [ -n "$LATEST_BACKUP" ]; then' >> get_backup.sh
+          echo '  LATEST_BACKUP="$BACKUP_DIR/$(basename "$LATEST_BACKUP")"' >> get_backup.sh
+          echo '  if sudo test -f "$LATEST_BACKUP"; then' >> get_backup.sh
+          echo '    echo "Debug: Archivo encontrado: $LATEST_BACKUP"' >> get_backup.sh
           echo '    echo "FILE:$LATEST_BACKUP"' >> get_backup.sh
           echo '    echo "NAME:$DB_NAME"' >> get_backup.sh
+          echo '    # Asegurar que el archivo es legible' >> get_backup.sh
+          echo '    sudo chmod 644 "$LATEST_BACKUP"' >> get_backup.sh
           echo '  else' >> get_backup.sh
-          echo '    echo "ERROR:No se encontraron archivos de backup en $BACKUP_DIR"' >> get_backup.sh
+          echo '    echo "Debug: El archivo encontrado no existe: $LATEST_BACKUP"' >> get_backup.sh
           echo '    exit 1' >> get_backup.sh
           echo '  fi' >> get_backup.sh
           echo 'else' >> get_backup.sh
-          echo '  echo "ERROR:El directorio $BACKUP_DIR no existe"' >> get_backup.sh
+          echo '  echo "Debug: No se encontraron archivos que coincidan con el patrón $PATTERN"' >> get_backup.sh
           echo '  exit 1' >> get_backup.sh
           echo 'fi' >> get_backup.sh
           
           chmod +x get_backup.sh
           
+          echo "Debug: Ejecutando script en servidor de producción..."
           # Ejecutar script en servidor de producción
-          OUTPUT=$(ssh $USER_NAME_BD@$IP_ADDRESS_BD \
+          OUTPUT=$(ssh -v $USER_NAME_BD@$IP_ADDRESS_BD \
             "BMYSQL_ENV_FILE='$BMYSQL_ENV_FILE_BD' BMYSQL_BACKUP_DIR_BD='$BMYSQL_BACKUP_DIR_BD' /bin/bash -s" < get_backup.sh)
+          
+          echo "Debug: Salida del script:"
+          echo "$OUTPUT"
           
           # Procesar la salida
           if echo "$OUTPUT" | grep -q "ERROR:"; then
@@ -392,20 +425,29 @@ jobs:
           BACKUP_FILE=$(echo "$OUTPUT" | grep "FILE:" | cut -d':' -f2-)
           DB_NAME=$(echo "$OUTPUT" | grep "NAME:" | cut -d':' -f2-)
           
+          echo "Debug: BACKUP_FILE=$BACKUP_FILE"
+          echo "Debug: DB_NAME=$DB_NAME"
+          
+          if [ -z "$BACKUP_FILE" ] || [ -z "$DB_NAME" ]; then
+            echo "Error: No se pudo obtener la información del backup"
+            exit 1
+          fi
+          
           # Copiar el archivo cifrado al runner temporalmente
-          echo "Copiando archivo cifrado al runner..."
-          # El archivo ya tiene la extensión .gpg desde el servidor de origen
-          ssh $USER_NAME_BD@$IP_ADDRESS_BD "sudo chmod 644 \"$BACKUP_FILE\""
-          scp $USER_NAME_BD@$IP_ADDRESS_BD:"$BACKUP_FILE" .
+          echo "Debug: Copiando archivo cifrado al runner..."
+          scp -v $USER_NAME_BD@$IP_ADDRESS_BD:"$BACKUP_FILE" .
           
           # Obtener solo el nombre del archivo (ya incluye .gpg)
           BACKUP_FILENAME=$(basename "$BACKUP_FILE")
+          echo "Debug: BACKUP_FILENAME=$BACKUP_FILENAME"
           
           # Copiar desde el runner al servidor de testing
-          echo "Copiando archivo cifrado al servidor TEST..."
-          scp -i ~/.ssh/remote/id_rsa "$BACKUP_FILENAME" $USER_NAME_TEST@$IP_ADDRESS_TEST:/tmp/
+          echo "Debug: Copiando archivo cifrado al servidor TEST..."
+          scp -v -i ~/.ssh/remote/id_rsa "$BACKUP_FILENAME" $USER_NAME_TEST@$IP_ADDRESS_TEST:/tmp/
           ssh -i ~/.ssh/remote/id_rsa $USER_NAME_TEST@$IP_ADDRESS_TEST "sudo mv /tmp/$BACKUP_FILENAME '$BMYSQL_BACKUP_DIR_TEST/' && sudo chown $USER_NAME_TEST:$USER_NAME_TEST '$BMYSQL_BACKUP_DIR_TEST/$BACKUP_FILENAME' && sudo chmod 644 '$BMYSQL_BACKUP_DIR_TEST/$BACKUP_FILENAME'"
           TEST_STATUS=$?
+          
+          echo "Debug: TEST_STATUS=$TEST_STATUS"
           
           # Verificar estado de la copia
           if [ $TEST_STATUS -eq 0 ]; then
