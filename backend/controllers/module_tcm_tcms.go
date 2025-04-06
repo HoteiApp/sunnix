@@ -435,8 +435,15 @@ func CoreGetListTCMS(c *fiber.Ctx) error {
 			tcm := core.GetUsersFromLDAP("(&(roll=tcm)(supervisor=" + supervisor.Uid + "))")
 
 			// -------
+			tcmsUIDs := []string{supervisor.Uid} // Initialize the list with the supervisor's UID
+			avatarUrls, err := core.BatchGetAvatars(tcmsUIDs)
+			if err != nil {
+				return err
+			}
+			// -------
 			tcms = append(tcms, models.OutListTCMS{
 				ID:       k + 1,
+				Photo:    avatarUrls[supervisor.Uid],
 				User:     userData.User,
 				Info:     userInfo,
 				TotlaTcm: len(tcm),
