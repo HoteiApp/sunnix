@@ -17,6 +17,7 @@ type OutTCMS struct {
 
 type OutListTCMS struct {
 	ID       int          `json:"id"`
+	Photo    string       `json:"photo"`
 	User     Users        `json:"user"`
 	Info     WorkerRecord `json:"info"`
 	TotlaTcm int          `json:"total_tcm"`
