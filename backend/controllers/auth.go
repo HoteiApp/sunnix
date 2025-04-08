@@ -139,6 +139,25 @@ func GetUserInfo(uid string) models.ActiveUser {
 				)
 			}
 
+			if record.FullName != "" && record.FullName != userLdap.GetAttributeValue("cn") {
+				fullname := strings.Split(record.FullName, " ")
+				givenName := ""
+				sn := ""
+
+				if len(fullname) > 1 {
+					givenName = fullname[0]
+					sn = strings.Join(fullname[1:], " ")
+				} else {
+					givenName = fullname[0]
+					sn = fullname[1]
+				}
+				core.ExtractFunctionsPlugins("ldap", "ModifyAccount", uid,
+					"givenName-->"+givenName,
+					"sn-->"+sn,
+					"cn-->"+givenName+" "+sn,
+				)
+			}
+
 			var education models.Educations
 			db.Where("worker_record_id = ?", record.ID).First(&education)
 			record.Education = education
