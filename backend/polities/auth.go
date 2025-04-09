@@ -2,6 +2,7 @@ package polities
 
 import (
 	"github.com/HoteiApp/sunnix/backend/controllers"
+	"github.com/HoteiApp/sunnix/backend/core"
 	"github.com/HoteiApp/sunnix/backend/system"
 	"github.com/gofiber/fiber/v2"
 )
@@ -12,6 +13,31 @@ func LoggedIn(c *fiber.Ctx) error {
 	if cookie == "" {
 		return c.SendStatus(fiber.StatusForbidden)
 	}
+	return c.Next()
+}
+
+// Captcha --> Check if the valid tocken
+func Captcha(c *fiber.Ctx) error {
+	var data map[string]string
+	if err := c.BodyParser(&data); err != nil {
+		return err
+	}
+	token := data["token"]
+	if token == "" {
+		return c.JSON(fiber.Map{
+			"OK":      false,
+			"message": "You have not sent the CloudFlare token",
+		})
+	}
+
+	if ok, _ := core.VerifyTurnstileToken(token, c.IP()); !ok {
+		c.Status(fiber.StatusConflict)
+		return c.JSON(fiber.Map{
+			"OK":      false,
+			"message": "Incorrect verification with Cloudflare",
+		})
+	}
+
 	return c.Next()
 }
 
