@@ -42,6 +42,8 @@ var (
 	postgresSslmode    = configEnv("sunissUp.db.postgres.SSLmode")
 	postgresPassword   = string(posgresPassB64)
 	PosgresCredentials = "host=" + postgresHost + " port=" + postgresPort + " user=" + postgresUser + " dbname=" + postgresDbname + " password=" + postgresPassword + " sslmode=" + postgresSslmode
+	// -- CAPTCHA CLOUD FLARE
+	TurnstileSecret = configEnv("sunissUp.cf.secrectKey")
 	// -- CHANEL
 	Log    = make(chan interface{})
 	Notify = make(chan interface{})
