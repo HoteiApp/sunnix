@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/base64"
+	"sort"
 	"strconv"
 
 	"github.com/HoteiApp/sunnix/backend/core"
@@ -24,6 +25,12 @@ func CoreGetTCMS(c *fiber.Ctx) error {
 		// Query the database for all users
 
 		listTcms := core.GetUsersFromLDAP("(&(roll=tcms)(active=True))")
+		// Ordenar por el campo Business
+		sort.Slice(listTcms, func(i, j int) bool {
+			numI, _ := strconv.Atoi(listTcms[i].Business)
+			numJ, _ := strconv.Atoi(listTcms[j].Business)
+			return numI < numJ
+		})
 		for k, supervisor := range listTcms {
 			userInfo := core.GetWorkerRecord(supervisor.Uid)
 			userData := GetUserInfo(supervisor.Uid)
@@ -428,6 +435,13 @@ func CoreGetListTCMS(c *fiber.Ctx) error {
 		var tcms []models.OutListTCMS
 		// Query the database for all users
 		listTcms := core.GetUsersFromLDAP("(&(roll=tcms)(active=True))")
+		// Ordenar por el campo Business
+		sort.Slice(listTcms, func(i, j int) bool {
+			numI, _ := strconv.Atoi(listTcms[i].Business)
+			numJ, _ := strconv.Atoi(listTcms[j].Business)
+			return numI < numJ
+		})
+
 		for k, supervisor := range listTcms {
 			userInfo := core.GetWorkerRecord(supervisor.Uid)
 			userData := GetUserInfo(supervisor.Uid)

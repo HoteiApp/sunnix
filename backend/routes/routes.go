@@ -68,7 +68,7 @@ func Routes(app *fiber.App) {
 	api.Post("/register", controllers.Register).Name("Register")
 	api.Post("/speech", controllers.HandleTextToSpeech).Name("Speech")
 
-	api.Post("/login", controllers.AuthLogin).Name("AuthLogin")
+	api.Post("/login", polities.Captcha, controllers.AuthLogin).Name("AuthLogin")
 	api.Post("/logout", controllers.AuthLogout).Name("AuthLogout")
 	// -- Is logged in
 	api.Use(polities.LoggedIn)
