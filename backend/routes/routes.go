@@ -6,6 +6,7 @@ import (
 	"github.com/HoteiApp/sunnix/backend/controllers"
 	"github.com/HoteiApp/sunnix/backend/models"
 	"github.com/HoteiApp/sunnix/backend/polities"
+	"github.com/HoteiApp/sunnix/backend/system"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/monitor"
 )
@@ -13,8 +14,10 @@ import (
 func Routes(app *fiber.App) {
 	app.Get("/metrics", monitor.New(
 		monitor.Config{
-			Title:   "Zentinelle API Metrics",
-			APIOnly: true,
+			Title:      "Metrics-Sunnix-" + system.Version,
+			APIOnly:    false, // Set to false to enable the full metrics dashboard with charts
+			CustomHead: `<!-- Custom HTML Head Content -->`,
+			ChartJsURL: "https://cdn.jsdelivr.net/npm/chart.js@2.9/dist/Chart.bundle.min.js",
 		}))
 	app.Post("/githubwebhook", func(c *fiber.Ctx) error {
 		// Parsear el cuerpo de la solicitud
