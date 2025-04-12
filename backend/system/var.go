@@ -52,6 +52,9 @@ var (
 	SecretKey   = configEnv("sunissUp.SecretKey")
 	Language    = configEnv("sunissUp.Language")
 	Location    = configEnv("sunissUp.Location")
+	// -- Import Clients
+	ImportClients     = configEnv("sunissUp.import.active")
+	ImportClientsFile = configEnv("sunissUp.import.file")
 
 	// -- AI
 	AiApiKey = configEnv("sunissUp.ia.apiKey")

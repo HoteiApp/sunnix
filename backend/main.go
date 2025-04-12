@@ -62,6 +62,10 @@ func init() {
 }
 
 func main() {
+	// Import Clients
+	if system.ImportClients == "yes" {
+		core.XlsxImportClients()
+	}
 	// Create a new Fiber application for the first server
 	app := fiber.New(fiber.Config{
 		AppName:           "API-Zentinelle v1.0.0",
