@@ -2398,6 +2398,18 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"clients": clients})
 }
 
+func ClientsDatabase(c *fiber.Ctx) error {
+	// claims, _ := GetClaims(c)
+
+	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
+		var clients []models.Clients
+		db.Find(&clients)
+		return clients
+	})
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"clients": result.([]models.Clients)})
+}
+
 // batchGetUserFromLDAP obtiene múltiples usuarios de LDAP en una sola operación
 func batchGetUserFromLDAP(uids []string) (map[string]models.Users, []string, error) {
 	if len(uids) == 0 {
