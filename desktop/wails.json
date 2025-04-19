@@ -1,0 +1,12 @@
+{
+  "name": "sunnix",
+  "outputfilename": "sunnix",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "Edgar Javier",
+    "email": "akosej9208@gmail.com"
+  }
+}

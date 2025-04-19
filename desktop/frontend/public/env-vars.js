@@ -1,0 +1,2 @@
+window.REACT_APP_SERVER_URL = "http://127.0.0.1:8000/api";
+window.REACT_APP_ACCESS_TOKEN = "AGA 559d993db43b396a45389adc2a5cf7fa";

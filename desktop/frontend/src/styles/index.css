@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: 226.67deg 44.26% 23.93%;
+    --color-primary-hover: 226.67deg 60.38% 29.64%;
+    --color-secondary: 75.39deg 69.72% 42.75%;
+    --color-secondary-hover: 75.39deg 69.72% 42.75%;
+  }
+}
+
+html,
+body {
+  height: 100%;
+}
+
+.root-container {
+  height: 100%;
+}
+
+body::-webkit-scrollbar,
+textarea::-webkit-scrollbar {
+  display: none;
+}
+
+::-webkit-scrollbar {
+  height: 6px;
+  width: 3px;
+
+  @include tablet {
+    width: 6px;
+  }
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+  visibility: hidden;
+}
+
+.bg-lineas-diagonales {
+  background: repeating-linear-gradient(45deg, transparent, transparent, #ffffff 1px, #cccccc 2px);
+}
+
+
+*:hover::-webkit-scrollbar-thumb {
+  visibility: visible;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: #999999;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b3b3b3;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.field {
+  @apply mb-2.5;
+}
+
+.border-0 {
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.hidden-border:focus {
+  border: 0 !important;
+  outline: none;
+  box-shadow: none;
+}
+.sticky {
+  transition: background-color 0.5s;
+  box-shadow: inset 0 -30px 30px -30px rgba(0, 0, 0, 0.5);
+}
+
+.layer1 {
+  position: absolute;
+  top: 0;
+  left: 30%;
+  width: 70%;
+  height: 100%;
+  z-index: -1;
+}
+
+.layer2 {
+  position: absolute;
+  top: 0;
+  left: 40%;
+  width: 60%;
+  height: 100%;
+ 
+  z-index: -1;
+}
+
+/* ---- */
+.lines-Units {
+  background: repeating-linear-gradient(
+    to bottom,
+    #e5e7eb 0px,
+    #e5e7eb 1px,
+    transparent 1px,
+    transparent 19px
+  );
+}
+
+
+
+.day-calendar {
+  position: relative;
+  width: 200px;
+  border: 1px solid #ccc;
+}
+
+.calendar-grid {
+  position: relative;
+  height: 100%;
+}
+
+.hour-slot {
+  height: 76px;
+  color: #a6a7aa;
+  align-content: center;
+  font-size: 12px;
+}
+
+.task {
+  position: relative;
+  /* margin-top: 1px; */
+  color: #000;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* styles.css o el archivo CSS correspondiente */
+.p-datatable {
+  border: 1px solid #ccc; /* Borde alrededor de la tabla */
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  border-top: 1px solid #ccc; /* Borde inferior de los encabezados */
+  border-bottom: 1px solid #ccc; /* Borde inferior de los encabezados */
+  border-right: 1px solid #ccc; /* Borde derecho de los encabezados */
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  border-bottom: 1px solid #ccc; /* Borde inferior de las filas */
+  border-right: 1px solid #ccc; /* Borde derecho de las celdas */
+}
+
+/* Para evitar que la última columna tenga un borde derecho */
+.p-datatable .p-datatable-tbody > tr > td:last-child,
+.p-datatable .p-datatable-thead > tr > th:last-child {
+  border-right: none; /* Sin borde derecho en la última columna */
+}

@@ -1,8 +1,6 @@
 package polities
 
 import (
-	"fmt"
-
 	"github.com/HoteiApp/sunnix/backend/controllers"
 	"github.com/HoteiApp/sunnix/backend/core"
 	"github.com/HoteiApp/sunnix/backend/system"
@@ -20,7 +18,6 @@ func LoggedIn(c *fiber.Ctx) error {
 
 // Captcha --> Check if the valid tocken
 func Captcha(c *fiber.Ctx) error {
-	fmt.Println(c.IP())
 	if system.Version != "local" {
 		var data map[string]string
 		if err := c.BodyParser(&data); err != nil {

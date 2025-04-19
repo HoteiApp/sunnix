@@ -1,0 +1,6 @@
+/vendor/
+/modules/
+/plugins/
+.vscode/
+.env
+frontend/node_modules
