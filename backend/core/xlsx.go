@@ -74,19 +74,11 @@ func XlsxImportClients() {
 		// fmt.Println("------", len(row))
 		if len(row) > 16 {
 			uidTCM = row[6]
-			// uidTCMS = row[13]
-
-			// if uidTCM == "islaidefg" {
-
 			//-- Mr
 			var mr, admission string
 
 			// Comprobar si la celda de MR tiene -
 			re, _ := regexp.Compile(`^\d+-[1-5]$`)
-			// if err != nil {
-			// 	log.Fatal(err)
-			// }
-
 			mrData := strings.ReplaceAll(row[2], ".", "")
 
 			if re.MatchString(mrData) {
@@ -278,14 +270,6 @@ func XlsxImportClients() {
 		}
 		fmt.Println(uidTCM)
 	}
-
 	fmt.Printf("\nTotal de filas procesadas: %d\n", len(rows)-1) // Restamos 1 por los encabezados
-
 	fmt.Println(clientsActive, clientsClosed, clientsNoOpend)
-	// return c.Status(fiber.StatusOK).JSON(fiber.Map{
-	// 	"Total":          len(rows) - 1,
-	// 	"ClientsOpen":    clientsActive,
-	// 	"ClientsClosed":  clientsClosed,
-	// 	"ClientsNoOpend": clientsNoOpend,
-	// })
 }
