@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"regexp"
@@ -10,10 +11,71 @@ import (
 	"github.com/HoteiApp/sunnix/backend/database"
 	"github.com/HoteiApp/sunnix/backend/models"
 	"github.com/HoteiApp/sunnix/backend/system"
+	"github.com/go-ldap/ldap/v3"
 	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
 )
 
+func openXlsx() *excelize.File {
+	excelFile, err := excelize.OpenFile(system.ImportClientsFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := excelFile.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	// Obtener todas las hojas del archivo
+
+	return excelFile
+}
+
+func rowsSheet(file *excelize.File, sheetName string) [][]string {
+	// Obtener todas las filas de la hoja
+	rows, err := file.GetRows(sheetName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if len(rows) == 0 {
+		log.Fatal("La hoja de Excel está vacía")
+	}
+
+	return rows
+}
+
+func getUserLdap(uid string) models.Users {
+	// Seleccionar TCM
+	var user models.Users
+	result := ExtractFunctionsPlugins("ldap", "Search", "(&(uid="+uid+"))")
+	bytes, _ := json.Marshal(&result)
+	var resultSearch ldap.SearchResult
+	_ = json.Unmarshal(bytes, &resultSearch)
+
+	if len(resultSearch.Entries) > 0 {
+		userLdap := resultSearch.Entries[0]
+		// FIXME: Aqui va los campos de la tabla de usuario exportados del LDAP
+		id, _ := strconv.ParseUint(userLdap.GetAttributeValue("id"), 10, 64)
+		user.ID = uint(id)
+		user.Uid = userLdap.GetAttributeValue("uid")
+		user.Email = userLdap.GetAttributeValue("mail")
+		user.Nick = userLdap.GetAttributeValue("givenName")
+		user.Signature = userLdap.GetAttributeValue("signature")
+
+		user.Roll = userLdap.GetAttributeValue("roll")
+		if userLdap.GetAttributeValue("roll") == "TCM" {
+			user.Credentials = userLdap.GetAttributeValue("credentials")
+		}
+		if userLdap.GetAttributeValue("roll") == "TCMS" {
+			user.Credentials = "CBHCMS"
+		}
+		user.Credentials = userLdap.GetAttributeValue("credentials")
+		user.Supervisor = userLdap.GetAttributeValue("supervisor")
+	}
+	return user
+}
 func XlsxImportClients() {
 	excelFile, err := excelize.OpenFile(system.ImportClientsFile)
 	if err != nil {
@@ -272,4 +334,64 @@ func XlsxImportClients() {
 	}
 	fmt.Printf("\nTotal de filas procesadas: %d\n", len(rows)-1) // Restamos 1 por los encabezados
 	fmt.Println(clientsActive, clientsClosed, clientsNoOpend)
+}
+
+func XlsxImportAdmission() {
+	//  Abrir Archivo
+	xlsx := openXlsx()
+	// Obtener las hojas
+	sheets := xlsx.GetSheetList()
+	if len(sheets) == 0 {
+		log.Fatal("El archivo Excel no contiene hojas")
+	}
+	// Usaremos la primera hoja
+	sheetName := sheets[0]
+	fmt.Printf("Leyendo datos de la hoja: %s\n", sheetName)
+	rows := rowsSheet(xlsx, sheetName)
+
+	for rowIdx, row := range rows {
+		if rowIdx == 0 {
+			continue // Saltar la fila de encabezado si lo deseas
+		}
+		if len(row) > 16 {
+			// if row[5] == "ACTIVE" {
+
+			re, _ := regexp.Compile(`^\d+-[1-5]$`)
+			mrData := strings.ReplaceAll(row[2], ".", "")
+			if re.MatchString(mrData) {
+				parts := regexp.MustCompile(`-`).Split(mrData, 2)
+				if len(parts) == 2 {
+					// ADMISSIONs
+					// mr := parts[0]
+					// admission := parts[1]
+					// fmt.Println("Admmision", mr, admission)
+				}
+			} else {
+				mr := mrData
+				_, _ = database.WithDB(func(db *gorm.DB) interface{} {
+					// Seleccionar TCM
+					// step 1
+					var client models.Clients
+					db.Where("mr = ?", mr).Find(&client)
+					if client.ID != 0 {
+						if row[6] == "islaidefg" {
+							// Seleccionar TCM
+							tcm := getUserLdap(row[6])
+							// Seleccionar TCMS
+							tcms := getUserLdap(tcm.Supervisor)
+							// TODO: CREAR ADMISION
+							fmt.Println("Client", mr, client.FirstName, tcm.Uid, tcms.Uid)
+						}
+					} else {
+						// fmt.Println("Crear MR:", mr)
+					}
+					return ""
+				})
+
+			}
+
+			// }
+
+		}
+	}
 }

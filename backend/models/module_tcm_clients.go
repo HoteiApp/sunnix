@@ -39,7 +39,9 @@ type Clients struct {
 	SingGuardian      string `json:"sign_guardian"`
 
 	// Medicaid       string `json:"medicaid" gorm:"type:longtext;uniqueIndex:idx_medicaid,length:255"`
-	Medicaid       string `json:"medicaid" gorm:"type:varchar(255);uniqueIndex:idx_medicaid"`
+	// Medicaid       string `json:"medicaid" gorm:"type:varchar(255);uniqueIndex:idx_medicaid"`
+	Medicaid string `json:"medicaid" gorm:"type:varchar(255)"`
+
 	GoldCardNumber string `json:"gold_card_number"`
 	Medicare       string `json:"medicare"`
 	// Medicare       string `json:"medicare" gorm:"type:longtext;uniqueIndex:idx_medicare,length:255"`
