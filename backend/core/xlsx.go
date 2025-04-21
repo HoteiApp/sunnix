@@ -249,9 +249,8 @@ func XlsxImportClients() {
 				client.Medicaid = row[10]
 				client.Medicare = row[11]
 
-				// fmt.Println(client)
 				result, _ := database.WithDB(func(db *gorm.DB) interface{} {
-
+					
 					db.Save(&client)
 					if db.Error != nil {
 						return false
