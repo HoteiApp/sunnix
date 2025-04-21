@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/HoteiApp/sunnix/backend/database"
 	"github.com/HoteiApp/sunnix/backend/models"
@@ -44,6 +45,30 @@ func rowsSheet(file *excelize.File, sheetName string) [][]string {
 	}
 
 	return rows
+}
+
+func FormatearFecha(fecha string) string {
+	// Posibles formatos de entrada
+	formatos := []string{
+		"1/2/2006", // 1/4/2021
+		"01/02/2006",
+		"1/2/06",   // 1/4/21
+		"01/02/06", // 01/04/21
+	}
+
+	var t time.Time
+	var err error
+
+	// Intentamos parsear con cada formato
+	for _, f := range formatos {
+		t, err = time.Parse(f, fecha)
+		if err == nil {
+			break
+		}
+	}
+
+	// Retornamos en formato MM/DD/YYYY
+	return t.Format("01/02/2006")
 }
 
 func getUserLdap(uid string) models.Users {
@@ -186,17 +211,28 @@ func XlsxImportClients() {
 				// Columna 17: PHONE #
 				// Columna 18: ADDRESS
 
+				status := "Closed"
+				if row[5] == "ACTIVE" {
+					status = "Open"
+				} else if row[5] == "CLOSED" {
+					status = "Closed"
+				} else {
+					status = "Pending"
+				}
+
 				client.Mr = mrInt
+
+				client.Status = status
 				client.ReferringAgency = "SunissUp"
 				client.ReferringPerson = uidTCM
 				client.CellPhone = ""
 				client.Fax = ""
 				client.Email = ""
-				client.Date = strings.ReplaceAll(row[4], "-", "/")
+				client.Date = FormatearFecha(strings.ReplaceAll(row[4], "-", "/"))
 				client.LastName = row[0]
 				client.FirstName = row[1]
 				client.SS = row[16]
-				client.DOB = strings.ReplaceAll(row[15], "-", "/")
+				client.DOB = FormatearFecha(strings.ReplaceAll(row[15], "-", "/"))
 
 				address := "N/A"
 				if len(row) >= 19 {
@@ -274,36 +310,36 @@ func XlsxImportClients() {
 			// 		// fmt.Println(recordTcm.FullName, recordTcms.FullName)
 
 			// 		fmt.Println(client.Mr, admission, recordTcm.FullName)
-			// 		// 	client.Mr = requestData.Newclient.Mr
-			// 		// 	client.ReferringAgency = requestData.Newclient.ReferringAgency
-			// 		// 	client.ReferringPerson = requestData.Newclient.ReferringPerson
-			// 		// 	client.CellPhone = requestData.Newclient.CellPhone
-			// 		// 	client.Fax = requestData.Newclient.Fax
-			// 		// 	client.Email = requestData.Newclient.Email
-			// 		// 	client.Date = requestData.Newclient.Date
+			// 		// 	client.Mr = client.Mr
+			// 		// 	client.ReferringAgency = client.ReferringAgency
+			// 		// 	client.ReferringPerson = client.ReferringPerson
+			// 		// 	client.CellPhone = client.CellPhone
+			// 		// 	client.Fax = client.Fax
+			// 		// 	client.Email = client.Email
+			// 		// 	client.Date = client.Date
 
-			// 		// 	client.LastName = requestData.Newclient.LastName
-			// 		// 	client.FirstName = requestData.Newclient.FirstName
-			// 		// 	client.SS = requestData.Newclient.SS
-			// 		// 	client.DOB = requestData.Newclient.Dob
-			// 		// 	client.Sexo = requestData.Newclient.Sexo
-			// 		// 	client.Race = requestData.Newclient.Race
+			// 		// 	client.LastName = client.LastName
+			// 		// 	client.FirstName = client.FirstName
+			// 		// 	client.SS = client.SS
+			// 		// 	client.DOB = client.Dob
+			// 		// 	client.Sexo = client.Sexo
+			// 		// 	client.Race = client.Race
 
-			// 		// 	client.Address = requestData.Newclient.Address
-			// 		// 	client.State = requestData.Newclient.State
-			// 		// 	client.ZipCode = requestData.Newclient.ZipCode
+			// 		// 	client.Address = client.Address
+			// 		// 	client.State = client.State
+			// 		// 	client.ZipCode = client.ZipCode
 
-			// 		// 	client.Phone = requestData.Newclient.Phone
-			// 		// 	client.School = requestData.Newclient.School
-			// 		// 	client.Lenguage = requestData.Newclient.Lenguage
+			// 		// 	client.Phone = client.Phone
+			// 		// 	client.School = client.School
+			// 		// 	client.Lenguage = client.Lenguage
 
-			// 		// 	client.LegalGuardian = requestData.Newclient.LegalGuardian
-			// 		// 	client.Relationship = requestData.Newclient.Relationship
-			// 		// 	client.CellPhoneGuardian = requestData.Newclient.CellPhoneGuardian
+			// 		// 	client.LegalGuardian = client.LegalGuardian
+			// 		// 	client.Relationship = client.Relationship
+			// 		// 	client.CellPhoneGuardian = client.CellPhoneGuardian
 
-			// 		// 	client.Medicaid = requestData.Newclient.Medicalid
-			// 		// 	client.GoldCardNumber = requestData.Newclient.GoldCardNumber
-			// 		// 	client.Medicare = requestData.Newclient.Medicare
+			// 		// 	client.Medicaid = client.Medicalid
+			// 		// 	client.GoldCardNumber = client.GoldCardNumber
+			// 		// 	client.Medicare = client.Medicare
 
 			// 		// 	client.TcmActive = recordTcm.Uid
 
@@ -314,8 +350,8 @@ func XlsxImportClients() {
 			// 		// }
 			// 		// // Obtener el ID del cliente insertado
 
-			// 		// clientID := requestData.Newclient.ClientId
-			// 		// if requestData.Newclient.ClientId == 0 {
+			// 		// clientID := client.ClientId
+			// 		// if client.ClientId == 0 {
 			// 		// 	clientID = int(client.ID)
 			// 		// }
 
@@ -379,8 +415,193 @@ func XlsxImportAdmission() {
 							tcm := getUserLdap(row[6])
 							// Seleccionar TCMS
 							tcms := getUserLdap(tcm.Supervisor)
-							// TODO: CREAR ADMISION
-							fmt.Println("Client", mr, client.FirstName, tcm.Uid, tcms.Uid)
+							// Seleccionar DOA
+							doa := FormatearFecha(strings.ReplaceAll(row[4], "-", "/"))
+
+							status := "Closed"
+							if row[5] == "ACTIVE" {
+								status = "Open"
+							} else if row[5] == "CLOSED" {
+								status = "Closed"
+							} else {
+								status = "Pending"
+							}
+
+							mentalPrimary := strings.ReplaceAll(row[3], ".", "")
+							mentalPrimaryDate := strings.ReplaceAll(row[8], "-", "/")
+							// Create folder in Bucket
+							ExtractFunctionsPlugins("s3", "CreateFolder", "clients/"+strconv.FormatUint(uint64(client.ID), 10)+"/")
+							// Create addmission
+							clientServiceCaseManagement := models.ClientServiceCaseManagement{
+								Client: int(client.ID),
+								TCM:    int(tcm.ID), // Valor por defecto para TCM
+								Doa:    doa,
+								Status: status,
+							}
+							db.Save(&clientServiceCaseManagement)
+							// Actualizar tcm t tcms en el client
+							client.TcmActive = tcm.Uid
+							client.Status = status
+							db.Save(&client)
+							if db.Error != nil {
+								return false
+							} else {
+								scmID := clientServiceCaseManagement.ID
+								// Demografic----------------------
+								clientSCMDemografic := models.ClientSCMDemografic{
+									Client: int(client.ID),
+									Scm:    scmID,
+
+									ReferringAgency: client.ReferringAgency,
+									ReferringPerson: client.ReferringPerson,
+									CellPhone:       client.CellPhone,
+									Fax:             client.Fax,
+									Email:           client.Email,
+									Date:            FormatearFecha(client.Date),
+
+									LastName:  client.LastName,
+									FirstName: client.FirstName,
+									SS:        client.SS,
+									DOB:       FormatearFecha(client.DOB),
+									Sexo:      client.Sexo,
+									Race:      client.Race,
+
+									Address: client.Address,
+									State:   client.State,
+									ZipCode: client.ZipCode,
+
+									Phone:    client.CellPhone,
+									School:   client.School,
+									Lenguage: client.Lenguage,
+
+									LegalGuardian:     client.LegalGuardian,
+									Relationship:      client.Relationship,
+									CellPhoneGuardian: client.CellPhoneGuardian,
+
+									Medicaid:       client.Medicaid,
+									GoldCardNumber: client.GoldCardNumber,
+									Medicare:       client.Medicare,
+								}
+								db.Save(&clientSCMDemografic)
+								// TCM-------------------------
+								clientSCMTcm := models.ClienteSCMTcm{
+									Client:      int(client.ID),
+									Scm:         scmID,
+									FullName:    tcm.Nick,
+									Categorytcm: tcm.Credentials,
+									Signature:   tcm.Signature,
+									Active:      tcm.Active,
+								}
+								db.Save(&clientSCMTcm)
+								// Medical-------------------------
+								clientSCMMedical := models.ClientSCMMedical{
+									Client: int(client.ID),
+									Scm:    scmID,
+									// MedicalPcp:        requestData.NewCMMedical.MedicalPcp,
+									// MedicalPcpAddress: requestData.NewCMMedical.MedicalPcpAddress,
+									// MedicalPcpPhone:   requestData.NewCMMedical.MedicalPcpPhone,
+
+									// MedicalPsychiatrisy:        requestData.NewCMMedical.MedicalPsychiatrisy,
+									// MedicalPsychiatrisyAddress: requestData.NewCMMedical.MedicalPsychiatrisyAddress,
+									// MedicalPsychiatrisyPhone:   requestData.NewCMMedical.MedicalPsychiatrisyPhone,
+								}
+								db.Save(&clientSCMMedical)
+								// Mental--------------------------
+								clientSCMMental := models.ClientSCMMental{
+									Client:            int(client.ID),
+									Scm:               scmID,
+									MentalPrimary:     mentalPrimary,
+									MentalPrimaryDate: FormatearFecha(mentalPrimaryDate),
+									// MentalSecondary:     requestData.Newclient.MentalSecondary,
+									// MentalSecondaryDate: requestData.Newclient.MentalSecondaryDate,
+								}
+								db.Save(&clientSCMMental)
+								// Certification---------------------
+								clientCertification := models.ClientSCMCertification{
+									Client: int(client.ID),
+									Scm:    scmID,
+									// -- Dates TCM
+									Tcm:         int(tcm.ID),
+									Nametcm:     tcm.Nick,
+									Categorytcm: tcm.Credentials,
+									// Dates TCMS
+									Supervisor:         int(tcms.ID),
+									NameSupervisor:     tcms.Nick,
+									Categorysupervisor: tcms.Credentials,
+								}
+								db.Save(&clientCertification)
+								// Assessment------------------------
+								clientAssessment := models.ClientSCMAssessment{
+									Client: int(client.ID),
+									Scm:    scmID,
+									// Dates TCM
+									Tcm:         int(tcm.ID),
+									Nametcm:     tcm.Nick,
+									Categorytcm: tcm.Credentials,
+									// Dates TCMS
+									Supervisor:         int(tcms.ID),
+									NameSupervisor:     tcms.Nick,
+									CategorySupervisor: tcms.Credentials,
+								}
+								db.Save(&clientAssessment)
+								// SP------------------------
+								clientSp := models.ClientSCMSp{
+									Client: int(client.ID),
+									Scm:    scmID,
+									// Dates TCM
+									Tcm:         int(tcm.ID),
+									Nametcm:     tcm.Nick,
+									Categorytcm: tcm.Credentials,
+									// Dates TCMS
+									Supervisor:         int(tcms.ID),
+									NameSupervisor:     tcms.Nick,
+									CategorySupervisor: tcms.Credentials,
+								}
+								db.Save(&clientSp)
+								var sp models.ClientSCMSp
+								db.Where("scm = ?", scmID).Find(&sp)
+								// Goal1------------------------
+								goal1 := models.SpGoal1{
+									Sp: sp.ID,
+								}
+								db.Save(&goal1)
+								// Goal2------------------------
+								goal2 := models.SpGoal2{
+									Sp: sp.ID,
+								}
+								db.Save(&goal2)
+								// Goal3------------------------
+								goal3 := models.SpGoal3{
+									Sp: sp.ID,
+								}
+								db.Save(&goal3)
+								// Goal4------------------------
+								goal4 := models.SpGoal4{
+									Sp: sp.ID,
+								}
+								db.Save(&goal4)
+								// Goal5------------------------
+								goal5 := models.SpGoal5{
+									Sp: sp.ID,
+								}
+								db.Save(&goal5)
+								// Goal6------------------------
+								goal6 := models.SpGoal6{
+									Sp: sp.ID,
+								}
+								db.Save(&goal6)
+								// Goal7------------------------
+								goal7 := models.SpGoal7{
+									Sp: sp.ID,
+								}
+								db.Save(&goal7)
+								// Goal8------------------------
+								goal8 := models.SpGoal8{
+									Sp: sp.ID,
+								}
+								db.Save(&goal8)
+							}
+							fmt.Println("Client create addmision")
 						}
 					} else {
 						// fmt.Println("Crear MR:", mr)

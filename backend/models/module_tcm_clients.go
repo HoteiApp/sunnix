@@ -44,9 +44,9 @@ type Clients struct {
 
 	GoldCardNumber string `json:"gold_card_number"`
 	Medicare       string `json:"medicare"`
-	// Medicare       string `json:"medicare" gorm:"type:longtext;uniqueIndex:idx_medicare,length:255"`
 
 	TcmActive string `json:"tcm_active"`
+	Status    string `json:"status"`
 }
 
 type ClientServiceCaseManagement struct {
@@ -100,10 +100,10 @@ type ClientSCMDemografic struct {
 	Relationship      string `json:"relationship"`
 	CellPhoneGuardian string `json:"cell_phone_guardian"`
 	SingGuardian      string `json:"sign_guardian"`
-
-	Medicaid       string `json:"medicaid" gorm:"type:varchar(255);uniqueIndex:idx_medicaid"`
+	Medicaid          string `json:"medicaid" gorm:"type:varchar(255)"`
+	// Medicaid       string `json:"medicaid" gorm:"type:varchar(255);uniqueIndex:idx_medicaid"`
 	GoldCardNumber string `json:"gold_card_number"`
-	Medicare       string `json:"medicare" gorm:"type:varchar(255);uniqueIndex:idx_medicare"`
+	Medicare       string `json:"medicare" gorm:"type:varchar(255)"`
 }
 
 type ClientSCMSure struct {

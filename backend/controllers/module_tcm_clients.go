@@ -2004,7 +2004,6 @@ func ClientsNewClientePut(c *fiber.Ctx) error {
 				}
 				db.Save(&clientAssessment)
 				// SP------------------------
-
 				clientSp := models.ClientSCMSp{
 					Client: clientID,
 					Scm:    scmID,
@@ -2595,6 +2594,8 @@ func getPaginatedClients(c *fiber.Ctx, claims jwt.MapClaims, userIDs []int64) ([
 				Medicaid:       client.Medicaid,
 				GoldCardNumber: client.GoldCardNumber,
 				Medicare:       client.Medicare,
+
+				Status: client.Status,
 
 				TcmActive: tcmInfo.Nick,
 				TcmPhoto:  tcmPhoto,
