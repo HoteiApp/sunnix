@@ -47,6 +47,7 @@ func ModuleTCMRoutes(app *fiber.App) error {
 
 	clients.Delete("/delnewreqclient/:id", controllers.ClientsRequestNewClienteDelele).Name("ClientsRequestNewClienteDelele") //ok
 
+	clients.Get("/database", controllers.ClientsDatabase).Name("ClientsDatabase")     //
 	clients.Get("/list/all", controllers.ClientsListAllGet).Name("ClientsListAllGet") //ok
 	clients.Get("/list/:id", controllers.ClientGet).Name("ClientsGet")                //ok
 
