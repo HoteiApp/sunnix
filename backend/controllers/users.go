@@ -233,6 +233,23 @@ func CheckEmail(c *fiber.Ctx) error {
 			"message": core.GetTextMessage("user_add_exist", email),
 		})
 	}
+	uid := strings.Split(email, "@")[0]
+	resultGetUid := core.ExtractFunctionsPlugins("ldap", "Search", "(&(uid="+uid+"))")
+	bytes, _ := json.Marshal(&resultGetUid)
+	var resultSearch ldap.SearchResult
+	_ = json.Unmarshal(bytes, &resultSearch)
+
+	if len(resultSearch.Entries) > 0 {
+		userLdap := resultSearch.Entries[0].GetAttributeValue("nick")
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"OK":      true,
+			"CREATE":  false,
+			"message": core.GetTextMessage("user_add_exist", userLdap),
+		})
+	}
+	if result {
+
+	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"OK":      false,
