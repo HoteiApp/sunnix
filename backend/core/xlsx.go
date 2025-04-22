@@ -15,6 +15,7 @@ import (
 	"github.com/go-ldap/ldap/v3"
 	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func openXlsx() *excelize.File {
@@ -249,17 +250,33 @@ func XlsxImportClients() {
 				client.Medicaid = row[10]
 				client.Medicare = row[11]
 
-				result, _ := database.WithDB(func(db *gorm.DB) interface{} {
-					
-					db.Save(&client)
-					if db.Error != nil {
-						return false
+				_, _ = database.WithDB(func(db *gorm.DB) interface{} {
+					silentDB := db.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)})
+					// Validar Medicaid
+					if client.Medicaid != "" {
+						var existing models.Clients
+						if err := silentDB.Where("medicaid = ?", client.Medicaid).First(&existing).Error; err == nil {
+							return fmt.Errorf("ya existe otro cliente con el mismo número de Medicaid: %s", client.Medicaid)
+						}
+					}
+
+					// Validar Medicare
+					if client.Medicare != "" && client.Medicare != "N/A" {
+						var existing models.Clients
+						if err := silentDB.Where("medicare = ?", client.Medicare).First(&existing).Error; err == nil {
+							return fmt.Errorf("ya existe otro cliente con el mismo número de Medicare: %s", client.Medicare)
+						}
+					}
+
+					// Guardar si no hay duplicados
+					if err := silentDB.Save(&client).Error; err != nil {
+						return fmt.Errorf("error al guardar el cliente: %v", err)
 					}
 
 					return client
 				})
 
-				fmt.Println(result)
+				// fmt.Println(result)
 
 				// for colIdx, colCell := range row {
 				// 	// Mostrar solo columnas que tienen encabezado (para evitar índices fuera de rango)
