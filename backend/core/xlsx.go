@@ -102,6 +102,11 @@ func getUserLdap(uid string) models.Users {
 	}
 	return user
 }
+
+func EsMayuscula(texto string) bool {
+	return texto == strings.ToUpper(texto) && texto != strings.ToLower(texto)
+}
+
 func XlsxImportClients() {
 	excelFile, err := excelize.OpenFile(system.ImportClientsFile)
 	if err != nil {
@@ -174,6 +179,20 @@ func XlsxImportClients() {
 				if len(parts) == 2 {
 					mr = parts[0]
 					admission = parts[1]
+					// var client models.Clients
+					// _, _ = database.WithDB(func(db *gorm.DB) interface{} {
+					// 	silentDB := db.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)})
+					// 	silentDB.Where("mr = ?", mr).Find(&client)
+					// 	if client.ID != 0 {
+					// 		client.Status = row[5]
+					// 		if EsMayuscula(uidTCM) {
+					// 			client.ReferringPerson = uidTCM
+					// 		} else {
+					// 			client.TcmActive = uidTCM
+					// 		}
+					// 	}
+					// 	return client
+					// })
 					// break
 				}
 			} else {
@@ -214,18 +233,24 @@ func XlsxImportClients() {
 
 				status := "Closed"
 				if row[5] == "ACTIVE" {
-					status = "Open"
+					status = "Pending"
 				} else if row[5] == "CLOSED" {
 					status = "Closed"
 				} else {
-					status = "Pending"
+					status = "No Opened"
+				}
+
+				if EsMayuscula(uidTCM) {
+					client.ReferringPerson = uidTCM
+				} else {
+					client.TcmActive = uidTCM
 				}
 
 				client.Mr = mrInt
 
 				client.Status = status
 				client.ReferringAgency = "SunissUp"
-				client.ReferringPerson = uidTCM
+
 				client.CellPhone = ""
 				client.Fax = ""
 				client.Email = ""
@@ -256,7 +281,8 @@ func XlsxImportClients() {
 					if client.Medicaid != "" {
 						var existing models.Clients
 						if err := silentDB.Where("medicaid = ?", client.Medicaid).First(&existing).Error; err == nil {
-							return fmt.Errorf("ya existe otro cliente con el mismo número de Medicaid: %s", client.Medicaid)
+							fmt.Println("DuplicateMedicaid:", client.Medicaid)
+							return false
 						}
 					}
 
@@ -275,114 +301,9 @@ func XlsxImportClients() {
 
 					return client
 				})
-
-				// fmt.Println(result)
-
-				// for colIdx, colCell := range row {
-				// 	// Mostrar solo columnas que tienen encabezado (para evitar índices fuera de rango)
-				// 	if colIdx < len(headers) {
-				// 		// -----------------------
-
-				// 		// TCM
-				// 		if colIdx == 6 {
-				// 			uidTCM = colCell
-				// 		}
-
-				// 		if colIdx == 5 {
-				// 			if colCell == "ACTIVE" {
-				// 				clientsActive++
-
-				// 			} else if colCell == "CLOSED" {
-				// 				clientsClosed++
-				// 			} else {
-				// 				clientsNoOpend++
-				// 			}
-				// 		}
-
-				// 		if colIdx == 2 {
-				// 			if regex.MatchString(colCell) {
-				// 				// fmt.Printf("  %s contiene un número seguido de un '-' y otro número del 1 al 5\n", headers[colIdx])
-				// 				// fmt.Printf("  %s: %s\n", headers[colIdx], colCell)
-				// 			}
-				// 		}
-
-				// 	}
-				// }
 			}
-			// ----------------------------------------------------------------------------------------------
-			// _, _ = database.WithDB(func(db *gorm.DB) interface{} {
-			// 	// Seleccionar TCM
-			// 	// step 1
-			// 	var client models.Clients
-			// 	db.Where("mr = ?", mr).Find(&client)
-			// 	if client.ID != 0 {
-			// 		var recordTcm models.WorkerRecord
-			// 		db.Where("uid = ?", uidTCM).Find(&recordTcm)
-			// 		// Seleccionar TCMS
-			// 		var recordTcms models.WorkerRecord
-			// 		db.Where("uid = ?", uidTCMS).Find(&recordTcms)
-
-			// 		// fmt.Println(uidTCM, uidTCMS)
-			// 		// fmt.Println(recordTcm.FullName, recordTcms.FullName)
-
-			// 		fmt.Println(client.Mr, admission, recordTcm.FullName)
-			// 		// 	client.Mr = client.Mr
-			// 		// 	client.ReferringAgency = client.ReferringAgency
-			// 		// 	client.ReferringPerson = client.ReferringPerson
-			// 		// 	client.CellPhone = client.CellPhone
-			// 		// 	client.Fax = client.Fax
-			// 		// 	client.Email = client.Email
-			// 		// 	client.Date = client.Date
-
-			// 		// 	client.LastName = client.LastName
-			// 		// 	client.FirstName = client.FirstName
-			// 		// 	client.SS = client.SS
-			// 		// 	client.DOB = client.Dob
-			// 		// 	client.Sexo = client.Sexo
-			// 		// 	client.Race = client.Race
-
-			// 		// 	client.Address = client.Address
-			// 		// 	client.State = client.State
-			// 		// 	client.ZipCode = client.ZipCode
-
-			// 		// 	client.Phone = client.Phone
-			// 		// 	client.School = client.School
-			// 		// 	client.Lenguage = client.Lenguage
-
-			// 		// 	client.LegalGuardian = client.LegalGuardian
-			// 		// 	client.Relationship = client.Relationship
-			// 		// 	client.CellPhoneGuardian = client.CellPhoneGuardian
-
-			// 		// 	client.Medicaid = client.Medicalid
-			// 		// 	client.GoldCardNumber = client.GoldCardNumber
-			// 		// 	client.Medicare = client.Medicare
-
-			// 		// 	client.TcmActive = recordTcm.Uid
-
-			// 		// 	db.Save(&client)
-			// 		// 	if db.Error != nil {
-			// 		// 		return false
-			// 		// 	}
-			// 		// }
-			// 		// // Obtener el ID del cliente insertado
-
-			// 		// clientID := client.ClientId
-			// 		// if client.ClientId == 0 {
-			// 		// 	clientID = int(client.ID)
-			// 		// }
-
-			// 	} else {
-			// 		// fmt.Println("Crear MR:", mr)
-			// 	}
-
-			// 	return ""
-
-			// })
-
-			// }
-
 		}
-		fmt.Println(uidTCM)
+		// fmt.Println(uidTCM)
 	}
 	fmt.Printf("\nTotal de filas procesadas: %d\n", len(rows)-1) // Restamos 1 por los encabezados
 	fmt.Println(clientsActive, clientsClosed, clientsNoOpend)
