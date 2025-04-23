@@ -2594,7 +2594,7 @@ func getPaginatedClients(c *fiber.Ctx, claims jwt.MapClaims, userIDs []int64) ([
 				Medicaid:       client.Medicaid,
 				GoldCardNumber: client.GoldCardNumber,
 				Medicare:       client.Medicare,
-
+				// Este campo debe de actualizarse en cada admision
 				Status: client.Status,
 
 				TcmActive: tcmInfo.Nick,
