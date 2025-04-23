@@ -233,7 +233,7 @@ func XlsxImportClients() {
 
 				status := "Closed"
 				if row[5] == "ACTIVE" {
-					status = "Pending"
+					status = "Open"
 				} else if row[5] == "CLOSED" {
 					status = "Closed"
 				} else {
