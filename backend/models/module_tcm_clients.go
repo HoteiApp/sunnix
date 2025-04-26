@@ -56,6 +56,7 @@ type ClientServiceCaseManagement struct {
 	Status      string `json:"status"`
 	Doa         string `json:"doa"`
 	ClosingDate string `json:"closing_date"`
+	Order       int    `json:"order"`
 }
 
 type ClienteSCMTcm struct {
