@@ -65,7 +65,7 @@ func main() {
 	// Import Clients
 	if system.ImportClients == "yes" {
 		// core.XlsxImportClients()
-		core.XlsxImportAdmission()
+		go core.XlsxImportAdmission()
 	}
 	// Create a new Fiber application for the first server
 	app := fiber.New(fiber.Config{
