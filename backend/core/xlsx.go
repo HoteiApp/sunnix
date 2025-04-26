@@ -18,6 +18,24 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+var userList = []string{
+	"lcc900202",
+	"yanetsyriver0604",
+	"silvitajrl",
+	"islaidefg",
+	"odehernandez11",
+	"joelmaringarcia8",
+}
+
+// contains checks if a string exists in a slice.
+func contains(slice []string, item string) bool {
+	for _, v := range slice {
+		if v == item {
+			return true
+		}
+	}
+	return false
+}
 func openXlsx() *excelize.File {
 	excelFile, err := excelize.OpenFile(system.ImportClientsFile)
 	if err != nil {
@@ -347,7 +365,8 @@ func XlsxImportAdmission() {
 					var client models.Clients
 					db.Where("mr = ?", mr).Find(&client)
 					if client.ID != 0 {
-						if row[6] == "islaidefg" {
+
+						if contains(userList, row[6]) {
 							// Seleccionar TCM
 							tcm := getUserLdap(row[6])
 							// Seleccionar TCMS
