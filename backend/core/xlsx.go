@@ -19,6 +19,14 @@ import (
 )
 
 var userList = []string{
+	// "raidelon10",                //"Raidel Cruz Garcia" OJO no esta en xlsx
+	// "martinezjanny1939",         //"Janny Martinez Fernandez" no esta en xlsx
+	// "leanischakiraa",         //"Leanis CH Aguilar" tcms no client
+	// "jorgeamarero",           //"Jorge A. Marrero Diaz" no aparece en xlsx
+	// "jenny30783",             //"Jenny Puerta" no aparece en xlsx
+	// "g.casanovalopez15",    //"Gerardo Casanova Lopez" no aparece en xlsx
+	// "daylinrioscm",         //"Daylin Rios" no aparece en xlsx
+
 	"yuli300185",                //"Yusleiby Moreno"
 	"yuleisy87ff",               //"Yuleisy Fajardo Fernandez"
 	"yoslavy.gonzalez78",        //"Yoslavy Gonzalez Anel"
@@ -44,66 +52,57 @@ var userList = []string{
 	"sayuri2264",                //"Sayuri Cabrera Bebert"
 	"santanaduany",              //"Mirelys Santana Duany"
 	"rickye29",                  //"Ricardo Armenteros"
-	// "raidelon10",                //"Raidel Cruz Garcia" OJO no esta en xlsx
-	"rachelomi",      //"Rachel Lopez"
-	"prunaheleem",    //"Heleem Pruna"
-	"oskrin1214",     //"Oscar E. Moreno"
-	"olmamservices",  //"Josvany Barrios Fernandez"
-	"odehernandez11", //"Odelkys Hernandez"
-	"nildita1809",    //"Nilda C. Marante"
-	"natypol63",      //"Natalia Pol Marron"
-	"mrtellez10",     //"Margarita Ramirez"
-
-	// "mirialys.suarez1973",       //"Mirialys Suarez Casanola"
-	// "milyaidin",                 //"Mileydis A. Ojeda Cruz"
-	// "miamivitalityservices",     //"Zulay M. Hermida"
-	// "mh0186382",                 //"Maria Hernandez Perez"
-	// "mg.delglez",                //"Merlyn Delgado Gonzalez"
-	// "maurolin1",                 //"Mauricio C. Diaz Diaz"
-	// "mary960513",                //"Maria Laura Gonzalez"
-	// "martinezjanny1939",         //"Janny Martinez Fernandez"
-	// "marielarosabalh",           //"Mariela Rosabal Hernandez"
-	// "mariamkeny23",              //"Mariam Sanchez Santos"
-	// "maikelcarrillo0311",        //"Maikel Carrillo del Valle"
-	// "madelincarvelo6",           //"Madelyn Carvelo Rodriguez"
-	// "lpduran2015",               //"Liliana Pelayo Duran"
-	// "liuvaroque",                //"Liuva Roque"
-	// "liancasem02",               //"Lianne Landa"
-	// "leanischakiraa",            //"Leanis CH Aguilar"
-	// "lcc900202",                 //"Lilian Caraballo "
-	// "laureensm",                 //"Laureen Sanchez"
-	// "kmartnez28",                //"Kertin Martinez Rodriguez"
-	// "julianayadiralescaille",    //"Juliana Y. Lescaille Rodriguez"
-	// "jorgeamarero",              //"Jorge A. Marrero Diaz"
-	// "joelmaringarcia8",          //"Joel Marin Garcia"
-	// "jenny30783",                //"Jenny Puerta"
-	// "jaime871015",               //"Jaime Estrada"
-	// "iviamonte",                 //"Ivan Viamonte"
-	// "ivaneras88",                //"Ivan Eras Alfonso"
-	// "islaidefg",                 //"Islaide Fournier"
-	// "isabelgretel",              //"Gretel Hernandez"
-	// "irais.fernandez",           //"Irais Fernandez Rubio"
-	// "humbertomiguel650622",      //"Humberto Miguel Cabrera"
-	// "gracyavila63",              //"Graciela Avila"
-	// "geisylopez88",              //"Geisy Lopez Ordaz"
-	// "g.casanovalopez15",         //"Gerardo Casanova Lopez"
-	// "fernandezeldita155",        //"Elda Fernandez More"
-	// "esel",                      //"Esel Aguilar"
-	// "duranyaime4",               //"Yaime Duran Saname"
-	// "duranyaima167",             //"Yaima Duran Saname"
-	// "daylinrioscm",              //"Daylin Rios"
-	// "dayihernandez89",           //"Dayami Hernandez Marquez"
-	// "david.amaran903",           //"David Amaran Gonzalez"
-	// "damarisbal1968",            //"Damaris Rodriguez"
-	// "dairiszm",                  //"Dairis Zaldivar Miranda"
-	// "claudialc1988",             //"Claudia Lara"
-	// "chaoluisenrique",           //"Luis E. Chao"
-	// "carladanioscar",            //"Carlos A. Ibanez"
-	// "brendardtoste",             //"Brenda Rodriguez"
-	// "barbarafrometa15",          //"Barbara Martell"
-	// "asesorwpd",                 //"Sheyla M. Tamayo Perez"
-	// "ailic.macias",              //"Ailic Macias"
-	// "abeltg05",                  //"Abel Toledo Garcia"
+	"rachelomi",                 //"Rachel Lopez"
+	"prunaheleem",               //"Heleem Pruna"
+	"oskrin1214",                //"Oscar E. Moreno"
+	"olmamservices",             //"Josvany Barrios Fernandez"
+	"odehernandez11",            //"Odelkys Hernandez"
+	"nildita1809",               //"Nilda C. Marante"
+	"natypol63",                 //"Natalia Pol Marron"
+	"mrtellez10",                //"Margarita Ramirez"
+	"mirialys.suarez1973",       //"Mirialys Suarez Casanola"
+	"milyaidin",                 //"Mileydis A. Ojeda Cruz"
+	"miamivitalityservices",     //"Zulay M. Hermida"
+	"mh0186382",                 //"Maria Hernandez Perez"
+	"mg.delglez",                //"Merlyn Delgado Gonzalez"
+	"maurolin1",                 //"Mauricio C. Diaz Diaz"
+	"mary960513",                //"Maria Laura Gonzalez"
+	"marielarosabalh",           //"Mariela Rosabal Hernandez"
+	"mariamkeny23",              //"Mariam Sanchez Santos"
+	"maikelcarrillo0311",        //"Maikel Carrillo del Valle"
+	"madelincarvelo6",           //"Madelyn Carvelo Rodriguez"
+	"lpduran2015",               //"Liliana Pelayo Duran"
+	"liuvaroque",                //"Liuva Roque"
+	"liancasem02",               //"Lianne Landa"
+	"lcc900202",                 //"Lilian Caraballo "
+	"laureensm",                 //"Laureen Sanchez"
+	"kmartnez28",                //"Kertin Martinez Rodriguez"
+	"julianayadiralescaille",    //"Juliana Y. Lescaille Rodriguez"
+	"joelmaringarcia8",          //"Joel Marin Garcia"
+	"jaime871015",               //"Jaime Estrada"
+	"iviamonte",                 //"Ivan Viamonte"
+	"ivaneras88",                //"Ivan Eras Alfonso"
+	"islaidefg",                 //"Islaide Fournier"
+	"isabelgretel",              //"Gretel Hernandez"
+	"irais.fernandez",           //"Irais Fernandez Rubio"
+	"humbertomiguel650622",      //"Humberto Miguel Cabrera"
+	"gracyavila63",              //"Graciela Avila"
+	"geisylopez88",              //"Geisy Lopez Ordaz"
+	"fernandezeldita155",        //"Elda Fernandez More"
+	"duranyaime4",               //"Yaime Duran Saname"
+	"duranyaima167",             //"Yaima Duran Saname"
+	"dayihernandez89",           //"Dayami Hernandez Marquez"
+	"david.amaran903",           //"David Amaran Gonzalez"
+	"damarisbal1968",            //"Damaris Rodriguez"
+	"dairiszm",                  //"Dairis Zaldivar Miranda"
+	"claudialc1988",             //"Claudia Lara"
+	"chaoluisenrique",           //"Luis E. Chao"
+	"carladanioscar",            //"Carlos A. Ibanez"
+	"brendardtoste",             //"Brenda Rodriguez"
+	"barbarafrometa15",          //"Barbara Martell"
+	"asesorwpd",                 //"Sheyla M. Tamayo Perez"
+	"ailic.macias",              //"Ailic Macias"
+	"abeltg05",                  //"Abel Toledo Garcia"
 }
 
 // DuplicateMedicaid: 9537363856 ok
@@ -453,8 +452,8 @@ func XlsxImportAdmission() {
 	listClients := rows
 
 	for len(listClients) > 0 {
-		ability := 400
-		if len(listClients) < 400 {
+		ability := 1000
+		if len(listClients) < ability {
 			ability = len(listClients)
 		}
 
@@ -488,6 +487,9 @@ func XlsxImportAdmission() {
 		}
 
 		listClients = listClients[ability:]
+		fmt.Println("Total de filas procesadas:", len(listClients))
+		fmt.Println("Esperando 10 segundos para procesar el siguiente lote...")
+		time.Sleep(10 * time.Second)
 	}
 }
 
