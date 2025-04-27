@@ -19,18 +19,91 @@ import (
 )
 
 var userList = []string{
-	"lcc900202",
-	"yanetsyriver0604",
-	"silvitajrl",
-	"islaidefg",
-	"odehernandez11",
-	"joelmaringarcia8",
-	"david.amaran903",
-	"natypol63",
-	"humbertomiguel650622",
-	"duranyaima167",
-	"duranyaime4",
-	"yairai2015",
+	"yuli300185",                //"Yusleiby Moreno"
+	"yuleisy87ff",               //"Yuleisy Fajardo Fernandez"
+	"yoslavy.gonzalez78",        //"Yoslavy Gonzalez Anel"
+	"yosbelpereda",              //"Yosbel Pereda"
+	"yoejdvo13",                 //"Yoel De Velazco Ojeda"
+	"yipsym",                    //"Yipsy Marante Santos"
+	"yinetr1984",                //"Yinet Rodriguez"
+	"yaumaryht",                 //"Yaumary Hernandez Torres"
+	"yasma1024",                 //"Yasmani Fuentes"
+	"yani132331",                //"Yani Rodriguez"
+	"yanetsyriver0604",          //"Yanetsy Rivero"
+	"yamirkareyna",              //"Yamirka Reyna Aguilar"
+	"yamileonard",               //"Yamilet Leonard Barcelo"
+	"yamidelvito",               //"Yamilay Perez Ruiz"
+	"yalilitcm",                 //"Yalili Morata Lopez"
+	"yairai2015",                //"Yaima Espinosa Jimenez"
+	"yaimarzola8011",            //"Yaima Arzola Bobadilla"
+	"vivianegm21",               //"Viviane Gomez Mendez"
+	"terqui1990",                //"Maria Teresa Tamayo Quintana"
+	"taniahumbe",                //"Tania Garcia"
+	"socialmanagementagent.tcm", //"Lihannay Iglesias"
+	"silvitajrl",                //"Silvia Rodriguez Lleonart"
+	"sayuri2264",                //"Sayuri Cabrera Bebert"
+	"santanaduany",              //"Mirelys Santana Duany"
+	"rickye29",                  //"Ricardo Armenteros"
+	// "raidelon10",                //"Raidel Cruz Garcia" OJO no esta en xlsx
+	"rachelomi",      //"Rachel Lopez"
+	"prunaheleem",    //"Heleem Pruna"
+	"oskrin1214",     //"Oscar E. Moreno"
+	"olmamservices",  //"Josvany Barrios Fernandez"
+	"odehernandez11", //"Odelkys Hernandez"
+	"nildita1809",    //"Nilda C. Marante"
+	"natypol63",      //"Natalia Pol Marron"
+	"mrtellez10",     //"Margarita Ramirez"
+
+	// "mirialys.suarez1973",       //"Mirialys Suarez Casanola"
+	// "milyaidin",                 //"Mileydis A. Ojeda Cruz"
+	// "miamivitalityservices",     //"Zulay M. Hermida"
+	// "mh0186382",                 //"Maria Hernandez Perez"
+	// "mg.delglez",                //"Merlyn Delgado Gonzalez"
+	// "maurolin1",                 //"Mauricio C. Diaz Diaz"
+	// "mary960513",                //"Maria Laura Gonzalez"
+	// "martinezjanny1939",         //"Janny Martinez Fernandez"
+	// "marielarosabalh",           //"Mariela Rosabal Hernandez"
+	// "mariamkeny23",              //"Mariam Sanchez Santos"
+	// "maikelcarrillo0311",        //"Maikel Carrillo del Valle"
+	// "madelincarvelo6",           //"Madelyn Carvelo Rodriguez"
+	// "lpduran2015",               //"Liliana Pelayo Duran"
+	// "liuvaroque",                //"Liuva Roque"
+	// "liancasem02",               //"Lianne Landa"
+	// "leanischakiraa",            //"Leanis CH Aguilar"
+	// "lcc900202",                 //"Lilian Caraballo "
+	// "laureensm",                 //"Laureen Sanchez"
+	// "kmartnez28",                //"Kertin Martinez Rodriguez"
+	// "julianayadiralescaille",    //"Juliana Y. Lescaille Rodriguez"
+	// "jorgeamarero",              //"Jorge A. Marrero Diaz"
+	// "joelmaringarcia8",          //"Joel Marin Garcia"
+	// "jenny30783",                //"Jenny Puerta"
+	// "jaime871015",               //"Jaime Estrada"
+	// "iviamonte",                 //"Ivan Viamonte"
+	// "ivaneras88",                //"Ivan Eras Alfonso"
+	// "islaidefg",                 //"Islaide Fournier"
+	// "isabelgretel",              //"Gretel Hernandez"
+	// "irais.fernandez",           //"Irais Fernandez Rubio"
+	// "humbertomiguel650622",      //"Humberto Miguel Cabrera"
+	// "gracyavila63",              //"Graciela Avila"
+	// "geisylopez88",              //"Geisy Lopez Ordaz"
+	// "g.casanovalopez15",         //"Gerardo Casanova Lopez"
+	// "fernandezeldita155",        //"Elda Fernandez More"
+	// "esel",                      //"Esel Aguilar"
+	// "duranyaime4",               //"Yaime Duran Saname"
+	// "duranyaima167",             //"Yaima Duran Saname"
+	// "daylinrioscm",              //"Daylin Rios"
+	// "dayihernandez89",           //"Dayami Hernandez Marquez"
+	// "david.amaran903",           //"David Amaran Gonzalez"
+	// "damarisbal1968",            //"Damaris Rodriguez"
+	// "dairiszm",                  //"Dairis Zaldivar Miranda"
+	// "claudialc1988",             //"Claudia Lara"
+	// "chaoluisenrique",           //"Luis E. Chao"
+	// "carladanioscar",            //"Carlos A. Ibanez"
+	// "brendardtoste",             //"Brenda Rodriguez"
+	// "barbarafrometa15",          //"Barbara Martell"
+	// "asesorwpd",                 //"Sheyla M. Tamayo Perez"
+	// "ailic.macias",              //"Ailic Macias"
+	// "abeltg05",                  //"Abel Toledo Garcia"
 }
 
 // contains checks if a string exists in a slice.
@@ -75,25 +148,45 @@ func rowsSheet(file *excelize.File, sheetName string) [][]string {
 
 func FormatearFecha(fecha string) string {
 	// Posibles formatos de entrada
-	formatos := []string{
-		"1/2/2006", // 1/4/2021
-		"01/02/2006",
-		"1/2/06",   // 1/4/21
-		"01/02/06", // 01/04/21
+	formatos := []struct {
+		formato  string
+		anoCorto bool
+	}{
+		{"1/2/2006", false},
+		{"01/02/2006", false},
+		{"1/2/06", true},
+		{"01/02/06", true},
 	}
 
 	var t time.Time
 	var err error
+	var anoCorto bool
 
 	// Intentamos parsear con cada formato
 	for _, f := range formatos {
-		t, err = time.Parse(f, fecha)
+		t, err = time.Parse(f.formato, fecha)
 		if err == nil {
+			anoCorto = f.anoCorto
 			break
 		}
 	}
 
-	// Retornamos en formato MM/DD/YYYY
+	if err != nil {
+		// Si no pudimos parsear, regresamos la fecha original
+		return fecha
+	}
+
+	// Ajustar año solo si era de formato de año corto
+	if anoCorto && t.Year() < 100 {
+		currentYear := time.Now().Year() % 100
+		if t.Year() <= currentYear {
+			t = t.AddDate(2000, 0, 0)
+		} else {
+			t = t.AddDate(-100, 0, 0)
+		}
+	}
+
+	// Retornamos en formato 01/02/2006 (con ceros agregados)
 	return t.Format("01/02/2006")
 }
 
@@ -347,40 +440,55 @@ func XlsxImportAdmission() {
 	fmt.Printf("Leyendo datos de la hoja: %s\n", sheetName)
 	rows := rowsSheet(xlsx, sheetName)
 
-	for rowIdx, row := range rows {
-		if rowIdx == 0 {
-			continue // Saltar la fila de encabezado si lo deseas
+	listClients := rows
+
+	for len(listClients) > 0 {
+		ability := 400
+		if len(listClients) < 400 {
+			ability = len(listClients)
 		}
-		if len(row) > 16 {
-			// if row[5] == "ACTIVE" {
 
-			re, _ := regexp.Compile(`^\d+-[1-5]$`)
-			mrData := strings.ReplaceAll(row[2], ".", "")
-			if re.MatchString(mrData) {
-				parts := regexp.MustCompile(`-`).Split(mrData, 2)
-				if len(parts) == 2 {
-					// ADMISSIONs
-					mr := parts[0]
-					admission, _ := strconv.Atoi(parts[1])
-					if contains(userList, row[6]) {
-						createAdmission(row, mr, admission+1)
+		for rowIdx, row := range listClients[:ability] {
+			if rowIdx == 0 {
+				continue // Saltar la fila de encabezado si lo deseas
+			}
+			if len(row) > 16 {
+				// if row[5] == "ACTIVE" {
+				re, _ := regexp.Compile(`^\d+-[1-5]$`)
+				mrData := strings.ReplaceAll(row[2], ".", "")
+				// time.Sleep(500 * time.Millisecond)
+				if re.MatchString(mrData) {
+					parts := regexp.MustCompile(`-`).Split(mrData, 2)
+					if len(parts) == 2 {
+						// ADMISSIONs
+						mr := parts[0]
+						admission, _ := strconv.Atoi(parts[1])
+						if contains(userList, row[6]) {
+							createAdmission(row, mr, admission+1)
+						}
+						// fmt.Println("Admmision", mr, admission)
 					}
-					// fmt.Println("Admmision", mr, admission)
-				}
-			} else {
-				mr := mrData
+				} else {
+					mr := mrData
 
-				if contains(userList, row[6]) {
-					createAdmission(row, mr, 1)
+					if contains(userList, row[6]) {
+						createAdmission(row, mr, 1)
+					}
+
 				}
+
+				fmt.Println("---->", rowIdx)
+
+				// }
 
 			}
-
-			// }
-
 		}
+
+		listClients = listClients[ability:]
 	}
 }
+
+var tcmsList = make(map[string]models.Users)
 
 func createAdmission(row []string, mr string, order int) interface{} {
 	_, _ = database.WithDB(func(db *gorm.DB) interface{} {
@@ -391,8 +499,20 @@ func createAdmission(row []string, mr string, order int) interface{} {
 		if client.ID != 0 {
 			// Seleccionar TCM
 			tcm := getUserLdap(row[6])
+
 			// Seleccionar TCMS
-			tcms := getUserLdap(tcm.Supervisor)
+			tcms := tcmsList[tcm.Uid]
+			if tcms.Uid == "" {
+				if tcm.Supervisor != "" {
+					gettcms := getUserLdap(tcm.Supervisor)
+					tcmsList[tcm.Uid] = gettcms
+					tcms = gettcms
+				} else {
+					fmt.Println("no tcms")
+					return false
+				}
+			}
+
 			// Seleccionar DOA
 			doa := FormatearFecha(strings.ReplaceAll(row[4], "-", "/"))
 
