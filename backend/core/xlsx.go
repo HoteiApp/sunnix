@@ -106,6 +106,11 @@ var userList = []string{
 	// "abeltg05",                  //"Abel Toledo Garcia"
 }
 
+// DuplicateMedicaid: 9537363856 ok
+// DuplicateMedicaid: 9525997430 ok
+// DuplicateMedicaid: 9647185171 falta doa
+// DuplicateMedicaid: 9545201011 falta doa
+
 // contains checks if a string exists in a slice.
 func contains(slice []string, item string) bool {
 	for _, v := range slice {
@@ -176,13 +181,15 @@ func FormatearFecha(fecha string) string {
 		return fecha
 	}
 
-	// Ajustar año solo si era de formato de año corto
-	if anoCorto && t.Year() < 100 {
+	// Ajustar año si era de formato corto
+	if anoCorto {
+		originalYear := t.Year() % 100
 		currentYear := time.Now().Year() % 100
-		if t.Year() <= currentYear {
-			t = t.AddDate(2000, 0, 0)
-		} else {
-			t = t.AddDate(-100, 0, 0)
+
+		if t.Year() >= 2000 && t.Year() <= 2099 {
+			if originalYear > currentYear {
+				t = t.AddDate(-100, 0, 0) // restar 100 años
+			}
 		}
 	}
 
@@ -387,7 +394,10 @@ func XlsxImportClients() {
 				client.State = row[9]
 				Phone := "N/A"
 				if len(row) >= 18 {
-					Phone = row[17]
+					if len(row[17]) == 12 {
+						Phone = fmt.Sprintf("(%s) %s-%s", row[17][:3], row[17][4:7], row[17][8:])
+
+					}
 				}
 				client.Phone = Phone
 				client.Medicaid = row[10]
@@ -466,21 +476,14 @@ func XlsxImportAdmission() {
 						if contains(userList, row[6]) {
 							createAdmission(row, mr, admission+1)
 						}
-						// fmt.Println("Admmision", mr, admission)
 					}
 				} else {
 					mr := mrData
-
 					if contains(userList, row[6]) {
 						createAdmission(row, mr, 1)
 					}
 
 				}
-
-				fmt.Println("---->", rowIdx)
-
-				// }
-
 			}
 		}
 
@@ -569,7 +572,7 @@ func createAdmission(row []string, mr string, order int) interface{} {
 					State:   client.State,
 					ZipCode: client.ZipCode,
 
-					Phone:    client.CellPhone,
+					Phone:    client.Phone,
 					School:   client.School,
 					Lenguage: client.Lenguage,
 
@@ -704,6 +707,6 @@ func createAdmission(row []string, mr string, order int) interface{} {
 		return client
 	})
 
-	fmt.Println("Client create addmision", order)
+	fmt.Println("Client create addmision:", order, " MR: ", mr)
 	return true
 }
