@@ -18,7 +18,7 @@ func LoggedIn(c *fiber.Ctx) error {
 
 // Captcha --> Check if the valid tocken
 func Captcha(c *fiber.Ctx) error {
-	if system.Version == "local" || system.Version == "dev" {
+	if system.Version == "local" || system.Version == "testing" {
 		return c.Next()
 	}
 
