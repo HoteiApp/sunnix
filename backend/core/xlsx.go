@@ -231,6 +231,8 @@ func EsMayuscula(texto string) bool {
 	return texto == strings.ToUpper(texto) && texto != strings.ToLower(texto)
 }
 
+// Importar clientes desde un archivo Excel
+// XlsxImportClients lee un archivo Excel y procesa los datos de los clientes
 func XlsxImportClients() {
 	excelFile, err := excelize.OpenFile(system.ImportClientsFile)
 	if err != nil {
@@ -262,23 +264,6 @@ func XlsxImportClients() {
 		log.Fatal("La hoja de Excel está vacía")
 	}
 
-	// Mostrar encabezados (primera fila)
-	// headers := rows[0]
-	// fmt.Println("\nEncabezados:")
-	// for i, header := range headers {
-	// 	fmt.Printf("Columna %d: %s\n", i+1, header)
-	// }
-
-	// Compilar la expresión regular fuera del bucle
-	// regex, err := regexp.Compile(`^\d+-[1-5]$`)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	clientsActive := 0
-	clientsClosed := 0
-	clientsNoOpend := 0
-
 	// Procesar y mostrar las filas de datos
 	for rowIdx, row := range rows {
 		if rowIdx == 0 {
@@ -303,21 +288,6 @@ func XlsxImportClients() {
 				if len(parts) == 2 {
 					mr = parts[0]
 					admission = parts[1]
-					// var client models.Clients
-					// _, _ = database.WithDB(func(db *gorm.DB) interface{} {
-					// 	silentDB := db.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)})
-					// 	silentDB.Where("mr = ?", mr).Find(&client)
-					// 	if client.ID != 0 {
-					// 		client.Status = row[5]
-					// 		if EsMayuscula(uidTCM) {
-					// 			client.ReferringPerson = uidTCM
-					// 		} else {
-					// 			client.TcmActive = uidTCM
-					// 		}
-					// 	}
-					// 	return client
-					// })
-					// break
 				}
 			} else {
 				mr = mrData
@@ -374,8 +344,8 @@ func XlsxImportClients() {
 
 				client.Status = status
 				client.ReferringAgency = "SunissUp"
-
 				client.CellPhone = ""
+
 				client.Fax = ""
 				client.Email = ""
 				client.Date = FormatearFecha(strings.ReplaceAll(row[4], "-", "/"))
@@ -433,7 +403,6 @@ func XlsxImportClients() {
 		// fmt.Println(uidTCM)
 	}
 	fmt.Printf("\nTotal de filas procesadas: %d\n", len(rows)-1) // Restamos 1 por los encabezados
-	fmt.Println(clientsActive, clientsClosed, clientsNoOpend)
 }
 
 func XlsxImportAdmission() {
@@ -543,10 +512,33 @@ func createAdmission(row []string, mr string, order int) interface{} {
 				Order:  order,
 			}
 			db.Save(&clientServiceCaseManagement)
-			// Actualizar tcm t tcms en el client
+			// Actualizar dato del clientes por los datos de la admision
+			client.SS = row[16]
+
+			address := "N/A"
+			if len(row) >= 19 {
+				address = row[18]
+			}
+			client.Address = address
+			client.State = row[9]
+			// Phone
+			Phone := "N/A"
+			if len(row) >= 18 {
+				if len(row[17]) == 12 {
+					Phone = fmt.Sprintf("(%s) %s-%s", row[17][:3], row[17][4:7], row[17][8:])
+
+				}
+			}
+			client.Phone = Phone
+
+			client.Medicaid = row[10]
+			client.Medicare = row[11]
+
 			client.TcmActive = tcm.Uid
 			client.Status = status
+
 			db.Save(&client)
+
 			if db.Error != nil {
 				return false
 			} else {
