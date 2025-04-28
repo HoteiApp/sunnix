@@ -18,26 +18,28 @@ func LoggedIn(c *fiber.Ctx) error {
 
 // Captcha --> Check if the valid tocken
 func Captcha(c *fiber.Ctx) error {
-	if system.Version != "local" {
-		var data map[string]string
-		if err := c.BodyParser(&data); err != nil {
-			return err
-		}
-		token := data["token"]
-		if token == "" {
-			return c.JSON(fiber.Map{
-				"OK":      false,
-				"message": "You have not sent the CloudFlare token",
-			})
-		}
+	if system.Version == "local" || system.Version == "dev" {
+		return c.Next()
+	}
 
-		if ok, _ := core.VerifyTurnstileToken(token, c.IP()); !ok {
-			c.Status(fiber.StatusConflict)
-			return c.JSON(fiber.Map{
-				"OK":      false,
-				"message": "Incorrect verification with Cloudflare",
-			})
-		}
+	var data map[string]string
+	if err := c.BodyParser(&data); err != nil {
+		return err
+	}
+	token := data["token"]
+	if token == "" {
+		return c.JSON(fiber.Map{
+			"OK":      false,
+			"message": "You have not sent the CloudFlare token",
+		})
+	}
+
+	if ok, _ := core.VerifyTurnstileToken(token, c.IP()); !ok {
+		c.Status(fiber.StatusConflict)
+		return c.JSON(fiber.Map{
+			"OK":      false,
+			"message": "Incorrect verification with Cloudflare",
+		})
 	}
 
 	return c.Next()
