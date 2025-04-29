@@ -457,8 +457,8 @@ func XlsxImportAdmission() {
 
 		listClients = listClients[ability:]
 		fmt.Println("Total de filas procesadas:", len(listClients))
-		fmt.Println("Esperando 10 segundos para procesar el siguiente lote...")
-		time.Sleep(10 * time.Second)
+		// fmt.Println("Esperando 10 segundos para procesar el siguiente lote...")
+		// time.Sleep(10 * time.Second)
 	}
 }
 
