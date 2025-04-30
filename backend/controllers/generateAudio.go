@@ -34,8 +34,8 @@ func GenerateAudiotoText(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString("Error generando audio")
 	}
 
-	_ = WebhookAudio(audioStream.(io.ReadCloser), "audio.mp3")
+	// _ = WebhookAudio(audioStream.(io.ReadCloser), "audio.mp3")
 
-	c.Set("Content-Type", "audio/mpeg")
+	c.Set("Content-Type", "audio/mp3")
 	return c.SendStream(audioStream.(io.ReadCloser))
 }
