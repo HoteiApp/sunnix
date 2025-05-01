@@ -34,4 +34,5 @@ type Users struct {
 	PaymentByUnits float64 `json:"payment_by_units" gorm:"default:7.28"`
 	Rent           float64 `json:"rent" gorm:"default:0"`
 	Business       string  `json:"business"`
+	Avatar         string  `json:"avatar"` // Avatar
 }
