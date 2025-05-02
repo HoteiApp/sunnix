@@ -2399,14 +2399,84 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 
 func ClientsDatabase(c *fiber.Ctx) error {
 	// claims, _ := GetClaims(c)
-
+	var clientOut []models.OutClients
 	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
 		var clients []models.Clients
 		db.Find(&clients)
-		return clients
+
+		for _, client := range clients {
+			tcm := ""
+			tcmPhoto := ""
+			tcms := ""
+			tcmsPhoto := ""
+			// Realizar la consulta LDAP
+			resultTCMS := core.ExtractFunctionsPlugins("ldap", "Search", "(&(uid="+client.TcmActive+"))")
+			bytes, _ := json.Marshal(&resultTCMS)
+			var resultSearch ldap.SearchResult
+			_ = json.Unmarshal(bytes, &resultSearch)
+
+			for _, entry := range resultSearch.Entries {
+				tcm = entry.GetAttributeValue("cn")
+
+				resultSupervisor := core.ExtractFunctionsPlugins("ldap", "Search", "(&(uid="+entry.GetAttributeValue("supervisor")+"))")
+				bytess, _ := json.Marshal(&resultSupervisor)
+				var resultSearchSupervisor ldap.SearchResult
+				_ = json.Unmarshal(bytess, &resultSearchSupervisor)
+				for _, entrySup := range resultSearchSupervisor.Entries {
+					tcms = entrySup.GetAttributeValue("cn") // Asignar el nombre del supervisor
+				}
+
+				// Implementar batchGetAvatars(tcmUIDs) - versión optimizada
+				avatarUrls, err := core.BatchGetAvatars([]string{client.TcmActive, entry.GetAttributeValue("supervisor")})
+				if err != nil {
+					return err
+				}
+				tcmPhoto = avatarUrls[client.TcmActive]
+				tcmsPhoto = avatarUrls[entry.GetAttributeValue("supervisor")]
+
+			}
+
+			clientOut = append(clientOut, models.OutClients{
+				ID:                client.ID,
+				Mr:                client.Mr,
+				ReferrerID:        client.ReferrerID,
+				ReferringAgency:   client.ReferringAgency,
+				ReferringPerson:   client.ReferringPerson,
+				CellPhone:         client.CellPhone,
+				Fax:               client.Fax,
+				Email:             client.Email,
+				Date:              client.Date,
+				LastName:          client.LastName,
+				FirstName:         client.FirstName,
+				SS:                client.SS,
+				DOB:               client.DOB,
+				Sexo:              client.Sexo,
+				Race:              client.Race,
+				Address:           client.Address,
+				State:             client.State,
+				ZipCode:           client.ZipCode,
+				Phone:             client.Phone,
+				School:            client.School,
+				Lenguage:          client.Lenguage,
+				SingClient:        client.SingClient,
+				LegalGuardian:     client.LegalGuardian,
+				Relationship:      client.Relationship,
+				CellPhoneGuardian: client.CellPhoneGuardian,
+				SingGuardian:      client.SingGuardian,
+				Medicaid:          client.Medicaid,
+				GoldCardNumber:    client.GoldCardNumber,
+				Medicare:          client.Medicare,
+				TcmActive:         tcm,
+				TcmPhoto:          tcmPhoto,
+				TcmsActive:        tcms,
+				TcmsPhoto:         tcmsPhoto,
+			})
+		}
+
+		return clientOut
 	})
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"clients": result.([]models.Clients)})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"clients": result.([]models.OutClients)})
 }
 
 // batchGetUserFromLDAP obtiene múltiples usuarios de LDAP en una sola operación
@@ -2900,7 +2970,7 @@ func TCMClientsActiveCsm(c *fiber.Ctx) error {
 					ClosingDate: cm.ClosingDate,
 				})
 			}
-
+			// Obtener el usuario de LDAP del TCM
 			clients = append(clients, models.OutClients{
 				ID:              client.ID,
 				Mr:              client.Mr,
@@ -2938,6 +3008,8 @@ func TCMClientsActiveCsm(c *fiber.Ctx) error {
 				GoldCardNumber: client.GoldCardNumber,
 				Medicare:       client.Medicare,
 				Scm:            scm,
+
+				Status: client.Status,
 			})
 		}
 
