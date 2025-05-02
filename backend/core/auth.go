@@ -3,6 +3,7 @@ package core
 import (
 	"encoding/json"
 	"strconv"
+	"time"
 
 	"github.com/HoteiApp/sunnix/backend/database"
 	"github.com/HoteiApp/sunnix/backend/models"
@@ -23,6 +24,20 @@ func CheckLogin(email, password string) bool {
 		return true
 	}
 	return false
+}
+
+// GreetingOfTheDay devuelve un saludo dependiendo de la hora actual
+func GreetingOfTheDay() string {
+	hour := time.Now().Hour()
+
+	switch {
+	case hour >= 6 && hour < 12:
+		return "Good morning"
+	case hour >= 12 && hour < 18:
+		return "Good afternoon"
+	default:
+		return "Good night"
+	}
 }
 
 func CheckEmail(email string) bool {
