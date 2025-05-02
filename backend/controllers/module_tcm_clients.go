@@ -2398,42 +2398,94 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 }
 
 func ClientsDatabase(c *fiber.Ctx) error {
-	// claims, _ := GetClaims(c)
 	var clientOut []models.OutClients
+
 	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
 		var clients []models.Clients
 		db.Find(&clients)
 
+		// Paso 1: Recolectar todos los UID necesarios (TCMs y Supervisores)
+		uidSet := make(map[string]struct{})
+		for _, client := range clients {
+			if client.TcmActive != "" {
+				uidSet[client.TcmActive] = struct{}{}
+			}
+		}
+
+		// Paso 2: Consultar LDAP para todos los TCMs
+		var allUIDs []string
+		for uid := range uidSet {
+			allUIDs = append(allUIDs, uid)
+		}
+
+		ldapFilter := "(|" // filtro OR para consultar múltiples UID
+		for _, uid := range allUIDs {
+			ldapFilter += "(uid=" + uid + ")"
+		}
+		ldapFilter += ")"
+
+		ldapResult := core.ExtractFunctionsPlugins("ldap", "Search", ldapFilter)
+		ldapBytes, _ := json.Marshal(&ldapResult)
+		var ldapSearchResult ldap.SearchResult
+		_ = json.Unmarshal(ldapBytes, &ldapSearchResult)
+
+		// Paso 3: Crear mapa de UID -> Entry
+		ldapMap := make(map[string]*ldap.Entry)
+		supervisorUIDs := make(map[string]struct{})
+		for _, entry := range ldapSearchResult.Entries {
+			uid := entry.GetAttributeValue("uid")
+			ldapMap[uid] = entry
+
+			supUID := entry.GetAttributeValue("supervisor")
+			if supUID != "" {
+				supervisorUIDs[supUID] = struct{}{}
+			}
+		}
+
+		// Paso 4: Buscar Supervisores
+		var allSupUIDs []string
+		for uid := range supervisorUIDs {
+			allSupUIDs = append(allSupUIDs, uid)
+		}
+
+		supFilter := "(|"
+		for _, uid := range allSupUIDs {
+			supFilter += "(uid=" + uid + ")"
+		}
+		supFilter += ")"
+
+		supResult := core.ExtractFunctionsPlugins("ldap", "Search", supFilter)
+		supBytes, _ := json.Marshal(&supResult)
+		var supSearchResult ldap.SearchResult
+		_ = json.Unmarshal(supBytes, &supSearchResult)
+
+		// Mapa de Supervisores
+		supMap := make(map[string]*ldap.Entry)
+		for _, entry := range supSearchResult.Entries {
+			uid := entry.GetAttributeValue("uid")
+			supMap[uid] = entry
+		}
+
+		// Paso 5: Obtener todos los avatares necesarios en una sola llamada
+		allAvatarUIDs := append(allUIDs, allSupUIDs...)
+		avatarUrls, _ := core.BatchGetAvatars(allAvatarUIDs)
+
+		// Paso 6: Construir la respuesta
 		for _, client := range clients {
 			tcm := ""
 			tcmPhoto := ""
 			tcms := ""
 			tcmsPhoto := ""
-			// Realizar la consulta LDAP
-			resultTCMS := core.ExtractFunctionsPlugins("ldap", "Search", "(&(uid="+client.TcmActive+"))")
-			bytes, _ := json.Marshal(&resultTCMS)
-			var resultSearch ldap.SearchResult
-			_ = json.Unmarshal(bytes, &resultSearch)
 
-			for _, entry := range resultSearch.Entries {
+			if entry, ok := ldapMap[client.TcmActive]; ok {
 				tcm = entry.GetAttributeValue("cn")
-
-				resultSupervisor := core.ExtractFunctionsPlugins("ldap", "Search", "(&(uid="+entry.GetAttributeValue("supervisor")+"))")
-				bytess, _ := json.Marshal(&resultSupervisor)
-				var resultSearchSupervisor ldap.SearchResult
-				_ = json.Unmarshal(bytess, &resultSearchSupervisor)
-				for _, entrySup := range resultSearchSupervisor.Entries {
-					tcms = entrySup.GetAttributeValue("cn") // Asignar el nombre del supervisor
-				}
-
-				// Implementar batchGetAvatars(tcmUIDs) - versión optimizada
-				avatarUrls, err := core.BatchGetAvatars([]string{client.TcmActive, entry.GetAttributeValue("supervisor")})
-				if err != nil {
-					return err
-				}
 				tcmPhoto = avatarUrls[client.TcmActive]
-				tcmsPhoto = avatarUrls[entry.GetAttributeValue("supervisor")]
 
+				supUID := entry.GetAttributeValue("supervisor")
+				if supEntry, ok := supMap[supUID]; ok {
+					tcms = supEntry.GetAttributeValue("cn")
+					tcmsPhoto = avatarUrls[supUID]
+				}
 			}
 
 			clientOut = append(clientOut, models.OutClients{
@@ -2466,6 +2518,7 @@ func ClientsDatabase(c *fiber.Ctx) error {
 				Medicaid:          client.Medicaid,
 				GoldCardNumber:    client.GoldCardNumber,
 				Medicare:          client.Medicare,
+				Status:            client.Status,
 				TcmActive:         tcm,
 				TcmPhoto:          tcmPhoto,
 				TcmsActive:        tcms,
