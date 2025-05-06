@@ -2523,6 +2523,12 @@ func ClientsDatabase(c *fiber.Ctx) error {
 				TcmPhoto:          tcmPhoto,
 				TcmsActive:        tcms,
 				TcmsPhoto:         tcmsPhoto,
+
+				HealthPlan:      client.HealthPlan,
+				DxCode:          client.DxCode,
+				PsychEvaluation: client.PsychEvaluation,
+				Doa:             client.Doa,
+				InsuranceId:     client.InsuranceId,
 			})
 		}
 

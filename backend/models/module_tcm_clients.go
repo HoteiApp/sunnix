@@ -45,6 +45,12 @@ type Clients struct {
 
 	TcmActive string `json:"tcm_active"`
 	Status    string `json:"status"`
+	// Other Fields
+	DxCode          string `json:"dx_code"`
+	PsychEvaluation string `json:"psych_evaluation"`
+	Doa             string `json:"doa"`
+	HealthPlan      string `json:"health_plan"`
+	InsuranceId     string `json:"insurance_id"`
 }
 
 type ClientServiceCaseManagement struct {

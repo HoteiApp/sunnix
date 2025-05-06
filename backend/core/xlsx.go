@@ -267,6 +267,7 @@ func XlsxImportClients() {
 	// Procesar y mostrar las filas de datos
 	for rowIdx, row := range rows {
 		if rowIdx == 0 {
+			// fmt.Println(row, row)
 			continue // Saltar la fila de encabezado si lo deseas
 		}
 
@@ -279,9 +280,11 @@ func XlsxImportClients() {
 			//-- Mr
 			var mr, admission string
 
+			mrData1 := strings.ReplaceAll(row[2], ".", "-")
+			mrData := strings.ReplaceAll(mrData1, "_", "-")
+
 			// Comprobar si la celda de MR tiene -
 			re, _ := regexp.Compile(`^\d+-[1-5]$`)
-			mrData := strings.ReplaceAll(row[2], ".", "")
 
 			if re.MatchString(mrData) {
 				parts := regexp.MustCompile(`-`).Split(mrData, 2)
@@ -305,30 +308,30 @@ func XlsxImportClients() {
 					log.Fatalf("Error converting mr to int: %v", err)
 				}
 
-				// Columna 0: LAST NAME
-				// Columna 1: FIRST NAME
-				// Columna 2: MR
-				// Columna 3: DX
-				// Columna 4: DOA
-				// Columna 5: CLOSING
-				// Columna 6: TCM
-				// Columna 7: HEALTH PLAN
-				// Columna 8: PSYCH EVAL
-				// Columna 9: LOCATION
-				// Columna 10: MEDICAID ID
-				// Columna 11: MEDICARE ID
-				// Columna 12: INSURANCE ID
-				// Columna 13: SUPERVISOR
-				// Columna 14: Auth. Exp
-				// Columna 15: DOB
-				// Columna 16: SS#
-				// Columna 17: PHONE #
-				// Columna 18: ADDRESS
+				// 0 LAST NAME
+				// 1 FIRST NAME
+				// 2 MR
+				// 3 DX
+				// 4 PSYCH EVAL
+				// 5 DOA
+				// 6 STATUS
+				// 7 TCM
+				// 8 SUPERVISOR
+				// 9 LOCATION
+				// 10 HEALTH PLAN
+				// 11 MEDICAID ID
+				// 12 MEDICARE ID
+				// 13 INSURANCE ID
+				// 14 Auth. Exp
+				// 15 DOB
+				// 16 SS#
+				// 17 PHONE #
+				// 18 ADDRESS
 
 				status := "Closed"
-				if row[5] == "ACTIVE" {
+				if row[6] == "ACTIVE" {
 					status = "Open"
-				} else if row[5] == "CLOSED" {
+				} else if row[6] == "CLOSED" {
 					status = "Closed"
 				} else {
 					status = "No Opened"
@@ -340,19 +343,22 @@ func XlsxImportClients() {
 					client.TcmActive = uidTCM
 				}
 
+				client.LastName = row[0]
+				client.FirstName = row[1]
 				client.Mr = mrInt
 
 				client.Status = status
 				client.ReferringAgency = "SunissUp"
 				client.CellPhone = ""
-
 				client.Fax = ""
 				client.Email = ""
-				client.Date = FormatearFecha(strings.ReplaceAll(row[4], "-", "/"))
-				client.LastName = row[0]
-				client.FirstName = row[1]
-				client.SS = row[16]
+
+				client.Date = FormatearFecha(strings.ReplaceAll(row[5], "-", "/"))
+				client.Doa = FormatearFecha(strings.ReplaceAll(row[5], "-", "/"))
+				fmt.Println(FormatearFecha(strings.ReplaceAll(row[5], "-", "/")))
+
 				client.DOB = FormatearFecha(strings.ReplaceAll(row[15], "-", "/"))
+				client.SS = row[16]
 
 				address := "N/A"
 				if len(row) >= 19 {
@@ -361,16 +367,23 @@ func XlsxImportClients() {
 
 				client.Address = address
 				client.State = row[9]
+
 				Phone := "N/A"
 				if len(row) >= 18 {
 					if len(row[17]) == 12 {
 						Phone = fmt.Sprintf("(%s) %s-%s", row[17][:3], row[17][4:7], row[17][8:])
-
 					}
 				}
 				client.Phone = Phone
-				client.Medicaid = row[10]
-				client.Medicare = row[11]
+				client.Medicaid = row[11]
+				client.Medicare = row[12]
+				client.InsuranceId = row[13]
+
+				// remplazar el punto por un espacio en blanco en el DX
+				client.DxCode = strings.ReplaceAll(row[3], ".", "")
+				client.PsychEvaluation = FormatearFecha(strings.ReplaceAll(row[4], "-", "/"))
+
+				client.HealthPlan = row[10]
 
 				_, _ = database.WithDB(func(db *gorm.DB) interface{} {
 					silentDB := db.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)})
@@ -378,7 +391,7 @@ func XlsxImportClients() {
 					if client.Medicaid != "" {
 						var existing models.Clients
 						if err := silentDB.Where("medicaid = ?", client.Medicaid).First(&existing).Error; err == nil {
-							fmt.Println("DuplicateMedicaid:", client.Medicaid)
+							// fmt.Println("DuplicateMedicaid:", client.Medicaid)
 							return false
 						}
 					}
