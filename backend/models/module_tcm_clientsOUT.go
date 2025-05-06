@@ -413,6 +413,13 @@ type OutClients struct {
 	TcmsActive string `json:"tcms_active"`
 	TcmsPhoto  string `json:"tcms_photo"`
 
+	// Other Fields
+	DxCode          string `json:"dx_code"`
+	PsychEvaluation string `json:"psych_evaluation"`
+	Doa             string `json:"doa"`
+	HealthPlan      string `json:"health_plan"`
+	InsuranceId     string `json:"insurance_id"`
+
 	Scm []OutClientSCM `json:"scm"`
 }
 
