@@ -10,8 +10,9 @@ import (
 )
 
 const (
-	TelegramBotToken = "1812808528:AAHixtQSqqIHXMpu0A5eWLDASoiQw1pKE24" // Reemplaza con el token de tu bot
-	TelegramChatID   = "-1002318517831"                                 // Reemplaza con el ID del chat
+	TelegramBotToken = "7938874108:AAGwhfjN5h-AC9KHb0Am2JteDD1Mz67aBUQ" // Sunnix Bot Token
+	// TelegramBotToken = "1812808528:AAHixtQSqqIHXMpu0A5eWLDASoiQw1pKE24" // Reemplaza con el token de tu bot
+	TelegramChatID = "-1002318517831" // Reemplaza con el ID del chat
 )
 
 // Función para enviar mensajes a Telegram
