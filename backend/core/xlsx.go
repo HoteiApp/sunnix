@@ -233,6 +233,24 @@ func EsMayuscula(texto string) bool {
 
 // Importar clientes desde un archivo Excel
 // XlsxImportClients lee un archivo Excel y procesa los datos de los clientes
+// 0 LAST NAME
+// 1 FIRST NAME
+// 2 MR
+// 3 DX
+// 4 PSYCH EVAL
+// 5 DOA
+// 6 STATUS
+// 7 TCM
+// 8 SUPERVISOR
+// 9 LOCATION
+// 10 HEALTH PLAN
+// 11 MEDICAID ID
+// 12 MEDICARE ID
+// 13 INSURANCE ID
+// 14 DOB
+// 15 SS#
+// 16 PHONE #
+// 17 ADDRESS
 func XlsxImportClients() {
 	excelFile, err := excelize.OpenFile(system.ImportClientsFile)
 	if err != nil {
@@ -267,7 +285,6 @@ func XlsxImportClients() {
 	// Procesar y mostrar las filas de datos
 	for rowIdx, row := range rows {
 		if rowIdx == 0 {
-			// fmt.Println(row, row)
 			continue // Saltar la fila de encabezado si lo deseas
 		}
 
@@ -296,7 +313,6 @@ func XlsxImportClients() {
 				mr = mrData
 			}
 
-			// fmt.Println(mr)
 			// Solo se tendra en cuenta primera admission
 			// ----------------------------------------------------------------------------------------------
 			if admission == "" && mr != "" {
@@ -307,26 +323,6 @@ func XlsxImportClients() {
 				if err != nil {
 					log.Fatalf("Error converting mr to int: %v", err)
 				}
-
-				// 0 LAST NAME
-				// 1 FIRST NAME
-				// 2 MR
-				// 3 DX
-				// 4 PSYCH EVAL
-				// 5 DOA
-				// 6 STATUS
-				// 7 TCM
-				// 8 SUPERVISOR
-				// 9 LOCATION
-				// 10 HEALTH PLAN
-				// 11 MEDICAID ID
-				// 12 MEDICARE ID
-				// 13 INSURANCE ID
-				// 14 Auth. Exp
-				// 15 DOB
-				// 16 SS#
-				// 17 PHONE #
-				// 18 ADDRESS
 
 				status := "Closed"
 				if row[6] == "ACTIVE" {
@@ -355,23 +351,22 @@ func XlsxImportClients() {
 
 				client.Date = FormatearFecha(strings.ReplaceAll(row[5], "-", "/"))
 				client.Doa = FormatearFecha(strings.ReplaceAll(row[5], "-", "/"))
-				fmt.Println(FormatearFecha(strings.ReplaceAll(row[5], "-", "/")))
 
-				client.DOB = FormatearFecha(strings.ReplaceAll(row[15], "-", "/"))
-				client.SS = row[16]
+				client.DOB = FormatearFecha(strings.ReplaceAll(row[14], "-", "/"))
+				client.SS = row[15]
 
 				address := "N/A"
-				if len(row) >= 19 {
-					address = row[18]
+				if len(row) >= 18 {
+					address = row[17]
 				}
 
 				client.Address = address
 				client.State = row[9]
 
 				Phone := "N/A"
-				if len(row) >= 18 {
-					if len(row[17]) == 12 {
-						Phone = fmt.Sprintf("(%s) %s-%s", row[17][:3], row[17][4:7], row[17][8:])
+				if len(row) >= 17 {
+					if len(row[16]) == 12 {
+						Phone = fmt.Sprintf("(%s) %s-%s", row[16][:3], row[16][4:7], row[16][8:])
 					}
 				}
 				client.Phone = Phone
@@ -391,11 +386,10 @@ func XlsxImportClients() {
 					if client.Medicaid != "" {
 						var existing models.Clients
 						if err := silentDB.Where("medicaid = ?", client.Medicaid).First(&existing).Error; err == nil {
-							// fmt.Println("DuplicateMedicaid:", client.Medicaid)
+
 							return false
 						}
 					}
-
 					// Validar Medicare
 					if client.Medicare != "" && client.Medicare != "N/A" {
 						var existing models.Clients
@@ -413,7 +407,6 @@ func XlsxImportClients() {
 				})
 			}
 		}
-		// fmt.Println(uidTCM)
 	}
 	fmt.Printf("\nTotal de filas procesadas: %d\n", len(rows)-1) // Restamos 1 por los encabezados
 }
