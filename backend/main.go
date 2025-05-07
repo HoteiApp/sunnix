@@ -64,6 +64,7 @@ func init() {
 func main() {
 	// Import Clients
 	if system.ImportClients == "yes" {
+		// core.TestDic()
 		go core.XlsxImportClients()
 		// go core.XlsxImportAdmission()
 	}

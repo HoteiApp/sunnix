@@ -58,6 +58,7 @@ var (
 	// -- Import Clients
 	ImportClients     = configEnv("sunissUp.import.active")
 	ImportClientsFile = configEnv("sunissUp.import.file")
+	ImportTcmListFile = configEnv("sunissUp.import.tcmlist.file")
 
 	// -- AI
 	AiApiKey = configEnv("sunissUp.ia.apiKey")
