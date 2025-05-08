@@ -225,11 +225,25 @@ func XlsxImportClients() {
 
 		uidTCM := ""
 		if len(row) > 16 {
+
 			if val, exists := tcmList[row[7]]; exists {
 				uidTCM = val
 			} else {
-				fmt.Printf("No se encontró Usuario para '%s'\n", row[7])
+				logFilePath := "data/logs/missing_users.log"
+				logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				if err != nil {
+					log.Fatalf("Error abriendo o creando el archivo de log: %v", err)
+				}
+				defer logFile.Close()
+
+				logMessage := fmt.Sprintf("No se encontró Usuario para '%s' '%s' '%s' \n", row[7], row[0], row[1])
+				if _, err := logFile.WriteString(logMessage); err != nil {
+					log.Fatalf("Error escribiendo en el archivo de log: %v", err)
+				}
+				continue
+				// fmt.Printf("No se encontró Usuario para '%s'\n", row[7])
 			}
+
 			//-- Mr
 			var mr, admission string
 
@@ -249,86 +263,86 @@ func XlsxImportClients() {
 				mr = mrData
 			}
 
-			// Solo se tendra en cuenta primera admission
-			// ----------------------------------------------------------------------------------------------
-			if admission == "" && mr != "" {
+			if row[6] != "NO OPEND" {
+				// Solo se tendra en cuenta primera admission
+				// ----------------------------------------------------------------------------------------------
+				if admission == "" && mr != "" {
+					var client models.Clients
 
-				var client models.Clients
-
-				mrInt, err := strconv.Atoi(mr)
-				if err != nil {
-					log.Fatalf("Error converting mr to int: %v", err)
-				}
-
-				status := "Closed"
-				if row[6] == "ACTIVE" {
-					status = "Open"
-				} else if row[6] == "CLOSED" {
-					status = "Closed"
-				} else {
-					status = "No Opened"
-				}
-
-				if EsMayuscula(uidTCM) {
-					client.ReferringPerson = uidTCM
-				} else {
-					client.TcmActive = uidTCM
-				}
-
-				client.LastName = row[0]
-				client.FirstName = row[1]
-				client.Mr = mrInt
-
-				client.Status = status
-				client.ReferringAgency = "SunissUp"
-				client.CellPhone = ""
-				client.Fax = ""
-				client.Email = ""
-
-				client.Date = FormatearFecha(strings.ReplaceAll(row[5], "-", "/"))
-				client.Doa = FormatearFecha(strings.ReplaceAll(row[5], "-", "/"))
-
-				client.DOB = FormatearFecha(strings.ReplaceAll(row[14], "-", "/"))
-				client.SS = row[15]
-
-				address := "N/A"
-				if len(row) >= 18 {
-					address = row[17]
-				}
-
-				client.Address = address
-				client.State = row[9]
-
-				Phone := "N/A"
-				if len(row) >= 17 {
-					if len(row[16]) == 12 {
-						Phone = fmt.Sprintf("(%s) %s-%s", row[16][:3], row[16][4:7], row[16][8:])
+					mrInt, err := strconv.Atoi(mr)
+					if err != nil {
+						log.Fatalf("Error converting mr to int: %v", err)
 					}
-				}
-				client.Phone = Phone
-				client.Medicaid = row[11]
-				client.Medicare = row[12]
-				client.InsuranceId = row[13]
 
-				// remplazar el punto por un espacio en blanco en el DX
-				client.DxCode = strings.ReplaceAll(row[3], ".", "")
-				client.PsychEvaluation = FormatearFecha(strings.ReplaceAll(row[4], "-", "/"))
+					status := "No Opened"
+					if row[6] == "ACTIVE" {
+						status = "Pending"
+					}
+					if row[6] == "CLOSED" {
+						status = "Closed"
+					}
 
-				client.HealthPlan = row[10]
+					if EsMayuscula(uidTCM) {
+						client.ReferringPerson = uidTCM
+					} else {
+						client.TcmActive = uidTCM
+					}
 
-				_, _ = database.WithDB(func(db *gorm.DB) interface{} {
-					silentDB := db.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)})
-					// Validar Medicaid
-					if client.Medicaid != "" {
-						var existing models.Clients
-						if err := silentDB.Where("medicaid = ?", client.Medicaid).First(&existing).Error; err == nil {
-							return false
+					client.LastName = row[0]
+					client.FirstName = row[1]
+					client.Mr = mrInt
+
+					client.Status = status
+					client.ReferringAgency = "SunissUp"
+					client.CellPhone = ""
+					client.Fax = ""
+					client.Email = ""
+
+					client.Date = FormatearFecha(strings.ReplaceAll(row[5], "-", "/"))
+					client.Doa = FormatearFecha(strings.ReplaceAll(row[5], "-", "/"))
+
+					client.DOB = FormatearFecha(strings.ReplaceAll(row[14], "-", "/"))
+					client.SS = row[15]
+
+					address := "N/A"
+					if len(row) >= 18 {
+						address = row[17]
+					}
+
+					client.Address = address
+					client.State = row[9]
+
+					Phone := "N/A"
+					if len(row) >= 17 {
+						if len(row[16]) == 12 {
+							Phone = fmt.Sprintf("(%s) %s-%s", row[16][:3], row[16][4:7], row[16][8:])
 						}
 					}
-					// Validar Medicare
-					if client.Medicare != "" && client.Medicare != "N/A" {
+					client.Phone = Phone
+					client.Medicaid = row[11]
+					client.Medicare = row[12]
+					client.InsuranceId = row[13]
+
+					// remplazar el punto por un espacio en blanco en el DX
+					client.DxCode = strings.ReplaceAll(row[3], ".", "")
+					client.PsychEvaluation = FormatearFecha(strings.ReplaceAll(row[4], "-", "/"))
+
+					client.HealthPlan = row[10]
+
+					_, _ = database.WithDB(func(db *gorm.DB) interface{} {
+						silentDB := db.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Silent)})
+						// Validar Medicaid
+						if client.Medicaid != "" {
+							var existing models.Clients
+							if err := silentDB.Where("medicaid = ?", client.Medicaid).First(&existing).Error; err == nil {
+
+								return false
+							}
+						}
+						// Validar Medicare
+
 						var existing models.Clients
-						if err := silentDB.Where("medicare = ?", client.Medicare).First(&existing).Error; err == nil {
+						if err := silentDB.Where("medicare = ? AND medicare != '' AND medicare != 'N/A'", client.Medicare).First(&existing).Error; err == nil {
 							return fmt.Errorf("ya existe otro cliente con el mismo número de Medicare: %s", client.Medicare)
 						}
 
@@ -340,17 +354,20 @@ func XlsxImportClients() {
 								createAdmission(row, mr, uidTCM, 1)
 							}
 						}
+
+						return client
+					})
+				} else {
+					if uidTCM != "" {
+						// fmt.Println("2", row[7], row[2])
+
+						num_admission, _ := strconv.Atoi(admission)
+
+						createAdmission(row, mr, uidTCM, num_admission+1)
 					}
-
-					return client
-				})
-			} else {
-				if uidTCM != "" {
-					num_admission, _ := strconv.Atoi(admission)
-
-					createAdmission(row, mr, uidTCM, num_admission+1)
-					fmt.Println(mr, " ------------ ", admission)
 				}
+			} else {
+				fmt.Println(mr, "  ", admission, " NO OPEND")
 			}
 		}
 	}
@@ -371,10 +388,9 @@ func createAdmission(row []string, mr string, uidTCM string, order int) interfac
 			tcms := tcmsList[tcm.Supervisor]
 			if tcms.Uid == "" {
 				if tcm.Supervisor != "" {
-					gettcms := getUserLdap(tcm.Supervisor)
-					tcms = gettcms
+					tcms = getUserLdap(tcm.Supervisor)
 				} else {
-					fmt.Println("no tcms")
+					fmt.Println("No tcms para: ", uidTCM)
 					return false
 				}
 			}
@@ -384,11 +400,10 @@ func createAdmission(row []string, mr string, uidTCM string, order int) interfac
 
 			status := "Closed"
 			if row[6] == "ACTIVE" {
-				status = "Open"
-			} else if row[6] == "CLOSED" {
-				status = "Closed"
-			} else {
 				status = "Pending"
+			}
+			if row[6] == "CLOSED" {
+				status = "Closed"
 			}
 
 			mentalPrimary := strings.ReplaceAll(row[3], ".", "")
@@ -417,7 +432,6 @@ func createAdmission(row []string, mr string, uidTCM string, order int) interfac
 
 			client.Date = FormatearFecha(strings.ReplaceAll(row[5], "-", "/"))
 			client.Doa = FormatearFecha(strings.ReplaceAll(row[5], "-", "/"))
-			fmt.Println("DOB     ", row[14])
 			client.DOB = FormatearFecha(strings.ReplaceAll(row[14], "-", "/"))
 			client.SS = row[15]
 
