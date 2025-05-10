@@ -2538,6 +2538,162 @@ func ClientsDatabase(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"clients": result.([]models.OutClients)})
 }
 
+func ClientsAllInfo(c *fiber.Ctx) error {
+	id := c.Params("id")
+	var scm []models.OutClientSCMActive
+
+	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
+		var caseManagement []models.ClientServiceCaseManagement
+		db.Where("client = ?", id).Find(&caseManagement)
+
+		for _, dataSCM := range caseManagement {
+
+			var tcm models.ClienteSCMTcm
+			db.Where("scm = ?", dataSCM.ID).Find(&tcm)
+			var demografic models.ClientSCMDemografic
+			db.Where("scm = ?", dataSCM.ID).Find(&demografic)
+			// -----
+			var sureActive models.ClientSCMSure
+			db.Where("scm = ? and active = ?", dataSCM.ID, true).Find(&sureActive)
+
+			var notes []models.Notes
+			db.Where("scm = ? and insurance = ?", dataSCM.ID, sureActive.ID).Find(&notes)
+			// --- Calculte notes available
+			var consumedUnits int64
+			for _, note := range notes {
+				consumedUnits += int64(note.Units)
+			}
+			// ---
+
+			var sures []models.ClientSCMSure
+			db.Where("scm = ?", dataSCM.ID).Find(&sures)
+
+			var files []models.ClientSCMSureFilesInCloud
+			db.Where("scm = ?", dataSCM.ID).Find(&files)
+			// -----
+
+			var medicals models.ClientSCMMedical
+			db.Where("scm = ?", dataSCM.ID).Find(&medicals)
+			var mentals models.ClientSCMMental
+			db.Where("scm = ?", dataSCM.ID).Find(&mentals)
+			// Documents
+			// -------------
+			var certification models.ClientSCMCertification
+			db.Where("scm = ?", dataSCM.ID).Find(&certification)
+
+			var outCertification models.OutSCMCertification
+
+			decryptedCertSignaturetcm, _ := core.DecryptImage(certification.Signtcm)
+			decryptedCertSignaturesupervisor, _ := core.DecryptImage(certification.Signsupervisor)
+			decryptedCertSignatureqa, _ := core.DecryptImage(certification.Signqa)
+
+			copier.Copy(&outCertification, &certification)
+
+			outCertification.Signtcm = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedCertSignaturetcm)
+			outCertification.Signsupervisor = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedCertSignaturesupervisor)
+			outCertification.Signqa = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedCertSignatureqa)
+
+			// -----------
+
+			var assessment models.ClientSCMAssessment
+			db.Where("scm = ?", dataSCM.ID).Find(&assessment)
+			var outAssessmet models.OutSCMAssessment
+			decryptedAssessmentSignaturetcm, _ := core.DecryptImage(assessment.Signaturetcm)
+			decryptedAssessmentSignaturesupervisor, _ := core.DecryptImage(assessment.Signaturesupervisor)
+			decryptedAssessmentSignatureqa, _ := core.DecryptImage(assessment.Signatureqa)
+			copier.Copy(&outAssessmet, &assessment)
+			outAssessmet.Signaturetcm = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedAssessmentSignaturetcm)
+			outAssessmet.Signaturesupervisor = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedAssessmentSignaturesupervisor)
+			outAssessmet.Signatureqa = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedAssessmentSignatureqa)
+
+			var sp models.ClientSCMSp
+			db.Where("scm = ?", dataSCM.ID).Find(&sp)
+
+			var goal1 models.SpGoal1
+			db.Where("sp = ?", sp.ID).Find(&goal1)
+			var goal2 models.SpGoal2
+			db.Where("sp = ?", sp.ID).Find(&goal2)
+			var goal3 models.SpGoal3
+			db.Where("sp = ?", sp.ID).Find(&goal3)
+			var goal4 models.SpGoal4
+			db.Where("sp = ?", sp.ID).Find(&goal4)
+			var goal5 models.SpGoal5
+			db.Where("sp = ?", sp.ID).Find(&goal5)
+			var goal6 models.SpGoal6
+			db.Where("sp = ?", sp.ID).Find(&goal6)
+			var goal7 models.SpGoal7
+			db.Where("sp = ?", sp.ID).Find(&goal7)
+			var goal8 models.SpGoal8
+			db.Where("sp = ?", sp.ID).Find(&goal8)
+
+			var outSp models.OutClientSCMSp
+			decryptedSignaturetcm, _ := core.DecryptImage(sp.Signaturetcm)
+			decryptedSignaturesupervisor, _ := core.DecryptImage(sp.Signaturesupervisor)
+			decryptedSignatureqa, _ := core.DecryptImage(sp.Signatureqa)
+
+			outSp.ID = int(sp.ID)
+			outSp.Client = sp.Client
+			outSp.Scm = sp.Scm
+			outSp.Developmentdate = sp.Developmentdate
+			outSp.Axiscode = sp.Axiscode
+			outSp.Axiscodedescription = sp.Axiscodedescription
+			outSp.Tcm = sp.Tcm
+			outSp.Goal1 = goal1
+			outSp.Goal2 = goal2
+			outSp.Goal3 = goal3
+			outSp.Goal4 = goal4
+			outSp.Goal5 = goal5
+			outSp.Goal6 = goal6
+			outSp.Goal7 = goal7
+			outSp.Goal8 = goal8
+
+			outSp.Nametcm = sp.Nametcm
+			outSp.Categorytcm = sp.Categorytcm
+			outSp.Signaturetcm = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignaturetcm)
+			outSp.Signaturetcmdate = sp.Signaturetcmdate
+
+			outSp.Supervisor = sp.Supervisor
+			outSp.NameSupervisor = sp.NameSupervisor
+			outSp.CategorySupervisor = sp.CategorySupervisor
+			outSp.Signaturesupervisor = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignaturesupervisor)
+			outSp.Signaturesupervisordate = sp.Signaturesupervisordate
+
+			outSp.Qa = sp.Qa
+			outSp.Signatureqa = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignatureqa)
+			outSp.Signatureqadate = sp.Signatureqadate
+
+			// ------------------
+			scm = append(scm, models.OutClientSCMActive{
+				ID:              int(dataSCM.ID),
+				Status:          dataSCM.Status,
+				Doa:             dataSCM.Doa,
+				ClosingDate:     dataSCM.ClosingDate,
+				TcmID:           dataSCM.TCM,
+				TCM:             tcm,
+				Demografic:      demografic,
+				SureActive:      sureActive,
+				NotesSureActive: notes,
+				UnitsConsumed:   consumedUnits,
+				Sure:            sures,
+				Files:           files,
+				Medical:         medicals,
+				Mental:          mentals,
+
+				Certification: outCertification,
+				Assessment:    outAssessmet,
+				Sp:            outSp,
+			})
+		}
+
+		return scm
+	})
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"scm": result.([]models.OutClientSCMActive),
+	})
+
+}
+
 // batchGetUserFromLDAP obtiene múltiples usuarios de LDAP en una sola operación
 func batchGetUserFromLDAP(uids []string) (map[string]models.Users, []string, error) {
 	if len(uids) == 0 {
