@@ -348,6 +348,7 @@ type OutClientSCMSure struct {
 	Active bool                      `json:"active"`
 	Files  ClientSCMSureFilesInCloud `json:"files"`
 }
+
 type OutClientSCMActive struct {
 	ID              int           `json:"id"`
 	Status          string        `json:"status"`

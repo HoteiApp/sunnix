@@ -34,10 +34,13 @@ func ModuleTCMRoutes(app *fiber.App) error {
 	clients := tcm.Group("/clients")
 	clients.Get("/availableMr/:mr", controllers.AvailableMr).Name("AvailableMr")
 	clients.Get("/proposeMr", controllers.ProposeMr).Name("ProposeMr")
+
 	clients.Get("/requestNewClients", controllers.CoreListRequestNewClients).Name("CoreListRequestNewClients")
-	clients.Put("/requestNewClient", controllers.ClientsRequestNewClientePut).Name("NewCliente")                                  //ok
-	clients.Post("/requestEditClient", controllers.ClientsRequestEditClientePost).Name("EditCliente")                             //ok
-	clients.Post("/requestEditSCMClient", controllers.ClientsRequestEditSCMClientePost).Name("EditSCMCliente")                    //ok
+	clients.Put("/requestNewClient", controllers.ClientsRequestNewClientePut).Name("NewCliente") //ok
+
+	clients.Post("/requestEditClient", controllers.ClientsRequestEditClientePost).Name("EditCliente")          //ok
+	clients.Post("/requestEditSCMClient", controllers.ClientsRequestEditSCMClientePost).Name("EditSCMCliente") //ok
+
 	clients.Put("/requestAddSCMSure", controllers.ClientsRequestAddSCMSurePut).Name("ClientsRequestAddSCMSurePut")                //
 	clients.Post("/requestEditSCMSure", controllers.ClientsRequestEditSCMSurePost).Name("EditSCMSure")                            //ok
 	clients.Post("/requestSubmitSCMSure", controllers.ClientsRequestSubmitCMSurePost).Name("SubmitSCMSure")                       //ok
@@ -51,6 +54,7 @@ func ModuleTCMRoutes(app *fiber.App) error {
 	clients.Get("/list/all", controllers.ClientsListAllGet).Name("ClientsListAllGet") //ok
 	clients.Get("/list/:id", controllers.ClientGet).Name("ClientsGet")                //ok
 
+	clients.Get("/:id", controllers.ClientsAllInfo).Name("ClientsAllInfo")                               // ok
 	clients.Get("/scm/:id", controllers.ClientSCMGet).Name("ClientsSCMGet")                              // ok
 	clients.Put("/add", controllers.ClientsNewClientePut).Name("ClientsNewClientePut")                   //ok
 	clients.Get("/addtoxlsx", controllers.ClientsNewClienteToXlsxPut).Name("ClientsNewClienteToXlsxPut") //TODO POR TERMINAR
