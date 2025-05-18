@@ -1,0 +1,1 @@
+- Cuando se crea una admission no modifica el value del status en la tabla de clients
