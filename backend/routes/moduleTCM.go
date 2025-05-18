@@ -105,6 +105,7 @@ func ModuleTCMRoutes(app *fiber.App) error {
 	tcms := tcm.Group("/tcms")
 	tcms.Get("/list", controllers.CoreGetListTCMS).Name("CoreGetListTCMS")
 	tcms.Get("/all", controllers.CoreGetTCMS).Name("CoreGetTCMS")
+	tcms.Get("/:uid", controllers.CoreGetTCMSID).Name("CoreGetTCMSID")
 	// PDF
 	pdf := tcm.Group("/pdf")
 	pdf.Post("/", controllers.GeneratePDF).Name("GeneratePDF")

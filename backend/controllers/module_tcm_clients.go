@@ -335,9 +335,9 @@ func ClientsRequestEditSCMClientePost(c *fiber.Ctx) error {
 		}
 		var client models.Clients
 		// Buscar la entrada existente por ID
-		if err := db.Where("ID = ?", requestData.Editclient.ID).First(&client).Error; err != nil {
+		if err := db.Where("ID = ?", request.Client).First(&client).Error; err != nil {
 			// Manejar el caso en el que no se encuentra la entrada
-			return err
+			return false
 		}
 		// Actualizar los campos de la entrada existente
 		client.ReferringAgency = request.ReferringAgency
@@ -367,6 +367,7 @@ func ClientsRequestEditSCMClientePost(c *fiber.Ctx) error {
 		client.GoldCardNumber = request.GoldCardNumber
 		client.Medicare = request.Medicare
 		db.Save(&client)
+
 		if db.Error != nil {
 			return db.Error
 		} else {
