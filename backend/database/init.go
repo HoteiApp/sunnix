@@ -89,6 +89,10 @@ func InitDB() {
 	if err := db.AutoMigrate(&models.ModuleTcmRateRange{}, &models.ModuleTcmPaymentsRateRange{}, &models.ModuleTcmPayments{}, &models.ModuleTcmPaymentsTcm{}, &models.ModuleTcmNotesPayments{}); err != nil {
 		panic(fmt.Sprintf("Failed to auto-migrate table: %s", err.Error()))
 	}
+	// Auto-migrate the TablePreference table
+	if err := db.AutoMigrate(&models.TablePreference{}); err != nil {
+		panic(fmt.Sprintf("Failed to auto-migrate table: %s", err.Error()))
+	}
 
 }
 

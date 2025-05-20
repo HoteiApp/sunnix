@@ -91,6 +91,9 @@ func Routes(app *fiber.App) {
 	my.Post("/generatePDF", controllers.GeneratePDF).Name("GeneratePDF")
 
 	// ----------------------------------------------------------------------
+	preference := api.Group("preference")
+	preference.Post("/table", controllers.TablePreferencePost).Name("TablePreferencePost")
+	// ----------------------------------------------------------------------
 	voice := api.Group("voice")
 	voice.Post("/get", controllers.VoiceGet).Name("VoicePost")
 	voice.Post("/", controllers.VoicePost).Name("VoicePost")
