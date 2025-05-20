@@ -2399,12 +2399,30 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 }
 
 func ClientsDatabase(c *fiber.Ctx) error {
+	claims, _ := GetClaims(c)
+
 	var clientOut []models.OutClients
 
 	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
 		var clients []models.Clients
-		db.Find(&clients)
+		if claims["Roll"].(string) == "TCMS" {
 
+			var userUIDs []string
+			userUIDs = append(userUIDs, claims["UID"].(string))
+
+			resultTCMS := core.ExtractFunctionsPlugins("ldap", "Search", "(&(supervisor="+claims["UID"].(string)+"))")
+			bytes, _ := json.Marshal(&resultTCMS)
+			var resultSearch ldap.SearchResult
+			_ = json.Unmarshal(bytes, &resultSearch)
+
+			for _, userLdap := range resultSearch.Entries {
+				userUIDs = append(userUIDs, userLdap.GetAttributeValue("uid"))
+			}
+			db.Where("tcm_active IN (?)", userUIDs).Find(&clients)
+
+		} else {
+			db.Find(&clients)
+		}
 		// Paso 1: Recolectar todos los UID necesarios (TCMs y Supervisores)
 		uidSet := make(map[string]struct{})
 		for _, client := range clients {
