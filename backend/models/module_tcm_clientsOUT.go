@@ -389,7 +389,7 @@ type OutClients struct {
 	Race      string `json:"race"`
 
 	Address string `json:"address"`
-	State   string `json:"state"`
+	State   string `json:"location"`
 	ZipCode string `json:"zip_code"`
 
 	Phone    string `json:"phone"`
