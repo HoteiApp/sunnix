@@ -128,3 +128,37 @@ func GetPresignedURL(key string, expiration time.Duration) string {
 	}
 	return url
 }
+
+// Función para obtener una URL presignada de los avatars
+func GetAvatarsURL(uids []string, expiration time.Duration) map[string]string {
+	svc := s3.New(system.SESSION)
+	avatars := make(map[string]string)
+
+	for _, uid := range uids {
+		key := "records/" + uid + "/avatar.png"
+
+		// Verifica si el objeto existe
+		_, err := svc.HeadObject(&s3.HeadObjectInput{
+			Bucket: aws.String(system.S3_BUCKET),
+			Key:    aws.String(key),
+		})
+		if err != nil {
+			// No existe el archivo
+			continue
+		}
+
+		// URL presignada con expiración
+		req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
+			Bucket: aws.String(system.S3_BUCKET),
+			Key:    aws.String(key),
+		})
+		url, err := req.Presign(expiration)
+		if err != nil {
+			continue
+		}
+		avatars[uid] = url
+
+	}
+
+	return avatars
+}

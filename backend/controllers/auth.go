@@ -218,6 +218,10 @@ func GetUserInfo(uid string) models.ActiveUser {
 					active.Avatar = url
 				}
 			}
+			// Table preference
+			var pref models.TablePreference
+			db.Where("user_id = ?", uid).Find(&pref)
+			active.TablePreference = pref
 
 		}
 
