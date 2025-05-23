@@ -2423,6 +2423,7 @@ func ClientsDatabase(c *fiber.Ctx) error {
 		} else {
 			db.Find(&clients)
 		}
+
 		// Paso 1: Recolectar todos los UID necesarios (TCMs y Supervisores)
 		uidSet := make(map[string]struct{})
 		for _, client := range clients {

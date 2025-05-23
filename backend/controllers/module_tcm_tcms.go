@@ -689,7 +689,6 @@ func CoreGetTCMSID(c *fiber.Ctx) error {
 				var cms []models.ClientServiceCaseManagement
 				db.Where("client = ?", client.ID).Find(&cms)
 				var scm []models.OutClientSCM
-				
 
 				clients = append(clients, models.OutClients{
 					ID:              client.ID,
@@ -727,6 +726,19 @@ func CoreGetTCMSID(c *fiber.Ctx) error {
 					GoldCardNumber: client.GoldCardNumber,
 					Medicare:       client.Medicare,
 					Scm:            scm,
+
+					Mr:     client.Mr,
+					Status: client.Status,
+					// TcmActive:  tcm,
+					// TcmPhoto:   tcmPhoto,
+					// TcmsActive: tcms,
+					// TcmsPhoto:  tcmsPhoto,
+
+					HealthPlan:      client.HealthPlan,
+					DxCode:          client.DxCode,
+					PsychEvaluation: client.PsychEvaluation,
+					Doa:             client.Doa,
+					InsuranceId:     client.InsuranceId,
 				})
 			}
 			// --------------
