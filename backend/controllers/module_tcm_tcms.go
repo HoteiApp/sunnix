@@ -772,50 +772,127 @@ func CoreGetTCMSID(c *fiber.Ctx) error {
 }
 
 // Funtion mejorada para listar los TCMs supervisores porque la anterior no estaba optimizada
+// func CoreGetListTCMS(c *fiber.Ctx) error {
+
+// 	result, err := database.WithDB(func(db *gorm.DB) interface{} {
+// 		var tcms []models.OutListTCMS
+// 		// Query the database for all users
+// 		listTcms := core.GetUsersFromLDAP("(&(roll=tcms)(active=True))")
+// 		// Ordenar por el campo Business
+// 		sort.Slice(listTcms, func(i, j int) bool {
+// 			numI, _ := strconv.Atoi(listTcms[i].Business)
+// 			numJ, _ := strconv.Atoi(listTcms[j].Business)
+// 			return numI < numJ
+// 		})
+// 		var allUIDs []string
+// 		for _, tcms_info := range listTcms {
+// 			allUIDs = append(allUIDs, tcms_info.Uid)
+// 		}
+// 		avatarUrls, _ := core.BatchGetAvatars(allUIDs)
+// 		for k, supervisor := range listTcms {
+// 			userInfo := core.GetWorkerRecord(supervisor.Uid)
+// 			userData := GetUserInfo(supervisor.Uid)
+// 			// --
+// 			tcm := core.GetUsersFromLDAP("(&(roll=tcm)(supervisor=" + supervisor.Uid + "))")
+
+// 			tcms = append(tcms, models.OutListTCMS{
+// 				ID:       k + 1,
+// 				Photo:    avatarUrls[supervisor.Uid],
+// 				User:     userData.User,
+// 				Info:     userInfo,
+// 				TotlaTcm: len(tcm),
+// 			})
+// 		}
+
+// 		return tcms
+// 	})
+// 	if err != nil {
+// 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+// 			"message": "Error",
+// 		})
+// 	}
+
+// 	// Return the list of users
+// 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+// 		"tcms": result.([]models.OutListTCMS),
+// 	})
+// }
+
 func CoreGetListTCMS(c *fiber.Ctx) error {
 	result, err := database.WithDB(func(db *gorm.DB) interface{} {
 		var tcms []models.OutListTCMS
-		// Query the database for all users
+
+		// Obtener lista de supervisores desde LDAP
 		listTcms := core.GetUsersFromLDAP("(&(roll=tcms)(active=True))")
-		// Ordenar por el campo Business
+
+		// Ordenar por campo Business numéricamente
 		sort.Slice(listTcms, func(i, j int) bool {
 			numI, _ := strconv.Atoi(listTcms[i].Business)
 			numJ, _ := strconv.Atoi(listTcms[j].Business)
 			return numI < numJ
 		})
 
-		for k, supervisor := range listTcms {
-			userInfo := core.GetWorkerRecord(supervisor.Uid)
-			userData := GetUserInfo(supervisor.Uid)
-			// --
-			tcm := core.GetUsersFromLDAP("(&(roll=tcm)(supervisor=" + supervisor.Uid + "))")
+		// Extraer todos los UIDs
+		uids := make([]string, len(listTcms))
+		userMap := make(map[string]models.Users)
+		for i, t := range listTcms {
+			uids[i] = t.Uid
+			userMap[t.Uid] = t
+		}
 
-			// -------
-			tcmsUIDs := []string{supervisor.Uid} // Initialize the list with the supervisor's UID
-			avatarUrls, err := core.BatchGetAvatars(tcmsUIDs)
-			if err != nil {
-				return err
-			}
-			// -------
+		// Batch avatars, info y datos del usuario
+		avatarUrls, _ := core.BatchGetAvatars(uids)
+		recordsMap := BatchGetWorkerRecords(db, uids)        // Debes implementar esto
+		tcmsCountMap := BatchCountTCMsBySupervisor(db, uids) // Debes implementar esto
+
+		// Construir salida
+		for k, sup := range listTcms {
 			tcms = append(tcms, models.OutListTCMS{
 				ID:       k + 1,
-				Photo:    avatarUrls[supervisor.Uid],
-				User:     userData.User,
-				Info:     userInfo,
-				TotlaTcm: len(tcm),
+				Photo:    avatarUrls[sup.Uid],
+				User:     userMap[sup.Uid],
+				Info:     recordsMap[sup.Uid],
+				TotlaTcm: tcmsCountMap[sup.Uid],
 			})
 		}
 
 		return tcms
 	})
+
 	if err != nil {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
 			"message": "Error",
 		})
 	}
 
-	// Return the list of users
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"tcms": result.([]models.OutListTCMS),
 	})
+}
+
+func BatchGetWorkerRecords(db *gorm.DB, uids []string) map[string]models.WorkerRecord {
+	records := make(map[string]models.WorkerRecord)
+
+	if len(uids) == 0 {
+		return records
+	}
+
+	var dbRecords []models.WorkerRecord
+	db.Where("uid IN ?", uids).Find(&dbRecords)
+
+	for _, rec := range dbRecords {
+		records[rec.Uid] = rec
+	}
+
+	return records
+}
+
+func BatchCountTCMsBySupervisor(db *gorm.DB, supervisors []string) map[string]int {
+	counts := make(map[string]int)
+	for _, sup := range supervisors {
+		tcms := core.GetUsersFromLDAP("(&(roll=tcm)(supervisor=" + sup + "))")
+		counts[sup] = len(tcms)
+	}
+
+	return counts
 }
