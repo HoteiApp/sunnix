@@ -413,9 +413,8 @@ func SupervisorTCMs(c *fiber.Ctx) error {
 
 			// --------------------------------
 
-			var caseManagement []models.ClientServiceCaseManagement
-			// With this query obtain only one scm from each tcm client
-			db.Select("DISTINCT client").Where("tcm = ?", uTCM.ID).Find(&caseManagement)
+			var clients []models.Clients
+			db.Where("tcm_active = ?", uTCM.Uid).Find(&clients)
 
 			// --------------
 			OutTCMList = append(OutTCMList, models.OutTCMList{
@@ -423,7 +422,7 @@ func SupervisorTCMs(c *fiber.Ctx) error {
 				Photo:   avatarUrls[uTCM.Uid],
 				User:    userMap[uTCM.Uid],
 				Info:    recordsMap[uTCM.Uid],
-				Clients: len(caseManagement),
+				Clients: len(clients),
 			})
 		}
 
