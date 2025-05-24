@@ -12,9 +12,11 @@ import (
 	"gorm.io/gorm"
 )
 
+// BUG: esta es la funcion que estaba antes de la de abajo, que demora mucho porque hace muchas consultas
 // Get all TCM of the SuPERVISOR ---------------------------------------------
-func SupervisorTCMs(c *fiber.Ctx) error {
+func SupervisorTCM(c *fiber.Ctx) error {
 	claims, _ := GetClaims(c)
+
 	var week models.Week
 	_, _ = database.WithDB(func(db *gorm.DB) interface{} {
 		return db.Where("active = ?", true).First(&week)
@@ -24,6 +26,7 @@ func SupervisorTCMs(c *fiber.Ctx) error {
 
 		tcm := core.GetUsersFromLDAP("(&(|(roll=tcm)(roll=tcms))(supervisor=" + claims["UID"].(string) + "))")
 		var outTCM []models.OutTCM
+
 		for i, uTCM := range tcm {
 			// tcmInfo := core.GetWorkerRecord(uTCM.Uid)
 			tcmUserData := GetUserInfo(uTCM.Uid)
@@ -374,6 +377,66 @@ func SupervisorTCMs(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"tcms": result.([]models.OutTCM),
+	})
+}
+
+// Get all TCM of the SuPERVISOR ---------------------------------------------
+func SupervisorTCMs(c *fiber.Ctx) error {
+	claims, _ := GetClaims(c)
+
+	var week models.Week
+	_, _ = database.WithDB(func(db *gorm.DB) interface{} {
+		return db.Where("active = ?", true).First(&week)
+	})
+
+	result, err := database.WithDB(func(db *gorm.DB) interface{} {
+
+		tcm := core.GetUsersFromLDAP("(&(|(roll=tcm)(roll=tcms))(supervisor=" + claims["UID"].(string) + "))")
+
+		// Extraer todos los UIDs
+		uids := make([]string, len(tcm))
+		userMap := make(map[string]models.Users)
+		for i, t := range tcm {
+			uids[i] = t.Uid
+			userMap[t.Uid] = t
+		}
+
+		// Batch avatars, info y datos del usuario
+		avatarUrls, _ := core.BatchGetAvatars(uids)
+		recordsMap := BatchGetWorkerRecords(db, uids)
+
+		var OutTCMList []models.OutTCMList
+
+		for i, uTCM := range tcm {
+			// tcmInfo := core.GetWorkerRecord(uTCM.Uid)
+			// tcmUserData := GetUserInfo(uTCM.Uid)
+
+			// --------------------------------
+
+			var caseManagement []models.ClientServiceCaseManagement
+			// With this query obtain only one scm from each tcm client
+			db.Select("DISTINCT client").Where("tcm = ?", uTCM.ID).Find(&caseManagement)
+
+			// --------------
+			OutTCMList = append(OutTCMList, models.OutTCMList{
+				ID:      i + 1,
+				Photo:   avatarUrls[uTCM.Uid],
+				User:    userMap[uTCM.Uid],
+				Info:    recordsMap[uTCM.Uid],
+				Clients: len(caseManagement),
+			})
+		}
+
+		return OutTCMList
+	})
+	if err != nil {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"message": "Error",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"tcms": result.([]models.OutTCMList),
 	})
 }
 
