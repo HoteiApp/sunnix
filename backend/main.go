@@ -35,9 +35,12 @@ func init() {
 	go core.ExtractFunctionsPlugins("task", "Task", system.MODE)
 	// -- Initializar plugins static
 	pluginsList := system.FindFiles(system.Path+"/plugins", ".plugin")
+
 	if len(pluginsList) > 0 {
+
 		for _, pluginPath := range pluginsList {
 			if strings.Contains(pluginPath, "plugin") {
+
 				pluginName := strings.Split(filepath.Base(pluginPath), ".")[0]
 				var pluginConfig models.StaticPluginConfig
 				_, _ = core.LoadPluginAndCreatePermission(pluginPath)
@@ -70,7 +73,7 @@ func main() {
 	}
 	// Create a new Fiber application for the first server
 	app := fiber.New(fiber.Config{
-		AppName:           "API-Zentinelle v1.0.0",
+		AppName:           "API-SUNNIX v1.0.0",
 		CaseSensitive:     false,
 		EnablePrintRoutes: false,
 	})
@@ -132,48 +135,7 @@ func main() {
 			}
 		}
 	}
-	// Discover and load modules
 	//--------------------------------------------------------------------
-	// modulesList := system.FindFiles(system.Path+"/modules", ".module")
-	// if len(modulesList) > 0 {
-	// 	for _, modulesPath := range modulesList {
-	// 		moduleName := filepath.Base(modulesPath)
-	// 		var moduleConfig models.ModuleConfig
-	// 		result, _ := database.WithDB(func(db *gorm.DB) interface{} {
-	// 			return db.Where("name = ?", moduleName).First(&moduleConfig)
-	// 		})
-	// 		loadedModule, loadedModuleError := core.LoadPluginAndCreatePermission(modulesPath)
-	// 		if result.(*gorm.DB).RowsAffected == 0 {
-	// 			_, _ = database.WithDB(func(db *gorm.DB) interface{} {
-	// 				return db.Create(&models.ModuleConfig{Name: moduleName, Active: false})
-	// 			})
-	// 			system.Log <- models.Logs{
-	// 				App:         "AGA",
-	// 				Action:      "MODULE_ADD",
-	// 				LoggedIn:    "sys",
-	// 				Username:    "sys",
-	// 				Description: "The system detected a new module " + moduleName + ", the module is disabled.",
-	// 			}
-	// 		} else if moduleConfig.Active {
-	// 			if loadedModuleError == nil {
-	// 				GetRoutes, err := loadedModule.Lookup("GetRoutes")
-	// 				if err != nil {
-	// 					system.Log <- models.Logs{
-	// 						App:         "AGA",
-	// 						Action:      "MODULE_ADD_ERROR",
-	// 						LoggedIn:    "sys",
-	// 						Username:    "sys",
-	// 						Description: "Error loading module " + moduleName + " , " + err.Error(),
-	// 					}
-	// 					fmt.Println("Error loading module: ", err)
-	// 				}
-	// 				_ = GetRoutes.(func(app *fiber.App) error)(app)
-	// 			}
-	// 		}
-	// 	}
-	// }
-	//--------------------------------------------------------------------
-
 	// Listen on the port specified in the "PORT" environment variable for the first server
 	go func() {
 		_ = app.Listen(":" + system.Port)
