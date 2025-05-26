@@ -367,9 +367,7 @@ func AuthLogin(c *fiber.Ctx) error {
 			"message": core.GetTextMessage("login_err_002"),
 		})
 	}
-
 	resultGetUser := GetUserInfo(username)
-
 	securityCode := false
 
 	if resultGetUser.User.Email != "" {
