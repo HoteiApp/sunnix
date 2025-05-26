@@ -270,138 +270,138 @@ func CoreGetTCMS(c *fiber.Ctx) error {
 				}
 
 				// --------------------------------
-				var clients []models.OutClients
+				// var clients []models.OutClients
 				var caseManagement []models.ClientServiceCaseManagement
 				// With this query obtain only one scm from each tcm client
 				db.Select("DISTINCT client").Where("tcm = ?", uTCM.ID).Find(&caseManagement)
 
-				for _, val := range caseManagement {
-					var client models.Clients
-					db.Where("ID = ?", val.Client).Find(&client)
-					var cms []models.ClientServiceCaseManagement
-					db.Where("client = ?", client.ID).Find(&cms)
-					var scm []models.OutClientSCM
-					for _, cm := range cms {
-						var tcm models.ClienteSCMTcm
-						db.Where("scm = ?", cm.ID).Find(&tcm)
-						var demografic models.ClientSCMDemografic
-						db.Where("scm = ?", cm.ID).Find(&demografic)
-						var sures []models.ClientSCMSure
-						db.Where("scm = ?", cm.ID).Find(&sures)
-						var medicals []models.ClientSCMMedical
-						db.Where("scm = ?", cm.ID).Find(&medicals)
-						var mentals []models.ClientSCMMental
-						db.Where("scm = ?", cm.ID).Find(&mentals)
-						// Documents
-						var certification models.ClientSCMCertification
-						db.Where("scm = ?", cm.ID).Find(&certification)
+				// for _, val := range caseManagement {
+				// 	var client models.Clients
+				// 	db.Where("ID = ?", val.Client).Find(&client)
+				// 	var cms []models.ClientServiceCaseManagement
+				// 	db.Where("client = ?", client.ID).Find(&cms)
+				// 	var scm []models.OutClientSCM
+				// 	for _, cm := range cms {
+				// 		var tcm models.ClienteSCMTcm
+				// 		db.Where("scm = ?", cm.ID).Find(&tcm)
+				// 		var demografic models.ClientSCMDemografic
+				// 		db.Where("scm = ?", cm.ID).Find(&demografic)
+				// 		var sures []models.ClientSCMSure
+				// 		db.Where("scm = ?", cm.ID).Find(&sures)
+				// 		var medicals []models.ClientSCMMedical
+				// 		db.Where("scm = ?", cm.ID).Find(&medicals)
+				// 		var mentals []models.ClientSCMMental
+				// 		db.Where("scm = ?", cm.ID).Find(&mentals)
+				// 		// Documents
+				// 		var certification models.ClientSCMCertification
+				// 		db.Where("scm = ?", cm.ID).Find(&certification)
 
-						var assessment models.ClientSCMAssessment
-						db.Where("scm = ?", cm.ID).Find(&assessment)
+				// 		var assessment models.ClientSCMAssessment
+				// 		db.Where("scm = ?", cm.ID).Find(&assessment)
 
-						var sp models.ClientSCMSp
-						db.Where("scm = ?", cm.ID).Find(&sp)
+				// 		var sp models.ClientSCMSp
+				// 		db.Where("scm = ?", cm.ID).Find(&sp)
 
-						var goal1 models.SpGoal1
-						db.Where("sp = ?", sp.ID).Find(&goal1)
-						var goal2 models.SpGoal2
-						db.Where("sp = ?", sp.ID).Find(&goal2)
-						var goal3 models.SpGoal3
-						db.Where("sp = ?", sp.ID).Find(&goal3)
-						var goal4 models.SpGoal4
-						db.Where("sp = ?", sp.ID).Find(&goal4)
-						var goal5 models.SpGoal5
-						db.Where("sp = ?", sp.ID).Find(&goal5)
-						var goal6 models.SpGoal6
-						db.Where("sp = ?", sp.ID).Find(&goal6)
-						var goal7 models.SpGoal7
-						db.Where("sp = ?", sp.ID).Find(&goal7)
-						var goal8 models.SpGoal8
-						db.Where("sp = ?", sp.ID).Find(&goal8)
+				// 		var goal1 models.SpGoal1
+				// 		db.Where("sp = ?", sp.ID).Find(&goal1)
+				// 		var goal2 models.SpGoal2
+				// 		db.Where("sp = ?", sp.ID).Find(&goal2)
+				// 		var goal3 models.SpGoal3
+				// 		db.Where("sp = ?", sp.ID).Find(&goal3)
+				// 		var goal4 models.SpGoal4
+				// 		db.Where("sp = ?", sp.ID).Find(&goal4)
+				// 		var goal5 models.SpGoal5
+				// 		db.Where("sp = ?", sp.ID).Find(&goal5)
+				// 		var goal6 models.SpGoal6
+				// 		db.Where("sp = ?", sp.ID).Find(&goal6)
+				// 		var goal7 models.SpGoal7
+				// 		db.Where("sp = ?", sp.ID).Find(&goal7)
+				// 		var goal8 models.SpGoal8
+				// 		db.Where("sp = ?", sp.ID).Find(&goal8)
 
-						// var outSp models.OutClientSCMSp
-						// // ---
-						// decryptedSignaturetcm, _ := core.DecryptImage(sp.Signaturetcm)
-						// decryptedSignaturesupervisor, _ := core.DecryptImage(sp.Signaturesupervisor)
-						// decryptedSignatureqa, _ := core.DecryptImage(sp.Signatureqa)
-						// // ---
+				// 		// var outSp models.OutClientSCMSp
+				// 		// // ---
+				// 		// decryptedSignaturetcm, _ := core.DecryptImage(sp.Signaturetcm)
+				// 		// decryptedSignaturesupervisor, _ := core.DecryptImage(sp.Signaturesupervisor)
+				// 		// decryptedSignatureqa, _ := core.DecryptImage(sp.Signatureqa)
+				// 		// // ---
 
-						// outSp.ID = int(sp.ID)
-						// outSp.Client = sp.Client
-						// outSp.Scm = sp.Scm
-						// outSp.Developmentdate = sp.Developmentdate
-						// outSp.Axiscode = sp.Axiscode
-						// outSp.Axiscodedescription = sp.Axiscodedescription
-						// outSp.Tcm = sp.Tcm
-						// outSp.Goal1 = goal1
-						// outSp.Goal2 = goal2
-						// outSp.Goal3 = goal3
-						// outSp.Goal4 = goal4
-						// outSp.Goal5 = goal5
-						// outSp.Goal6 = goal6
-						// outSp.Goal7 = goal7
-						// outSp.Goal8 = goal8
-						// outSp.Signaturetcm = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignaturetcm)
-						// outSp.Signaturetcmdate = sp.Signaturetcmdate
-						// outSp.Supervisor = sp.Supervisor
-						// outSp.Signaturesupervisor = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignaturesupervisor)
-						// outSp.Signaturesupervisordate = sp.Signaturesupervisordate
-						// outSp.Qa = sp.Qa
-						// outSp.Signatureqa = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignatureqa)
-						// outSp.Signatureqadate = sp.Signatureqadate
+				// 		// outSp.ID = int(sp.ID)
+				// 		// outSp.Client = sp.Client
+				// 		// outSp.Scm = sp.Scm
+				// 		// outSp.Developmentdate = sp.Developmentdate
+				// 		// outSp.Axiscode = sp.Axiscode
+				// 		// outSp.Axiscodedescription = sp.Axiscodedescription
+				// 		// outSp.Tcm = sp.Tcm
+				// 		// outSp.Goal1 = goal1
+				// 		// outSp.Goal2 = goal2
+				// 		// outSp.Goal3 = goal3
+				// 		// outSp.Goal4 = goal4
+				// 		// outSp.Goal5 = goal5
+				// 		// outSp.Goal6 = goal6
+				// 		// outSp.Goal7 = goal7
+				// 		// outSp.Goal8 = goal8
+				// 		// outSp.Signaturetcm = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignaturetcm)
+				// 		// outSp.Signaturetcmdate = sp.Signaturetcmdate
+				// 		// outSp.Supervisor = sp.Supervisor
+				// 		// outSp.Signaturesupervisor = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignaturesupervisor)
+				// 		// outSp.Signaturesupervisordate = sp.Signaturesupervisordate
+				// 		// outSp.Qa = sp.Qa
+				// 		// outSp.Signatureqa = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignatureqa)
+				// 		// outSp.Signatureqadate = sp.Signatureqadate
 
-						scm = append(scm, models.OutClientSCM{
-							ID:          int(cm.ID),
-							Status:      cm.Status,
-							Doa:         cm.Doa,
-							ClosingDate: cm.ClosingDate,
-						})
-					}
+				// 		scm = append(scm, models.OutClientSCM{
+				// 			ID:          int(cm.ID),
+				// 			Status:      cm.Status,
+				// 			Doa:         cm.Doa,
+				// 			ClosingDate: cm.ClosingDate,
+				// 		})
+				// 	}
 
-					clients = append(clients, models.OutClients{
-						ID:              client.ID,
-						ReferrerID:      client.ReferrerID,
-						ReferringAgency: client.ReferringAgency,
-						ReferringPerson: client.ReferringPerson,
-						CellPhone:       client.CellPhone,
-						Fax:             client.Fax,
-						Email:           client.Email,
-						Date:            client.Date,
+				// 	clients = append(clients, models.OutClients{
+				// 		ID:              client.ID,
+				// 		ReferrerID:      client.ReferrerID,
+				// 		ReferringAgency: client.ReferringAgency,
+				// 		ReferringPerson: client.ReferringPerson,
+				// 		CellPhone:       client.CellPhone,
+				// 		Fax:             client.Fax,
+				// 		Email:           client.Email,
+				// 		Date:            client.Date,
 
-						LastName:  client.LastName,
-						FirstName: client.FirstName,
-						SS:        client.SS,
-						DOB:       client.DOB,
-						Sexo:      client.Sexo,
-						Race:      client.Race,
+				// 		LastName:  client.LastName,
+				// 		FirstName: client.FirstName,
+				// 		SS:        client.SS,
+				// 		DOB:       client.DOB,
+				// 		Sexo:      client.Sexo,
+				// 		Race:      client.Race,
 
-						Address: client.Address,
-						State:   client.State,
-						ZipCode: client.ZipCode,
+				// 		Address: client.Address,
+				// 		State:   client.State,
+				// 		ZipCode: client.ZipCode,
 
-						Phone:    client.Phone,
-						School:   client.School,
-						Lenguage: client.Lenguage,
+				// 		Phone:    client.Phone,
+				// 		School:   client.School,
+				// 		Lenguage: client.Lenguage,
 
-						SingClient: client.SingClient,
+				// 		SingClient: client.SingClient,
 
-						LegalGuardian:     client.LegalGuardian,
-						Relationship:      client.Relationship,
-						CellPhoneGuardian: client.CellPhoneGuardian,
-						SingGuardian:      client.SingGuardian,
+				// 		LegalGuardian:     client.LegalGuardian,
+				// 		Relationship:      client.Relationship,
+				// 		CellPhoneGuardian: client.CellPhoneGuardian,
+				// 		SingGuardian:      client.SingGuardian,
 
-						Medicaid:       client.Medicaid,
-						GoldCardNumber: client.GoldCardNumber,
-						Medicare:       client.Medicare,
-						Scm:            scm,
-					})
-				}
+				// 		Medicaid:       client.Medicaid,
+				// 		GoldCardNumber: client.GoldCardNumber,
+				// 		Medicare:       client.Medicare,
+				// 		Scm:            scm,
+				// 	})
+				// }
 				// --------------
 				outTCM = append(outTCM, models.OutTCM{
 					ID:       i + 1,
 					Info:     tcmUserData.Record,
 					User:     tcmUserData.User,
-					Clients:  clients,
+					Clients:  len(caseManagement),
 					BillData: billData,
 				})
 			}
@@ -678,75 +678,75 @@ func CoreGetTCMSID(c *fiber.Ctx) error {
 			}
 
 			// --------------------------------
-			var clients []models.OutClients
+			// var clients []models.OutClients
 			var caseManagement []models.ClientServiceCaseManagement
 			// With this query obtain only one scm from each tcm client
 			db.Select("DISTINCT client").Where("tcm = ?", uTCM.ID).Find(&caseManagement)
 
-			for _, val := range caseManagement {
-				var client models.Clients
-				db.Where("ID = ?", val.Client).Find(&client)
-				var cms []models.ClientServiceCaseManagement
-				db.Where("client = ?", client.ID).Find(&cms)
-				var scm []models.OutClientSCM
+			// for _, val := range caseManagement {
+			// 	var client models.Clients
+			// 	db.Where("ID = ?", val.Client).Find(&client)
+			// 	var cms []models.ClientServiceCaseManagement
+			// 	db.Where("client = ?", client.ID).Find(&cms)
+			// 	var scm []models.OutClientSCM
 
-				clients = append(clients, models.OutClients{
-					ID:              client.ID,
-					ReferrerID:      client.ReferrerID,
-					ReferringAgency: client.ReferringAgency,
-					ReferringPerson: client.ReferringPerson,
-					CellPhone:       client.CellPhone,
-					Fax:             client.Fax,
-					Email:           client.Email,
-					Date:            client.Date,
+			// 	clients = append(clients, models.OutClients{
+			// 		ID:              client.ID,
+			// 		ReferrerID:      client.ReferrerID,
+			// 		ReferringAgency: client.ReferringAgency,
+			// 		ReferringPerson: client.ReferringPerson,
+			// 		CellPhone:       client.CellPhone,
+			// 		Fax:             client.Fax,
+			// 		Email:           client.Email,
+			// 		Date:            client.Date,
 
-					LastName:  client.LastName,
-					FirstName: client.FirstName,
-					SS:        client.SS,
-					DOB:       client.DOB,
-					Sexo:      client.Sexo,
-					Race:      client.Race,
+			// 		LastName:  client.LastName,
+			// 		FirstName: client.FirstName,
+			// 		SS:        client.SS,
+			// 		DOB:       client.DOB,
+			// 		Sexo:      client.Sexo,
+			// 		Race:      client.Race,
 
-					Address: client.Address,
-					State:   client.State,
-					ZipCode: client.ZipCode,
+			// 		Address: client.Address,
+			// 		State:   client.State,
+			// 		ZipCode: client.ZipCode,
 
-					Phone:    client.Phone,
-					School:   client.School,
-					Lenguage: client.Lenguage,
+			// 		Phone:    client.Phone,
+			// 		School:   client.School,
+			// 		Lenguage: client.Lenguage,
 
-					SingClient: client.SingClient,
+			// 		SingClient: client.SingClient,
 
-					LegalGuardian:     client.LegalGuardian,
-					Relationship:      client.Relationship,
-					CellPhoneGuardian: client.CellPhoneGuardian,
-					SingGuardian:      client.SingGuardian,
+			// 		LegalGuardian:     client.LegalGuardian,
+			// 		Relationship:      client.Relationship,
+			// 		CellPhoneGuardian: client.CellPhoneGuardian,
+			// 		SingGuardian:      client.SingGuardian,
 
-					Medicaid:       client.Medicaid,
-					GoldCardNumber: client.GoldCardNumber,
-					Medicare:       client.Medicare,
-					Scm:            scm,
+			// 		Medicaid:       client.Medicaid,
+			// 		GoldCardNumber: client.GoldCardNumber,
+			// 		Medicare:       client.Medicare,
+			// 		Scm:            scm,
 
-					Mr:     client.Mr,
-					Status: client.Status,
-					// TcmActive:  tcm,
-					// TcmPhoto:   tcmPhoto,
-					// TcmsActive: tcms,
-					// TcmsPhoto:  tcmsPhoto,
+			// 		Mr:     client.Mr,
+			// 		Status: client.Status,
+			// 		// TcmActive:  tcm,
+			// 		// TcmPhoto:   tcmPhoto,
+			// 		// TcmsActive: tcms,
+			// 		// TcmsPhoto:  tcmsPhoto,
 
-					HealthPlan:      client.HealthPlan,
-					DxCode:          client.DxCode,
-					PsychEvaluation: client.PsychEvaluation,
-					Doa:             client.Doa,
-					InsuranceId:     client.InsuranceId,
-				})
-			}
+			// 		HealthPlan:      client.HealthPlan,
+			// 		DxCode:          client.DxCode,
+			// 		PsychEvaluation: client.PsychEvaluation,
+			// 		Doa:             client.Doa,
+			// 		InsuranceId:     client.InsuranceId,
+			// 	})
+			// }
 			// --------------
 			outTCM = append(outTCM, models.OutTCM{
 				ID:       i + 1,
 				Info:     tcmUserData.Record,
 				User:     tcmUserData.User,
-				Clients:  clients,
+				Clients:  len(caseManagement),
 				BillData: billData,
 			})
 		}
