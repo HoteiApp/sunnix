@@ -1,0 +1,107 @@
+name: Compile and Deploy - Plugins Polly
+
+env:
+  GO_VERSION: ${{ vars.GO_VERSION }}
+
+on:
+  push:
+    branches: [ "testing", "pro" ]
+    paths:
+      - 'plugins/polly/**'
+  workflow_dispatch:
+    inputs:
+      deploy_to_server:
+        description: 'Deploy to server'
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Limpiar caché de Go
+      run: |
+        sudo rm -rf /opt/hostedtoolcache/go
+        rm -rf ~/.cache/go-build
+        rm -rf ~/go/pkg/mod
+        echo "Caché de Go eliminado correctamente"
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        cache: false
+
+    - name: Verificar versión de Go
+      run: |
+        go_version=$(go version)
+        echo "Versión instalada: $go_version"
+        if [[ "$go_version" != *"go${{ env.GO_VERSION }}"* ]]; then
+          echo "Error: Se esperaba Go ${{ env.GO_VERSION }} pero se obtuvo $go_version"
+          exit 1
+        fi
+
+    - name: Debug Info
+      working-directory: ./plugins/polly
+      run: |
+        pwd
+        ls -la
+        go version
+        cat go.mod
+
+    - name: Download dependencies
+      working-directory: ./plugins/polly
+      run: |
+        go mod tidy
+
+    - name: Build
+      working-directory: ./plugins/polly
+      run: |
+        echo "Iniciando compilación..."
+        sudo /opt/hostedtoolcache/go/${{ env.GO_VERSION }}/x64/bin/go build -v -buildmode=plugin -trimpath -o polly.plugin main.go
+        echo "Compilación completada"
+        ls -la polly.plugin
+
+    - name: Deploy polly Plugin to Server
+      if: ${{ github.event_name == 'push' || github.event.inputs.deploy_to_server == 'true' }}
+      env:
+        PRIVATE_KEY: ${{ github.ref == 'refs/heads/pro' && secrets.SSH_PRIVATE_KEY_PRO || secrets.SSH_PRIVATE_KEY_TEST }}
+        HOSTNAME: ${{ github.ref == 'refs/heads/pro' && vars.IP_ADDRESS_PRO || vars.IP_ADDRESS_TEST }}
+        USER_NAME: ${{ github.ref == 'refs/heads/pro' && vars.USER_NAME_PRO || vars.USER_NAME_TEST }}
+        CALLED_BY_DEPLOY_CENTER: ${{ github.event.inputs.called_by_deploy_center }}
+      run: |
+        echo "Desplegando en rama ${{ github.ref }} a servidor $HOSTNAME"
+        echo "$PRIVATE_KEY" > private_key.pem
+        chmod 600 private_key.pem
+        scp -o StrictHostKeyChecking=no -i private_key.pem ./plugins/polly/polly.plugin $USER_NAME@$HOSTNAME:/tmp/polly.plugin.tmp
+        ssh -o StrictHostKeyChecking=no -i private_key.pem $USER_NAME@$HOSTNAME << EOF
+          # Crear directorio de respaldo si no existe
+          if [ ! -d "/home/$USER_NAME/backup/sunissUp/plugins" ]; then
+            mkdir -p /home/$USER_NAME/backup/sunissUp/plugins
+          fi
+          
+          # Crear copia de respaldo del plugin polly.plugin
+          cp /opt/sunissUp/plugins/polly.plugin /home/$USER_NAME/backup/sunissUp/plugins/polly.plugin_$(date +%Y%m%d_%H%M%S)
+          
+          if [[ -z "$CALLED_BY_DEPLOY_CENTER" ]]; then
+            sudo systemctl stop sunissup
+          fi
+          
+          # Verificar si el directorio existe, si no, crearlo
+          if [ ! -d "/opt/sunissUp/plugins" ]; then
+            sudo mkdir -p /opt/sunissUp/plugins
+          fi
+          
+          # Mover el plugin
+          sudo mv /tmp/polly.plugin.tmp /opt/sunissUp/plugins/polly.plugin
+          
+          sudo chmod +x /opt/sunissUp/plugins/polly.plugin
+          if [[ -z "$CALLED_BY_DEPLOY_CENTER" ]]; then
+            sudo systemctl start sunissup
+          fi
+          echo "polly Plugin desplegado correctamente."
+        EOF
