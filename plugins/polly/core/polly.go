@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/HoteiApp/sunnix/plugins/polly/system"
@@ -12,19 +13,17 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/polly/types"
 )
 
-func GenerateMp3toText(text, voiceId string) io.ReadCloser {
-
+func GenerateMp3toText(text, voiceId string) (io.ReadCloser, error) {
 	if system.AccessKey == "" || system.SecretKey == "" || system.Region == "" {
-		panic("Credenciales o región AWS no definidas en .env")
+		return nil, fmt.Errorf("credenciales o región AWS no definidas en .env")
 	}
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(system.Region),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(system.AccessKey, system.SecretKey, "")),
 	)
-
 	if err != nil {
-		panic("error cargando configuración de AWS: " + err.Error())
+		return nil, fmt.Errorf("error cargando configuración de AWS: %w", err)
 	}
 
 	client := polly.NewFromConfig(cfg)
@@ -37,19 +36,8 @@ func GenerateMp3toText(text, voiceId string) io.ReadCloser {
 
 	result, err := client.SynthesizeSpeech(context.TODO(), input)
 	if err != nil {
-		panic("error generando audio: " + err.Error())
+		return nil, fmt.Errorf("error generando audio: %w", err)
 	}
 
-	// outFile, err := os.Create("salida.mp3")
-	// if err != nil {
-	// 	panic("error creando archivo: " + err.Error())
-	// }
-	// defer outFile.Close()
-
-	// _, err = io.Copy(outFile, result.AudioStream)
-	// if err != nil {
-	// 	panic("error escribiendo audio: " + err.Error())
-	// }
-	return result.AudioStream
-	// fmt.Println("✅ Audio guardado como salida.mp3")
+	return result.AudioStream, nil
 }
