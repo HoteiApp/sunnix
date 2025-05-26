@@ -17,3 +17,6 @@ func GenerateAudiotoText(arg ...interface{}) interface{} {
 	objects, _ := core.GenerateMp3toText(arg[0].(string), arg[1].(string))
 	return objects
 }
+
+// -- Genera un fichero de audio a partir de un texto
+// -- Modo de uso: system.ExtractFunctionsPlugins("polly","GenerateAudiotoText", "text,voiceId")
