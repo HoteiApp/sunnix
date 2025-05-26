@@ -1,8 +1,8 @@
 #
 # Copyright (c) 2024 - sunissup . - <http://www.sunissup.com/>
 #
-# Version: 2.1.1 - 26-10-2024 -- 01:32AM
-#
+# Version: 2.1.2 - 22-02-2025 -- 11:28AM 
+# - Agregado atributo fixedPay
 # Services LDAP Schema
 
 attributetype ( 1.3.6.1.4.1.10018.1.1.1 NAME 'lastName'
@@ -10,8 +10,8 @@ attributetype ( 1.3.6.1.4.1.10018.1.1.1 NAME 'lastName'
 	SUP name
 	SINGLE-VALUE )
 
-attributetype ( 1.3.6.1.4.1.10018.1.1.2 NAME 'secundaryEmail'
-	DESC 'Direccion electronica'
+attributetype ( 1.3.6.1.4.1.10018.1.1.2 NAME 'secondaryMail'
+	DESC 'Segunda Direccion electronica'
 	SUP name
 	SINGLE-VALUE )
 
@@ -155,6 +155,13 @@ attributetype ( 1.3.6.1.4.1.10018.1.1.31 NAME 'business'
 	SUP name
 	SINGLE-VALUE )
 
+attributetype ( 1.3.6.1.4.1.10018.1.1.32 NAME 'fixedPay'
+	DESC 'fixedPay'
+	SUP name
+	SINGLE-VALUE )
+
+
+
 
 objectclass ( 1.3.6.1.4.1.10018.1.2.1 NAME 'servicesAccount' SUP top AUXILIARY
 	DESC 'Servicios de Usuario'
@@ -162,7 +169,7 @@ objectclass ( 1.3.6.1.4.1.10018.1.2.1 NAME 'servicesAccount' SUP top AUXILIARY
         MAY ( 
              status $ signature $ credentials $ mailService $ chatService $ faxService $ changePassword $ 
 			 securityCode $ global $ approved $ active $ qaCanSign $ hrCanSign $ temporarySupervisor $ roll $ tcmsCanSign $ 
-			 givenName $ secundaryEmail $ lastName $ status $ id $ supervisor $ nick $ referrer $ userPasswordLast $ userPasswordSet $ 
-			 modifyData $ billCanSing $ managerCanSing $ financeCanSing $ paymentByUnits $ rent $ business 
+			 givenName $ secondaryMail $ lastName $ status $ id $ supervisor $ nick $ referrer $ userPasswordLast $ userPasswordSet $ 
+			 modifyData $ billCanSing $ managerCanSing $ financeCanSing $ paymentByUnits $ rent $ business $ fixedPay
 	) )
 
