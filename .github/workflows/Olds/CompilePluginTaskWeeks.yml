@@ -1,4 +1,4 @@
-name: Compile and Deploy - Plugins Chat
+name: Compile and Deploy - Weeks Task
 
 env:
   GO_VERSION: ${{ vars.GO_VERSION }}
@@ -7,7 +7,7 @@ on:
   push:
     branches: [ "testing", "pro" ]
     paths:
-      - 'plugins/chat/**'
+      - 'tasks/weeks/**'
   workflow_dispatch:
     inputs:
       deploy_to_server:
@@ -18,10 +18,10 @@ on:
 
 jobs:
   build-and-deploy:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Check out code
+      uses: actions/checkout@v4
 
     - name: Limpiar caché de Go
       run: |
@@ -46,7 +46,7 @@ jobs:
         fi
 
     - name: Debug Info
-      working-directory: ./plugins/chat
+      working-directory: ./tasks/weeks
       run: |
         pwd
         ls -la
@@ -54,38 +54,38 @@ jobs:
         cat go.mod
 
     - name: Download dependencies
-      working-directory: ./plugins/chat
+      working-directory: ./tasks/weeks
       run: |
         go mod tidy
 
     - name: Build
-      working-directory: ./plugins/chat
+      working-directory: ./tasks/weeks
       run: |
         echo "Iniciando compilación..."
-        sudo /opt/hostedtoolcache/go/${{ env.GO_VERSION }}/x64/bin/go build -v -buildmode=plugin -trimpath -o chat.dinamic main.go
+        sudo /opt/hostedtoolcache/go/${{ env.GO_VERSION }}/x64/bin/go build -v -buildmode=plugin -trimpath -o weeks.task main.go
         echo "Compilación completada"
-        ls -la chat.dinamic
+        ls -la weeks.task
 
-    - name: Deploy Chat Plugin to Server
+    - name: Deploy Weeks Task to Server
       if: ${{ github.event_name == 'push' || github.event.inputs.deploy_to_server == 'true' }}
       env:
         PRIVATE_KEY: ${{ github.ref == 'refs/heads/pro' && secrets.SSH_PRIVATE_KEY_PRO || secrets.SSH_PRIVATE_KEY_TEST }}
-        HOSTNAME: ${{ github.ref == 'refs/heads/pro' && vars.IP_ADDRESS_PRO || vars.IP_ADDRESS_TEST }}
-        USER_NAME: ${{ github.ref == 'refs/heads/pro' && vars.USER_NAME_PRO || vars.USER_NAME_TEST }}
+        HOSTNAME: ${{ github.ref == 'refs/heads/pro' && secrets.IP_ADDRESS_PRO || secrets.IP_ADDRESS_TEST }}
+        USER_NAME: ${{ secrets.USER_NAME }}
         CALLED_BY_DEPLOY_CENTER: ${{ github.event.inputs.called_by_deploy_center }}
       run: |
         echo "Desplegando en rama ${{ github.ref }} a servidor $HOSTNAME"
         echo "$PRIVATE_KEY" > private_key.pem
         chmod 600 private_key.pem
-        scp -o StrictHostKeyChecking=no -i private_key.pem ./plugins/chat/chat.dinamic $USER_NAME@$HOSTNAME:/tmp/chat.dinamic.tmp
+        scp -o StrictHostKeyChecking=no -i private_key.pem ./tasks/weeks/weeks.task $USER_NAME@$HOSTNAME:/tmp/weeks.task.tmp
         ssh -o StrictHostKeyChecking=no -i private_key.pem $USER_NAME@$HOSTNAME << EOF
           # Crear directorio de respaldo si no existe
-          if [ ! -d "/home/$USER_NAME/backup/sunissUp/plugins" ]; then
-            mkdir -p /home/$USER_NAME/backup/sunissUp/plugins
+          if [ ! -d "/home/$USER_NAME/backup/sunissUp/plugins/tasks" ]; then
+            mkdir -p /home/$USER_NAME/backup/sunissUp/plugins/tasks
           fi
           
-          # Crear copia de respaldo del plugin chat.dinamic
-          cp /opt/sunissUp/plugins/chat.dinamic /home/$USER_NAME/backup/sunissUp/plugins/chat.dinamic_$(date +%Y%m%d_%H%M%S)
+          # Crear copia de respaldo del plugin weeks.task
+          cp /opt/sunissUp/plugins/tasks/weeks.task /home/$USER_NAME/backup/sunissUp/plugins/tasks/weeks.task_$(date +%Y%m%d_%H%M%S)
           
           if [[ -z "$CALLED_BY_DEPLOY_CENTER" ]]; then
             sudo systemctl stop sunissup
@@ -96,12 +96,17 @@ jobs:
             sudo mkdir -p /opt/sunissUp/plugins
           fi
           
-          # Mover el plugin
-          sudo mv /tmp/chat.dinamic.tmp /opt/sunissUp/plugins/chat.dinamic
+          # Verificar si existe el directorio tasks, si no, crearlo
+          if [ ! -d "/opt/sunissUp/plugins/tasks" ]; then
+            sudo mkdir -p /opt/sunissUp/plugins/tasks
+          fi
           
-          sudo chmod +x /opt/sunissUp/plugins/chat.dinamic
+          # Mover el plugin
+          sudo mv /tmp/weeks.task.tmp /opt/sunissUp/plugins/tasks/weeks.task
+          
+          sudo chmod +x /opt/sunissUp/plugins/tasks/weeks.task
           if [[ -z "$CALLED_BY_DEPLOY_CENTER" ]]; then
             sudo systemctl start sunissup
           fi
-          echo "Chat Plugin desplegado correctamente."
+          echo "Weeks Task desplegado correctamente."
         EOF
