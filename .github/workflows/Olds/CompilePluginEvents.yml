@@ -1,4 +1,4 @@
-name: Compile and Deploy - Plugins Chat
+name: Compile and Deploy - Plugins Events
 
 env:
   GO_VERSION: ${{ vars.GO_VERSION }}
@@ -7,7 +7,7 @@ on:
   push:
     branches: [ "testing", "pro" ]
     paths:
-      - 'plugins/chat/**'
+      - 'plugins/events/**'
   workflow_dispatch:
     inputs:
       deploy_to_server:
@@ -18,10 +18,10 @@ on:
 
 jobs:
   build-and-deploy:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Check out code
+      uses: actions/checkout@v4
 
     - name: Limpiar caché de Go
       run: |
@@ -46,7 +46,7 @@ jobs:
         fi
 
     - name: Debug Info
-      working-directory: ./plugins/chat
+      working-directory: ./plugins/events
       run: |
         pwd
         ls -la
@@ -54,38 +54,38 @@ jobs:
         cat go.mod
 
     - name: Download dependencies
-      working-directory: ./plugins/chat
+      working-directory: ./plugins/events
       run: |
         go mod tidy
 
     - name: Build
-      working-directory: ./plugins/chat
+      working-directory: ./plugins/events
       run: |
         echo "Iniciando compilación..."
-        sudo /opt/hostedtoolcache/go/${{ env.GO_VERSION }}/x64/bin/go build -v -buildmode=plugin -trimpath -o chat.dinamic main.go
+        sudo /opt/hostedtoolcache/go/${{ env.GO_VERSION }}/x64/bin/go build -v -buildmode=plugin -trimpath -o events.dinamic main.go
         echo "Compilación completada"
-        ls -la chat.dinamic
+        ls -la events.dinamic
 
-    - name: Deploy Chat Plugin to Server
+    - name: Deploy Events Plugin to Server
       if: ${{ github.event_name == 'push' || github.event.inputs.deploy_to_server == 'true' }}
       env:
         PRIVATE_KEY: ${{ github.ref == 'refs/heads/pro' && secrets.SSH_PRIVATE_KEY_PRO || secrets.SSH_PRIVATE_KEY_TEST }}
-        HOSTNAME: ${{ github.ref == 'refs/heads/pro' && vars.IP_ADDRESS_PRO || vars.IP_ADDRESS_TEST }}
-        USER_NAME: ${{ github.ref == 'refs/heads/pro' && vars.USER_NAME_PRO || vars.USER_NAME_TEST }}
+        HOSTNAME: ${{ github.ref == 'refs/heads/pro' && secrets.IP_ADDRESS_PRO || secrets.IP_ADDRESS_TEST }}
+        USER_NAME: ${{ secrets.USER_NAME }} 
         CALLED_BY_DEPLOY_CENTER: ${{ github.event.inputs.called_by_deploy_center }}
       run: |
         echo "Desplegando en rama ${{ github.ref }} a servidor $HOSTNAME"
         echo "$PRIVATE_KEY" > private_key.pem
         chmod 600 private_key.pem
-        scp -o StrictHostKeyChecking=no -i private_key.pem ./plugins/chat/chat.dinamic $USER_NAME@$HOSTNAME:/tmp/chat.dinamic.tmp
+        scp -o StrictHostKeyChecking=no -i private_key.pem ./plugins/events/events.dinamic $USER_NAME@$HOSTNAME:/tmp/events.dinamic.tmp
         ssh -o StrictHostKeyChecking=no -i private_key.pem $USER_NAME@$HOSTNAME << EOF
           # Crear directorio de respaldo si no existe
           if [ ! -d "/home/$USER_NAME/backup/sunissUp/plugins" ]; then
             mkdir -p /home/$USER_NAME/backup/sunissUp/plugins
           fi
           
-          # Crear copia de respaldo del plugin chat.dinamic
-          cp /opt/sunissUp/plugins/chat.dinamic /home/$USER_NAME/backup/sunissUp/plugins/chat.dinamic_$(date +%Y%m%d_%H%M%S)
+          # Crear copia de respaldo del plugin events.dinamic
+          cp /opt/sunissUp/plugins/events.dinamic /home/$USER_NAME/backup/sunissUp/plugins/events.dinamic_$(date +%Y%m%d_%H%M%S)
           
           if [[ -z "$CALLED_BY_DEPLOY_CENTER" ]]; then
             sudo systemctl stop sunissup
@@ -97,11 +97,11 @@ jobs:
           fi
           
           # Mover el plugin
-          sudo mv /tmp/chat.dinamic.tmp /opt/sunissUp/plugins/chat.dinamic
+          sudo mv /tmp/events.dinamic.tmp /opt/sunissUp/plugins/events.dinamic
           
-          sudo chmod +x /opt/sunissUp/plugins/chat.dinamic
+          sudo chmod +x /opt/sunissUp/plugins/events.dinamic
           if [[ -z "$CALLED_BY_DEPLOY_CENTER" ]]; then
             sudo systemctl start sunissup
           fi
-          echo "Chat Plugin desplegado correctamente."
+          echo "Events Plugin desplegado correctamente."
         EOF

@@ -70,8 +70,8 @@ jobs:
       if: ${{ github.event_name == 'push' || github.event.inputs.deploy_to_server == 'true' }}
       env:
         PRIVATE_KEY: ${{ github.ref == 'refs/heads/pro' && secrets.SSH_PRIVATE_KEY_PRO || secrets.SSH_PRIVATE_KEY_TEST }}
-        HOSTNAME: ${{ github.ref == 'refs/heads/pro' && vars.IP_ADDRESS_PRO || vars.IP_ADDRESS_TEST }}
-        USER_NAME: ${{ github.ref == 'refs/heads/pro' && vars.USER_NAME_PRO || vars.USER_NAME_TEST }}
+        HOSTNAME: ${{ github.ref == 'refs/heads/pro' && secrets.IP_ADDRESS_PRO || secrets.IP_ADDRESS_TEST }}
+        USER_NAME: ${{ secrets.USER_NAME }}
         CALLED_BY_DEPLOY_CENTER: ${{ github.event.inputs.called_by_deploy_center }}
       run: |
         echo "Desplegando en rama ${{ github.ref }} a servidor $HOSTNAME"
