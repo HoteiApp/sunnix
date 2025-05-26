@@ -13,6 +13,6 @@ func GetPermissions() []string {
 // -- Modo de uso: system.ExtractFunctionsPlugins("polly","GenerateAudiotoText", "text,voiceId")
 // -- Retorna un objeto io.ReadCloser
 func GenerateAudiotoText(arg ...interface{}) interface{} {
-	objects := core.GenerateMp3toText(arg[0].(string), arg[1].(string))
+	objects, _ := core.GenerateMp3toText(arg[0].(string), arg[1].(string))
 	return objects
 }
