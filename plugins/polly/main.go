@@ -5,6 +5,7 @@ import (
 	"github.com/HoteiApp/sunnix/plugins/polly/system"
 )
 
+// -- Get the plugin name
 func GetPermissions() []string {
 	return system.Permissions
 }
