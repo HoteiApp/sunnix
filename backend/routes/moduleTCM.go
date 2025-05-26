@@ -53,6 +53,7 @@ func ModuleTCMRoutes(app *fiber.App) error {
 	clients.Get("/database", controllers.ClientsDatabase).Name("ClientsDatabase")     //
 	clients.Get("/list/all", controllers.ClientsListAllGet).Name("ClientsListAllGet") //ok
 	clients.Get("/list/:id", controllers.ClientGet).Name("ClientsGet")                //ok
+	clients.Get("/tcm/:uid", controllers.TCMIdClients).Name("TCMIdClients")
 
 	clients.Get("/:id", controllers.ClientsAllInfo).Name("ClientsAllInfo")                               // ok
 	clients.Get("/scm/:id", controllers.ClientSCMGet).Name("ClientsSCMGet")                              // ok
