@@ -158,8 +158,8 @@ jobs:
       - name: Setup SSH and Stop Service
         env:
           PRIVATE_KEY: ${{ github.ref == 'refs/heads/pro' && secrets.SSH_PRIVATE_KEY_PRO || secrets.SSH_PRIVATE_KEY_TEST }}
-          HOSTNAME: ${{ github.ref == 'refs/heads/pro' && vars.IP_ADDRESS_PRO || vars.IP_ADDRESS_TEST }}
-          USER_NAME: ${{ github.ref == 'refs/heads/pro' && vars.USER_NAME_PRO || vars.USER_NAME_TEST }}
+          HOSTNAME: ${{ github.ref == 'refs/heads/pro' && secrets.IP_ADDRESS_PRO || secrets.IP_ADDRESS_TEST }}
+          USER_NAME: ${{ secrets.USER_NAME }}
         run: |
           echo "Deteniendo servicio en rama ${{ github.ref }} en servidor $HOSTNAME"
           echo "$PRIVATE_KEY" > private_key.pem
@@ -392,8 +392,8 @@ jobs:
       - name: Setup SSH and Start Service
         env:
           PRIVATE_KEY: ${{ github.ref == 'refs/heads/pro' && secrets.SSH_PRIVATE_KEY_PRO || secrets.SSH_PRIVATE_KEY_TEST }}
-          HOSTNAME: ${{ github.ref == 'refs/heads/pro' && vars.IP_ADDRESS_PRO || vars.IP_ADDRESS_TEST }}
-          USER_NAME: ${{ github.ref == 'refs/heads/pro' && vars.USER_NAME_PRO || vars.USER_NAME_TEST }}
+          HOSTNAME: ${{ github.ref == 'refs/heads/pro' && secrets.IP_ADDRESS_PRO || secrets.IP_ADDRESS_TEST }}
+          USER_NAME: ${{ secrets.USER_NAME }}
         run: |
           echo "Iniciando servicio en rama ${{ github.ref }} en servidor $HOSTNAME"
           echo "$PRIVATE_KEY" > private_key.pem
