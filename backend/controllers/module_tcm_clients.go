@@ -335,9 +335,9 @@ func ClientsRequestEditSCMClientePost(c *fiber.Ctx) error {
 		}
 		var client models.Clients
 		// Buscar la entrada existente por ID
-		if err := db.Where("ID = ?", requestData.Editclient.ID).First(&client).Error; err != nil {
+		if err := db.Where("ID = ?", request.Client).First(&client).Error; err != nil {
 			// Manejar el caso en el que no se encuentra la entrada
-			return err
+			return false
 		}
 		// Actualizar los campos de la entrada existente
 		client.ReferringAgency = request.ReferringAgency
@@ -367,6 +367,7 @@ func ClientsRequestEditSCMClientePost(c *fiber.Ctx) error {
 		client.GoldCardNumber = request.GoldCardNumber
 		client.Medicare = request.Medicare
 		db.Save(&client)
+
 		if db.Error != nil {
 			return db.Error
 		} else {
@@ -2398,15 +2399,319 @@ func ClientsListAllGet(c *fiber.Ctx) error {
 }
 
 func ClientsDatabase(c *fiber.Ctx) error {
-	// claims, _ := GetClaims(c)
+	claims, _ := GetClaims(c)
+
+	var clientOut []models.OutClients
 
 	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
 		var clients []models.Clients
-		db.Find(&clients)
-		return clients
+		if claims["Roll"].(string) == "TCMS" {
+
+			var userUIDs []string
+			userUIDs = append(userUIDs, claims["UID"].(string))
+
+			resultTCMS := core.ExtractFunctionsPlugins("ldap", "Search", "(&(supervisor="+claims["UID"].(string)+"))")
+			bytes, _ := json.Marshal(&resultTCMS)
+			var resultSearch ldap.SearchResult
+			_ = json.Unmarshal(bytes, &resultSearch)
+
+			for _, userLdap := range resultSearch.Entries {
+				userUIDs = append(userUIDs, userLdap.GetAttributeValue("uid"))
+			}
+			db.Where("tcm_active IN (?)", userUIDs).Find(&clients)
+
+		} else {
+			db.Find(&clients)
+		}
+
+		// Paso 1: Recolectar todos los UID necesarios (TCMs y Supervisores)
+		uidSet := make(map[string]struct{})
+		for _, client := range clients {
+			if client.TcmActive != "" {
+				uidSet[client.TcmActive] = struct{}{}
+			}
+		}
+
+		// Paso 2: Consultar LDAP para todos los TCMs
+		var allUIDs []string
+		for uid := range uidSet {
+			allUIDs = append(allUIDs, uid)
+		}
+
+		ldapFilter := "(|" // filtro OR para consultar múltiples UID
+		for _, uid := range allUIDs {
+			ldapFilter += "(uid=" + uid + ")"
+		}
+		ldapFilter += ")"
+
+		ldapResult := core.ExtractFunctionsPlugins("ldap", "Search", ldapFilter)
+		ldapBytes, _ := json.Marshal(&ldapResult)
+		var ldapSearchResult ldap.SearchResult
+		_ = json.Unmarshal(ldapBytes, &ldapSearchResult)
+
+		// Paso 3: Crear mapa de UID -> Entry
+		ldapMap := make(map[string]*ldap.Entry)
+		supervisorUIDs := make(map[string]struct{})
+		for _, entry := range ldapSearchResult.Entries {
+			uid := entry.GetAttributeValue("uid")
+			ldapMap[uid] = entry
+
+			supUID := entry.GetAttributeValue("supervisor")
+			if supUID != "" {
+				supervisorUIDs[supUID] = struct{}{}
+			}
+		}
+
+		// Paso 4: Buscar Supervisores
+		var allSupUIDs []string
+		for uid := range supervisorUIDs {
+			allSupUIDs = append(allSupUIDs, uid)
+		}
+
+		supFilter := "(|"
+		for _, uid := range allSupUIDs {
+			supFilter += "(uid=" + uid + ")"
+		}
+		supFilter += ")"
+
+		supResult := core.ExtractFunctionsPlugins("ldap", "Search", supFilter)
+		supBytes, _ := json.Marshal(&supResult)
+		var supSearchResult ldap.SearchResult
+		_ = json.Unmarshal(supBytes, &supSearchResult)
+
+		// Mapa de Supervisores
+		supMap := make(map[string]*ldap.Entry)
+		for _, entry := range supSearchResult.Entries {
+			uid := entry.GetAttributeValue("uid")
+			supMap[uid] = entry
+		}
+
+		// Paso 5: Obtener todos los avatares necesarios en una sola llamada
+		allAvatarUIDs := append(allUIDs, allSupUIDs...)
+		avatarUrls, _ := core.BatchGetAvatars(allAvatarUIDs)
+
+		// Paso 6: Construir la respuesta
+		for _, client := range clients {
+			tcm := ""
+			tcmPhoto := ""
+			tcms := ""
+			tcmsPhoto := ""
+
+			if entry, ok := ldapMap[client.TcmActive]; ok {
+				tcm = entry.GetAttributeValue("cn")
+				tcmPhoto = avatarUrls[client.TcmActive]
+
+				supUID := entry.GetAttributeValue("supervisor")
+				if supEntry, ok := supMap[supUID]; ok {
+					tcms = supEntry.GetAttributeValue("cn")
+					tcmsPhoto = avatarUrls[supUID]
+				}
+			}
+
+			clientOut = append(clientOut, models.OutClients{
+				ID:                client.ID,
+				Mr:                client.Mr,
+				ReferrerID:        client.ReferrerID,
+				ReferringAgency:   client.ReferringAgency,
+				ReferringPerson:   client.ReferringPerson,
+				CellPhone:         client.CellPhone,
+				Fax:               client.Fax,
+				Email:             client.Email,
+				Date:              client.Date,
+				LastName:          client.LastName,
+				FirstName:         client.FirstName,
+				SS:                client.SS,
+				DOB:               client.DOB,
+				Sexo:              client.Sexo,
+				Race:              client.Race,
+				Address:           client.Address,
+				State:             client.State,
+				ZipCode:           client.ZipCode,
+				Phone:             client.Phone,
+				School:            client.School,
+				Lenguage:          client.Lenguage,
+				SingClient:        client.SingClient,
+				LegalGuardian:     client.LegalGuardian,
+				Relationship:      client.Relationship,
+				CellPhoneGuardian: client.CellPhoneGuardian,
+				SingGuardian:      client.SingGuardian,
+				Medicaid:          client.Medicaid,
+				GoldCardNumber:    client.GoldCardNumber,
+				Medicare:          client.Medicare,
+				Status:            client.Status,
+				TcmActive:         tcm,
+				TcmPhoto:          tcmPhoto,
+				TcmsActive:        tcms,
+				TcmsPhoto:         tcmsPhoto,
+
+				HealthPlan:      client.HealthPlan,
+				DxCode:          client.DxCode,
+				PsychEvaluation: client.PsychEvaluation,
+				Doa:             client.Doa,
+				InsuranceId:     client.InsuranceId,
+			})
+		}
+
+		return clientOut
 	})
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"clients": result.([]models.Clients)})
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"clients": result.([]models.OutClients)})
+}
+
+func ClientsAllInfo(c *fiber.Ctx) error {
+	id := c.Params("id")
+	var scm []models.OutClientSCMActive
+
+	result, _ := database.WithDB(func(db *gorm.DB) interface{} {
+		var caseManagement []models.ClientServiceCaseManagement
+		db.Where("client = ?", id).Find(&caseManagement)
+
+		for _, dataSCM := range caseManagement {
+
+			var tcm models.ClienteSCMTcm
+			db.Where("scm = ?", dataSCM.ID).Find(&tcm)
+			var demografic models.ClientSCMDemografic
+			db.Where("scm = ?", dataSCM.ID).Find(&demografic)
+			// -----
+			var sureActive models.ClientSCMSure
+			db.Where("scm = ? and active = ?", dataSCM.ID, true).Find(&sureActive)
+
+			var notes []models.Notes
+			db.Where("scm = ? and insurance = ?", dataSCM.ID, sureActive.ID).Find(&notes)
+			// --- Calculte notes available
+			var consumedUnits int64
+			for _, note := range notes {
+				consumedUnits += int64(note.Units)
+			}
+			// ---
+
+			var sures []models.ClientSCMSure
+			db.Where("scm = ?", dataSCM.ID).Find(&sures)
+
+			var files []models.ClientSCMSureFilesInCloud
+			db.Where("scm = ?", dataSCM.ID).Find(&files)
+			// -----
+
+			var medicals models.ClientSCMMedical
+			db.Where("scm = ?", dataSCM.ID).Find(&medicals)
+			var mentals models.ClientSCMMental
+			db.Where("scm = ?", dataSCM.ID).Find(&mentals)
+			// Documents
+			// -------------
+			var certification models.ClientSCMCertification
+			db.Where("scm = ?", dataSCM.ID).Find(&certification)
+
+			var outCertification models.OutSCMCertification
+
+			decryptedCertSignaturetcm, _ := core.DecryptImage(certification.Signtcm)
+			decryptedCertSignaturesupervisor, _ := core.DecryptImage(certification.Signsupervisor)
+			decryptedCertSignatureqa, _ := core.DecryptImage(certification.Signqa)
+
+			copier.Copy(&outCertification, &certification)
+
+			outCertification.Signtcm = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedCertSignaturetcm)
+			outCertification.Signsupervisor = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedCertSignaturesupervisor)
+			outCertification.Signqa = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedCertSignatureqa)
+
+			// -----------
+
+			var assessment models.ClientSCMAssessment
+			db.Where("scm = ?", dataSCM.ID).Find(&assessment)
+			var outAssessmet models.OutSCMAssessment
+			decryptedAssessmentSignaturetcm, _ := core.DecryptImage(assessment.Signaturetcm)
+			decryptedAssessmentSignaturesupervisor, _ := core.DecryptImage(assessment.Signaturesupervisor)
+			decryptedAssessmentSignatureqa, _ := core.DecryptImage(assessment.Signatureqa)
+			copier.Copy(&outAssessmet, &assessment)
+			outAssessmet.Signaturetcm = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedAssessmentSignaturetcm)
+			outAssessmet.Signaturesupervisor = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedAssessmentSignaturesupervisor)
+			outAssessmet.Signatureqa = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedAssessmentSignatureqa)
+
+			var sp models.ClientSCMSp
+			db.Where("scm = ?", dataSCM.ID).Find(&sp)
+
+			var goal1 models.SpGoal1
+			db.Where("sp = ?", sp.ID).Find(&goal1)
+			var goal2 models.SpGoal2
+			db.Where("sp = ?", sp.ID).Find(&goal2)
+			var goal3 models.SpGoal3
+			db.Where("sp = ?", sp.ID).Find(&goal3)
+			var goal4 models.SpGoal4
+			db.Where("sp = ?", sp.ID).Find(&goal4)
+			var goal5 models.SpGoal5
+			db.Where("sp = ?", sp.ID).Find(&goal5)
+			var goal6 models.SpGoal6
+			db.Where("sp = ?", sp.ID).Find(&goal6)
+			var goal7 models.SpGoal7
+			db.Where("sp = ?", sp.ID).Find(&goal7)
+			var goal8 models.SpGoal8
+			db.Where("sp = ?", sp.ID).Find(&goal8)
+
+			var outSp models.OutClientSCMSp
+			decryptedSignaturetcm, _ := core.DecryptImage(sp.Signaturetcm)
+			decryptedSignaturesupervisor, _ := core.DecryptImage(sp.Signaturesupervisor)
+			decryptedSignatureqa, _ := core.DecryptImage(sp.Signatureqa)
+
+			outSp.ID = int(sp.ID)
+			outSp.Client = sp.Client
+			outSp.Scm = sp.Scm
+			outSp.Developmentdate = sp.Developmentdate
+			outSp.Axiscode = sp.Axiscode
+			outSp.Axiscodedescription = sp.Axiscodedescription
+			outSp.Tcm = sp.Tcm
+			outSp.Goal1 = goal1
+			outSp.Goal2 = goal2
+			outSp.Goal3 = goal3
+			outSp.Goal4 = goal4
+			outSp.Goal5 = goal5
+			outSp.Goal6 = goal6
+			outSp.Goal7 = goal7
+			outSp.Goal8 = goal8
+
+			outSp.Nametcm = sp.Nametcm
+			outSp.Categorytcm = sp.Categorytcm
+			outSp.Signaturetcm = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignaturetcm)
+			outSp.Signaturetcmdate = sp.Signaturetcmdate
+
+			outSp.Supervisor = sp.Supervisor
+			outSp.NameSupervisor = sp.NameSupervisor
+			outSp.CategorySupervisor = sp.CategorySupervisor
+			outSp.Signaturesupervisor = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignaturesupervisor)
+			outSp.Signaturesupervisordate = sp.Signaturesupervisordate
+
+			outSp.Qa = sp.Qa
+			outSp.Signatureqa = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignatureqa)
+			outSp.Signatureqadate = sp.Signatureqadate
+
+			// ------------------
+			scm = append(scm, models.OutClientSCMActive{
+				ID:              int(dataSCM.ID),
+				Status:          dataSCM.Status,
+				Doa:             dataSCM.Doa,
+				ClosingDate:     dataSCM.ClosingDate,
+				TcmID:           dataSCM.TCM,
+				TCM:             tcm,
+				Demografic:      demografic,
+				SureActive:      sureActive,
+				NotesSureActive: notes,
+				UnitsConsumed:   consumedUnits,
+				Sure:            sures,
+				Files:           files,
+				Medical:         medicals,
+				Mental:          mentals,
+
+				Certification: outCertification,
+				Assessment:    outAssessmet,
+				Sp:            outSp,
+			})
+		}
+
+		return scm
+	})
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"scm": result.([]models.OutClientSCMActive),
+	})
+
 }
 
 // batchGetUserFromLDAP obtiene múltiples usuarios de LDAP en una sola operación
@@ -2877,6 +3182,144 @@ func TCMClients(c *fiber.Ctx) error {
 }
 
 // Get all client of the TCM ---------------------------------------------
+func TCMIdClients(c *fiber.Ctx) error {
+	// claims, _ := GetClaims(c)
+	uid := c.Params("uid")
+	var clientsOut []models.OutClients
+
+	// Paso 2: Consultar LDAP para todos los TCMs
+	ldapFilter := "(&" // filtro OR para consultar múltiples UID
+	ldapFilter += "(uid=" + uid + ")"
+	ldapFilter += ")"
+
+	ldapResult := core.ExtractFunctionsPlugins("ldap", "Search", ldapFilter)
+	ldapBytes, _ := json.Marshal(&ldapResult)
+	var ldapSearchResult ldap.SearchResult
+	_ = json.Unmarshal(ldapBytes, &ldapSearchResult)
+	// Paso 2: Consultar LDAP para todos los TCMs
+	var allUIDs []string
+
+	allUIDs = append(allUIDs, uid)
+
+	// Paso 3: Crear mapa de UID -> Entry
+	ldapMap := make(map[string]*ldap.Entry)
+	supervisorUIDs := make(map[string]struct{})
+	for _, entry := range ldapSearchResult.Entries {
+		uid := entry.GetAttributeValue("uid")
+		ldapMap[uid] = entry
+
+		supUID := entry.GetAttributeValue("supervisor")
+		if supUID != "" {
+			supervisorUIDs[supUID] = struct{}{}
+		}
+	}
+
+	// Paso 4: Buscar Supervisores
+	var allSupUIDs []string
+	for uid := range supervisorUIDs {
+		allSupUIDs = append(allSupUIDs, uid)
+	}
+
+	supFilter := "(|"
+	for _, uid := range allSupUIDs {
+		supFilter += "(uid=" + uid + ")"
+	}
+	supFilter += ")"
+
+	supResult := core.ExtractFunctionsPlugins("ldap", "Search", supFilter)
+	supBytes, _ := json.Marshal(&supResult)
+	var supSearchResult ldap.SearchResult
+	_ = json.Unmarshal(supBytes, &supSearchResult)
+
+	// Mapa de Supervisores
+	supMap := make(map[string]*ldap.Entry)
+	for _, entry := range supSearchResult.Entries {
+		uid := entry.GetAttributeValue("uid")
+		supMap[uid] = entry
+	}
+
+	// Paso 5: Obtener todos los avatares necesarios en una sola llamada
+	allAvatarUIDs := append(allUIDs, allSupUIDs...)
+	avatarUrls, _ := core.BatchGetAvatars(allAvatarUIDs)
+
+	_, _ = database.WithDB(func(db *gorm.DB) interface{} {
+		var clients []models.Clients
+		db.Where("tcm_active = ?", uid).Find(&clients)
+		for _, client := range clients {
+			tcm := ""
+			tcmPhoto := ""
+			tcms := ""
+			tcmsPhoto := ""
+
+			if entry, ok := ldapMap[client.TcmActive]; ok {
+				tcm = entry.GetAttributeValue("cn")
+				tcmPhoto = avatarUrls[client.TcmActive]
+
+				supUID := entry.GetAttributeValue("supervisor")
+				if supEntry, ok := supMap[supUID]; ok {
+					tcms = supEntry.GetAttributeValue("cn")
+					tcmsPhoto = avatarUrls[supUID]
+				}
+			}
+			clientsOut = append(clientsOut, models.OutClients{
+				ID:              client.ID,
+				Mr:              client.Mr,
+				ReferrerID:      client.ReferrerID,
+				ReferringAgency: client.ReferringAgency,
+				ReferringPerson: client.ReferringPerson,
+				CellPhone:       client.CellPhone,
+				Fax:             client.Fax,
+				Email:           client.Email,
+				Date:            client.Date,
+
+				LastName:  client.LastName,
+				FirstName: client.FirstName,
+				SS:        client.SS,
+				DOB:       client.DOB,
+				Sexo:      client.Sexo,
+				Race:      client.Race,
+
+				Address: client.Address,
+				State:   client.State,
+				ZipCode: client.ZipCode,
+
+				Phone:    client.Phone,
+				School:   client.School,
+				Lenguage: client.Lenguage,
+
+				SingClient: client.SingClient,
+
+				LegalGuardian:     client.LegalGuardian,
+				Relationship:      client.Relationship,
+				CellPhoneGuardian: client.CellPhoneGuardian,
+				SingGuardian:      client.SingGuardian,
+
+				Medicaid:       client.Medicaid,
+				GoldCardNumber: client.GoldCardNumber,
+				Medicare:       client.Medicare,
+				// Scm:            scm,
+				Status:     client.Status,
+				TcmActive:  tcm,
+				TcmPhoto:   tcmPhoto,
+				TcmsActive: tcms,
+				TcmsPhoto:  tcmsPhoto,
+
+				HealthPlan:      client.HealthPlan,
+				DxCode:          client.DxCode,
+				PsychEvaluation: client.PsychEvaluation,
+				Doa:             client.Doa,
+				InsuranceId:     client.InsuranceId,
+			})
+		}
+		return true
+	})
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"clients": clientsOut,
+	})
+}
+
+// Get all client of the TCM ---------------------------------------------
 func TCMClientsActiveCsm(c *fiber.Ctx) error {
 	claims, _ := GetClaims(c)
 	var clients []models.OutClients
@@ -2900,7 +3343,7 @@ func TCMClientsActiveCsm(c *fiber.Ctx) error {
 					ClosingDate: cm.ClosingDate,
 				})
 			}
-
+			// Obtener el usuario de LDAP del TCM
 			clients = append(clients, models.OutClients{
 				ID:              client.ID,
 				Mr:              client.Mr,
@@ -2938,6 +3381,8 @@ func TCMClientsActiveCsm(c *fiber.Ctx) error {
 				GoldCardNumber: client.GoldCardNumber,
 				Medicare:       client.Medicare,
 				Scm:            scm,
+
+				Status: client.Status,
 			})
 		}
 

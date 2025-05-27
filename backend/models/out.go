@@ -9,6 +9,7 @@ type ActiveUser struct {
 	FortnightActive Fortnight
 	Events          []Event
 	Conversation    []OutConversations
+	TablePreference TablePreference
 }
 
 type Statistics struct {

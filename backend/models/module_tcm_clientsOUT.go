@@ -348,6 +348,7 @@ type OutClientSCMSure struct {
 	Active bool                      `json:"active"`
 	Files  ClientSCMSureFilesInCloud `json:"files"`
 }
+
 type OutClientSCMActive struct {
 	ID              int           `json:"id"`
 	Status          string        `json:"status"`
@@ -388,7 +389,7 @@ type OutClients struct {
 	Race      string `json:"race"`
 
 	Address string `json:"address"`
-	State   string `json:"state"`
+	State   string `json:"location"`
 	ZipCode string `json:"zip_code"`
 
 	Phone    string `json:"phone"`
@@ -412,6 +413,13 @@ type OutClients struct {
 	TcmPhoto   string `json:"tcm_photo"`
 	TcmsActive string `json:"tcms_active"`
 	TcmsPhoto  string `json:"tcms_photo"`
+
+	// Other Fields
+	DxCode          string `json:"dx_code"`
+	PsychEvaluation string `json:"psych_evaluation"`
+	Doa             string `json:"doa"`
+	HealthPlan      string `json:"health_plan"`
+	InsuranceId     string `json:"insurance_id"`
 
 	Scm []OutClientSCM `json:"scm"`
 }

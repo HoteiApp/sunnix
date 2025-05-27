@@ -52,9 +52,13 @@ var (
 	SecretKey   = configEnv("sunissUp.SecretKey")
 	Language    = configEnv("sunissUp.Language")
 	Location    = configEnv("sunissUp.Location")
+	// -- Telegram
+	TelegramBotToken = configEnv("sunissUp.telegram.BotToken")
+	TelegramGroupID  = configEnv("sunissUp.telegram.GroupID")
 	// -- Import Clients
 	ImportClients     = configEnv("sunissUp.import.active")
 	ImportClientsFile = configEnv("sunissUp.import.file")
+	ImportTcmListFile = configEnv("sunissUp.import.tcmlist.file")
 
 	// -- AI
 	AiApiKey = configEnv("sunissUp.ia.apiKey")

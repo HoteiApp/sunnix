@@ -86,3 +86,11 @@ func PresignedURL(arg ...interface{}) interface{} {
 	duration, _ := time.ParseDuration(arg[1].(string))
 	return core.GetPresignedURL(arg[0].(string), duration)
 }
+
+// -- Obtener url del objeto
+// -- Si en el segundo argumento pasa true el plugin desencriptara el fichero automaticamente
+// -- Modo de uso: system.ExtractFunctionsPlugins("s3","PresignedURL", "key", "5m30s")
+func PresignedAvatarsURL(arg ...interface{}) interface{} {
+	duration, _ := time.ParseDuration(arg[1].(string))
+	return core.GetAvatarsURL(arg[0].([]string), duration)
+}

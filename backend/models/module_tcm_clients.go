@@ -38,8 +38,6 @@ type Clients struct {
 	CellPhoneGuardian string `json:"cell_phone_guardian"`
 	SingGuardian      string `json:"sign_guardian"`
 
-	// Medicaid       string `json:"medicaid" gorm:"type:longtext;uniqueIndex:idx_medicaid,length:255"`
-	// Medicaid       string `json:"medicaid" gorm:"type:varchar(255);uniqueIndex:idx_medicaid"`
 	Medicaid string `json:"medicaid" gorm:"type:varchar(255)"`
 
 	GoldCardNumber string `json:"gold_card_number"`
@@ -47,6 +45,12 @@ type Clients struct {
 
 	TcmActive string `json:"tcm_active"`
 	Status    string `json:"status"`
+	// Other Fields
+	DxCode          string `json:"dx_code"`
+	PsychEvaluation string `json:"psych_evaluation"`
+	Doa             string `json:"doa"`
+	HealthPlan      string `json:"health_plan"`
+	InsuranceId     string `json:"insurance_id"`
 }
 
 type ClientServiceCaseManagement struct {

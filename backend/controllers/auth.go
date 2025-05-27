@@ -218,6 +218,10 @@ func GetUserInfo(uid string) models.ActiveUser {
 					active.Avatar = url
 				}
 			}
+			// Table preference
+			var pref models.TablePreference
+			db.Where("user_id = ?", uid).Find(&pref)
+			active.TablePreference = pref
 
 		}
 
@@ -225,6 +229,85 @@ func GetUserInfo(uid string) models.ActiveUser {
 	})
 
 	return result.(models.ActiveUser)
+}
+
+func GetUsersInfo(uids []string) []models.ActiveUser {
+	var activeUsers []models.ActiveUser
+
+	// Usamos la función de base de datos con DB
+	database.WithDB(func(db *gorm.DB) interface{} {
+		for _, uid := range uids {
+			var active models.ActiveUser
+			var user models.Users
+
+			result := core.ExtractFunctionsPlugins("ldap", "Search", "(&(uid="+uid+"))")
+			bytes, _ := json.Marshal(&result)
+			var resultSearch ldap.SearchResult
+			_ = json.Unmarshal(bytes, &resultSearch)
+
+			if len(resultSearch.Entries) > 0 {
+				userLdap := resultSearch.Entries[0]
+				// (Aquí va todo el procesamiento igual que en tu función original)
+				// Ejemplo para algunos campos:
+				id, _ := strconv.ParseUint(userLdap.GetAttributeValue("id"), 10, 64)
+				user.ID = uint(id)
+				user.Uid = userLdap.GetAttributeValue("uid")
+				// ... (más campos, igual que antes)
+
+				var record models.WorkerRecord
+				db.Where("uid = ?", uid).First(&record)
+				user.ID = record.ID
+				user.Record = record.ID
+
+				// Actualización LDAP si es necesario (igual que antes)
+				if record.ID != uint(id) {
+					core.ExtractFunctionsPlugins("ldap", "ModifyAccount", uid,
+						"id-->"+strconv.Itoa(int(record.ID)),
+					)
+				}
+
+				// Actualizar otros campos y relaciones
+				// ...
+
+				decryptedImage, _ := core.DecryptImage(user.Signature)
+				active.User = user
+				active.Record = record
+				if len(decryptedImage) > 0 {
+					active.Signature = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedImage)
+				} else {
+					active.Signature = ""
+				}
+
+				var week models.Week
+				db.Where("active = ?", true).First(&week)
+				active.WeekActive = week
+
+				var fortnight models.Fortnight
+				db.Where("active = ?", true).First(&fortnight)
+				active.FortnightActive = fortnight
+
+				// Obtener avatar
+				objectsUrl := core.ExtractFunctionsPlugins("s3", "ListeFilesInFolder", "records/"+uid+"/")
+				url := ""
+				for _, doc := range objectsUrl.([]map[string]string) {
+					if strings.Contains(doc["Key"], "avatar") {
+						url = doc["URL"]
+						active.Avatar = url
+					}
+				}
+
+				var pref models.TablePreference
+				db.Where("user_id = ?", uid).Find(&pref)
+				active.TablePreference = pref
+
+				// Añadir usuario activo al slice
+				activeUsers = append(activeUsers, active)
+			}
+		}
+		return nil
+	})
+
+	return activeUsers
 }
 
 func AuthLogin(c *fiber.Ctx) error {
@@ -284,9 +367,7 @@ func AuthLogin(c *fiber.Ctx) error {
 			"message": core.GetTextMessage("login_err_002"),
 		})
 	}
-
 	resultGetUser := GetUserInfo(username)
-
 	securityCode := false
 
 	if resultGetUser.User.Email != "" {
@@ -321,9 +402,10 @@ func AuthLogin(c *fiber.Ctx) error {
 			fmt.Println(err)
 		}
 	}()
+
 	return c.JSON(fiber.Map{
 		"OK":         true,
-		"message":    "Welcome " + activeUser.Record.FullName + ", " + core.GetTextMessage("login_ok_001"),
+		"message":    core.GreetingOfTheDay() + " " + strings.Split(activeUser.Record.FullName, " ")[0] + ", " + core.GetTextMessage("login_ok_001"),
 		"activeUser": activeUser,
 	})
 }

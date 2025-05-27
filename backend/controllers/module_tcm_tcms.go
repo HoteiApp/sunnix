@@ -270,138 +270,138 @@ func CoreGetTCMS(c *fiber.Ctx) error {
 				}
 
 				// --------------------------------
-				var clients []models.OutClients
+				// var clients []models.OutClients
 				var caseManagement []models.ClientServiceCaseManagement
 				// With this query obtain only one scm from each tcm client
 				db.Select("DISTINCT client").Where("tcm = ?", uTCM.ID).Find(&caseManagement)
 
-				for _, val := range caseManagement {
-					var client models.Clients
-					db.Where("ID = ?", val.Client).Find(&client)
-					var cms []models.ClientServiceCaseManagement
-					db.Where("client = ?", client.ID).Find(&cms)
-					var scm []models.OutClientSCM
-					for _, cm := range cms {
-						var tcm models.ClienteSCMTcm
-						db.Where("scm = ?", cm.ID).Find(&tcm)
-						var demografic models.ClientSCMDemografic
-						db.Where("scm = ?", cm.ID).Find(&demografic)
-						var sures []models.ClientSCMSure
-						db.Where("scm = ?", cm.ID).Find(&sures)
-						var medicals []models.ClientSCMMedical
-						db.Where("scm = ?", cm.ID).Find(&medicals)
-						var mentals []models.ClientSCMMental
-						db.Where("scm = ?", cm.ID).Find(&mentals)
-						// Documents
-						var certification models.ClientSCMCertification
-						db.Where("scm = ?", cm.ID).Find(&certification)
+				// for _, val := range caseManagement {
+				// 	var client models.Clients
+				// 	db.Where("ID = ?", val.Client).Find(&client)
+				// 	var cms []models.ClientServiceCaseManagement
+				// 	db.Where("client = ?", client.ID).Find(&cms)
+				// 	var scm []models.OutClientSCM
+				// 	for _, cm := range cms {
+				// 		var tcm models.ClienteSCMTcm
+				// 		db.Where("scm = ?", cm.ID).Find(&tcm)
+				// 		var demografic models.ClientSCMDemografic
+				// 		db.Where("scm = ?", cm.ID).Find(&demografic)
+				// 		var sures []models.ClientSCMSure
+				// 		db.Where("scm = ?", cm.ID).Find(&sures)
+				// 		var medicals []models.ClientSCMMedical
+				// 		db.Where("scm = ?", cm.ID).Find(&medicals)
+				// 		var mentals []models.ClientSCMMental
+				// 		db.Where("scm = ?", cm.ID).Find(&mentals)
+				// 		// Documents
+				// 		var certification models.ClientSCMCertification
+				// 		db.Where("scm = ?", cm.ID).Find(&certification)
 
-						var assessment models.ClientSCMAssessment
-						db.Where("scm = ?", cm.ID).Find(&assessment)
+				// 		var assessment models.ClientSCMAssessment
+				// 		db.Where("scm = ?", cm.ID).Find(&assessment)
 
-						var sp models.ClientSCMSp
-						db.Where("scm = ?", cm.ID).Find(&sp)
+				// 		var sp models.ClientSCMSp
+				// 		db.Where("scm = ?", cm.ID).Find(&sp)
 
-						var goal1 models.SpGoal1
-						db.Where("sp = ?", sp.ID).Find(&goal1)
-						var goal2 models.SpGoal2
-						db.Where("sp = ?", sp.ID).Find(&goal2)
-						var goal3 models.SpGoal3
-						db.Where("sp = ?", sp.ID).Find(&goal3)
-						var goal4 models.SpGoal4
-						db.Where("sp = ?", sp.ID).Find(&goal4)
-						var goal5 models.SpGoal5
-						db.Where("sp = ?", sp.ID).Find(&goal5)
-						var goal6 models.SpGoal6
-						db.Where("sp = ?", sp.ID).Find(&goal6)
-						var goal7 models.SpGoal7
-						db.Where("sp = ?", sp.ID).Find(&goal7)
-						var goal8 models.SpGoal8
-						db.Where("sp = ?", sp.ID).Find(&goal8)
+				// 		var goal1 models.SpGoal1
+				// 		db.Where("sp = ?", sp.ID).Find(&goal1)
+				// 		var goal2 models.SpGoal2
+				// 		db.Where("sp = ?", sp.ID).Find(&goal2)
+				// 		var goal3 models.SpGoal3
+				// 		db.Where("sp = ?", sp.ID).Find(&goal3)
+				// 		var goal4 models.SpGoal4
+				// 		db.Where("sp = ?", sp.ID).Find(&goal4)
+				// 		var goal5 models.SpGoal5
+				// 		db.Where("sp = ?", sp.ID).Find(&goal5)
+				// 		var goal6 models.SpGoal6
+				// 		db.Where("sp = ?", sp.ID).Find(&goal6)
+				// 		var goal7 models.SpGoal7
+				// 		db.Where("sp = ?", sp.ID).Find(&goal7)
+				// 		var goal8 models.SpGoal8
+				// 		db.Where("sp = ?", sp.ID).Find(&goal8)
 
-						// var outSp models.OutClientSCMSp
-						// // ---
-						// decryptedSignaturetcm, _ := core.DecryptImage(sp.Signaturetcm)
-						// decryptedSignaturesupervisor, _ := core.DecryptImage(sp.Signaturesupervisor)
-						// decryptedSignatureqa, _ := core.DecryptImage(sp.Signatureqa)
-						// // ---
+				// 		// var outSp models.OutClientSCMSp
+				// 		// // ---
+				// 		// decryptedSignaturetcm, _ := core.DecryptImage(sp.Signaturetcm)
+				// 		// decryptedSignaturesupervisor, _ := core.DecryptImage(sp.Signaturesupervisor)
+				// 		// decryptedSignatureqa, _ := core.DecryptImage(sp.Signatureqa)
+				// 		// // ---
 
-						// outSp.ID = int(sp.ID)
-						// outSp.Client = sp.Client
-						// outSp.Scm = sp.Scm
-						// outSp.Developmentdate = sp.Developmentdate
-						// outSp.Axiscode = sp.Axiscode
-						// outSp.Axiscodedescription = sp.Axiscodedescription
-						// outSp.Tcm = sp.Tcm
-						// outSp.Goal1 = goal1
-						// outSp.Goal2 = goal2
-						// outSp.Goal3 = goal3
-						// outSp.Goal4 = goal4
-						// outSp.Goal5 = goal5
-						// outSp.Goal6 = goal6
-						// outSp.Goal7 = goal7
-						// outSp.Goal8 = goal8
-						// outSp.Signaturetcm = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignaturetcm)
-						// outSp.Signaturetcmdate = sp.Signaturetcmdate
-						// outSp.Supervisor = sp.Supervisor
-						// outSp.Signaturesupervisor = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignaturesupervisor)
-						// outSp.Signaturesupervisordate = sp.Signaturesupervisordate
-						// outSp.Qa = sp.Qa
-						// outSp.Signatureqa = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignatureqa)
-						// outSp.Signatureqadate = sp.Signatureqadate
+				// 		// outSp.ID = int(sp.ID)
+				// 		// outSp.Client = sp.Client
+				// 		// outSp.Scm = sp.Scm
+				// 		// outSp.Developmentdate = sp.Developmentdate
+				// 		// outSp.Axiscode = sp.Axiscode
+				// 		// outSp.Axiscodedescription = sp.Axiscodedescription
+				// 		// outSp.Tcm = sp.Tcm
+				// 		// outSp.Goal1 = goal1
+				// 		// outSp.Goal2 = goal2
+				// 		// outSp.Goal3 = goal3
+				// 		// outSp.Goal4 = goal4
+				// 		// outSp.Goal5 = goal5
+				// 		// outSp.Goal6 = goal6
+				// 		// outSp.Goal7 = goal7
+				// 		// outSp.Goal8 = goal8
+				// 		// outSp.Signaturetcm = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignaturetcm)
+				// 		// outSp.Signaturetcmdate = sp.Signaturetcmdate
+				// 		// outSp.Supervisor = sp.Supervisor
+				// 		// outSp.Signaturesupervisor = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignaturesupervisor)
+				// 		// outSp.Signaturesupervisordate = sp.Signaturesupervisordate
+				// 		// outSp.Qa = sp.Qa
+				// 		// outSp.Signatureqa = "data:image/png;base64," + base64.StdEncoding.EncodeToString(decryptedSignatureqa)
+				// 		// outSp.Signatureqadate = sp.Signatureqadate
 
-						scm = append(scm, models.OutClientSCM{
-							ID:          int(cm.ID),
-							Status:      cm.Status,
-							Doa:         cm.Doa,
-							ClosingDate: cm.ClosingDate,
-						})
-					}
+				// 		scm = append(scm, models.OutClientSCM{
+				// 			ID:          int(cm.ID),
+				// 			Status:      cm.Status,
+				// 			Doa:         cm.Doa,
+				// 			ClosingDate: cm.ClosingDate,
+				// 		})
+				// 	}
 
-					clients = append(clients, models.OutClients{
-						ID:              client.ID,
-						ReferrerID:      client.ReferrerID,
-						ReferringAgency: client.ReferringAgency,
-						ReferringPerson: client.ReferringPerson,
-						CellPhone:       client.CellPhone,
-						Fax:             client.Fax,
-						Email:           client.Email,
-						Date:            client.Date,
+				// 	clients = append(clients, models.OutClients{
+				// 		ID:              client.ID,
+				// 		ReferrerID:      client.ReferrerID,
+				// 		ReferringAgency: client.ReferringAgency,
+				// 		ReferringPerson: client.ReferringPerson,
+				// 		CellPhone:       client.CellPhone,
+				// 		Fax:             client.Fax,
+				// 		Email:           client.Email,
+				// 		Date:            client.Date,
 
-						LastName:  client.LastName,
-						FirstName: client.FirstName,
-						SS:        client.SS,
-						DOB:       client.DOB,
-						Sexo:      client.Sexo,
-						Race:      client.Race,
+				// 		LastName:  client.LastName,
+				// 		FirstName: client.FirstName,
+				// 		SS:        client.SS,
+				// 		DOB:       client.DOB,
+				// 		Sexo:      client.Sexo,
+				// 		Race:      client.Race,
 
-						Address: client.Address,
-						State:   client.State,
-						ZipCode: client.ZipCode,
+				// 		Address: client.Address,
+				// 		State:   client.State,
+				// 		ZipCode: client.ZipCode,
 
-						Phone:    client.Phone,
-						School:   client.School,
-						Lenguage: client.Lenguage,
+				// 		Phone:    client.Phone,
+				// 		School:   client.School,
+				// 		Lenguage: client.Lenguage,
 
-						SingClient: client.SingClient,
+				// 		SingClient: client.SingClient,
 
-						LegalGuardian:     client.LegalGuardian,
-						Relationship:      client.Relationship,
-						CellPhoneGuardian: client.CellPhoneGuardian,
-						SingGuardian:      client.SingGuardian,
+				// 		LegalGuardian:     client.LegalGuardian,
+				// 		Relationship:      client.Relationship,
+				// 		CellPhoneGuardian: client.CellPhoneGuardian,
+				// 		SingGuardian:      client.SingGuardian,
 
-						Medicaid:       client.Medicaid,
-						GoldCardNumber: client.GoldCardNumber,
-						Medicare:       client.Medicare,
-						Scm:            scm,
-					})
-				}
+				// 		Medicaid:       client.Medicaid,
+				// 		GoldCardNumber: client.GoldCardNumber,
+				// 		Medicare:       client.Medicare,
+				// 		Scm:            scm,
+				// 	})
+				// }
 				// --------------
 				outTCM = append(outTCM, models.OutTCM{
 					ID:       i + 1,
 					Info:     tcmUserData.Record,
 					User:     tcmUserData.User,
-					Clients:  clients,
+					Clients:  len(caseManagement),
 					BillData: billData,
 				})
 			}
@@ -429,42 +429,51 @@ func CoreGetTCMS(c *fiber.Ctx) error {
 	})
 }
 
-// Funtion mejorada para listar los TCMs supervisores porque la anterior no estaba optimizada
-func CoreGetListTCMS(c *fiber.Ctx) error {
+func CoreGetTCMSID(c *fiber.Ctx) error {
+	uid := c.Params("uid")
+	var week models.Week
+	_, _ = database.WithDB(func(db *gorm.DB) interface{} {
+		return db.Where("active = ?", true).First(&week)
+	})
+
 	result, err := database.WithDB(func(db *gorm.DB) interface{} {
-		var tcms []models.OutListTCMS
-		// Query the database for all users
-		listTcms := core.GetUsersFromLDAP("(&(roll=tcms)(active=True))")
-		// Ordenar por el campo Business
-		sort.Slice(listTcms, func(i, j int) bool {
-			numI, _ := strconv.Atoi(listTcms[i].Business)
-			numJ, _ := strconv.Atoi(listTcms[j].Business)
-			return numI < numJ
-		})
 
-		for k, supervisor := range listTcms {
-			userInfo := core.GetWorkerRecord(supervisor.Uid)
-			userData := GetUserInfo(supervisor.Uid)
-			// --
-			tcm := core.GetUsersFromLDAP("(&(roll=tcm)(supervisor=" + supervisor.Uid + "))")
+		tcm := core.GetUsersFromLDAP("(&(|(roll=tcm)(roll=tcms))(supervisor=" + uid + "))")
 
-			// -------
-			tcmsUIDs := []string{supervisor.Uid} // Initialize the list with the supervisor's UID
-			avatarUrls, err := core.BatchGetAvatars(tcmsUIDs)
-			if err != nil {
-				return err
-			}
-			// -------
-			tcms = append(tcms, models.OutListTCMS{
-				ID:       k + 1,
-				Photo:    avatarUrls[supervisor.Uid],
-				User:     userData.User,
-				Info:     userInfo,
-				TotlaTcm: len(tcm),
+		// Extraer todos los UIDs
+		uids := make([]string, len(tcm))
+		userMap := make(map[string]models.Users)
+		for i, t := range tcm {
+			uids[i] = t.Uid
+			userMap[t.Uid] = t
+		}
+
+		// Batch avatars, info y datos del usuario
+		avatarUrls, _ := core.BatchGetAvatars(uids)
+		recordsMap := BatchGetWorkerRecords(db, uids)
+
+		var OutTCMList []models.OutTCMList
+
+		for i, uTCM := range tcm {
+			// tcmInfo := core.GetWorkerRecord(uTCM.Uid)
+			// tcmUserData := GetUserInfo(uTCM.Uid)
+
+			// --------------------------------
+
+			var clients []models.Clients
+			db.Where("tcm_active = ?", uTCM.Uid).Find(&clients)
+
+			// --------------
+			OutTCMList = append(OutTCMList, models.OutTCMList{
+				ID:      i + 1,
+				Photo:   avatarUrls[uTCM.Uid],
+				User:    userMap[uTCM.Uid],
+				Info:    recordsMap[uTCM.Uid],
+				Clients: len(clients),
 			})
 		}
 
-		return tcms
+		return OutTCMList
 	})
 	if err != nil {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
@@ -472,8 +481,133 @@ func CoreGetListTCMS(c *fiber.Ctx) error {
 		})
 	}
 
-	// Return the list of users
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"tcms": result.([]models.OutTCMList),
+	})
+}
+
+// Funtion mejorada para listar los TCMs supervisores porque la anterior no estaba optimizada
+// func CoreGetListTCMS(c *fiber.Ctx) error {
+
+// 	result, err := database.WithDB(func(db *gorm.DB) interface{} {
+// 		var tcms []models.OutListTCMS
+// 		// Query the database for all users
+// 		listTcms := core.GetUsersFromLDAP("(&(roll=tcms)(active=True))")
+// 		// Ordenar por el campo Business
+// 		sort.Slice(listTcms, func(i, j int) bool {
+// 			numI, _ := strconv.Atoi(listTcms[i].Business)
+// 			numJ, _ := strconv.Atoi(listTcms[j].Business)
+// 			return numI < numJ
+// 		})
+// 		var allUIDs []string
+// 		for _, tcms_info := range listTcms {
+// 			allUIDs = append(allUIDs, tcms_info.Uid)
+// 		}
+// 		avatarUrls, _ := core.BatchGetAvatars(allUIDs)
+// 		for k, supervisor := range listTcms {
+// 			userInfo := core.GetWorkerRecord(supervisor.Uid)
+// 			userData := GetUserInfo(supervisor.Uid)
+// 			// --
+// 			tcm := core.GetUsersFromLDAP("(&(roll=tcm)(supervisor=" + supervisor.Uid + "))")
+
+// 			tcms = append(tcms, models.OutListTCMS{
+// 				ID:       k + 1,
+// 				Photo:    avatarUrls[supervisor.Uid],
+// 				User:     userData.User,
+// 				Info:     userInfo,
+// 				TotlaTcm: len(tcm),
+// 			})
+// 		}
+
+// 		return tcms
+// 	})
+// 	if err != nil {
+// 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+// 			"message": "Error",
+// 		})
+// 	}
+
+// 	// Return the list of users
+// 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+// 		"tcms": result.([]models.OutListTCMS),
+// 	})
+// }
+
+func CoreGetListTCMS(c *fiber.Ctx) error {
+	result, err := database.WithDB(func(db *gorm.DB) interface{} {
+		var tcms []models.OutListTCMS
+
+		// Obtener lista de supervisores desde LDAP
+		listTcms := core.GetUsersFromLDAP("(&(roll=tcms)(active=True))")
+
+		// Ordenar por campo Business numéricamente
+		sort.Slice(listTcms, func(i, j int) bool {
+			numI, _ := strconv.Atoi(listTcms[i].Business)
+			numJ, _ := strconv.Atoi(listTcms[j].Business)
+			return numI < numJ
+		})
+
+		// Extraer todos los UIDs
+		uids := make([]string, len(listTcms))
+		userMap := make(map[string]models.Users)
+		for i, t := range listTcms {
+			uids[i] = t.Uid
+			userMap[t.Uid] = t
+		}
+
+		// Batch avatars, info y datos del usuario
+		avatarUrls, _ := core.BatchGetAvatars(uids)
+		recordsMap := BatchGetWorkerRecords(db, uids)        // Debes implementar esto
+		tcmsCountMap := BatchCountTCMsBySupervisor(db, uids) // Debes implementar esto
+
+		// Construir salida
+		for k, sup := range listTcms {
+			tcms = append(tcms, models.OutListTCMS{
+				ID:       k + 1,
+				Photo:    avatarUrls[sup.Uid],
+				User:     userMap[sup.Uid],
+				Info:     recordsMap[sup.Uid],
+				TotlaTcm: tcmsCountMap[sup.Uid],
+			})
+		}
+
+		return tcms
+	})
+
+	if err != nil {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"message": "Error",
+		})
+	}
+
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"tcms": result.([]models.OutListTCMS),
 	})
+}
+
+func BatchGetWorkerRecords(db *gorm.DB, uids []string) map[string]models.WorkerRecord {
+	records := make(map[string]models.WorkerRecord)
+
+	if len(uids) == 0 {
+		return records
+	}
+
+	var dbRecords []models.WorkerRecord
+	db.Where("uid IN ?", uids).Find(&dbRecords)
+
+	for _, rec := range dbRecords {
+		records[rec.Uid] = rec
+	}
+
+	return records
+}
+
+func BatchCountTCMsBySupervisor(db *gorm.DB, supervisors []string) map[string]int {
+	counts := make(map[string]int)
+	for _, sup := range supervisors {
+		tcms := core.GetUsersFromLDAP("(&(roll=tcm)(supervisor=" + sup + "))")
+		counts[sup] = len(tcms)
+	}
+
+	return counts
 }

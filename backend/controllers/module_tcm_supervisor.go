@@ -12,9 +12,11 @@ import (
 	"gorm.io/gorm"
 )
 
+// BUG: esta es la funcion que estaba antes de la de abajo, que demora mucho porque hace muchas consultas
 // Get all TCM of the SuPERVISOR ---------------------------------------------
-func SupervisorTCMs(c *fiber.Ctx) error {
+func SupervisorTCM(c *fiber.Ctx) error {
 	claims, _ := GetClaims(c)
+
 	var week models.Week
 	_, _ = database.WithDB(func(db *gorm.DB) interface{} {
 		return db.Where("active = ?", true).First(&week)
@@ -24,6 +26,7 @@ func SupervisorTCMs(c *fiber.Ctx) error {
 
 		tcm := core.GetUsersFromLDAP("(&(|(roll=tcm)(roll=tcms))(supervisor=" + claims["UID"].(string) + "))")
 		var outTCM []models.OutTCM
+
 		for i, uTCM := range tcm {
 			// tcmInfo := core.GetWorkerRecord(uTCM.Uid)
 			tcmUserData := GetUserInfo(uTCM.Uid)
@@ -257,109 +260,109 @@ func SupervisorTCMs(c *fiber.Ctx) error {
 			}
 
 			// --------------------------------
-			var clients []models.OutClients
+			// var clients []models.OutClients
 			var caseManagement []models.ClientServiceCaseManagement
 			// With this query obtain only one scm from each tcm client
 			db.Select("DISTINCT client").Where("tcm = ?", uTCM.ID).Find(&caseManagement)
 
-			for _, val := range caseManagement {
-				var client models.Clients
-				db.Where("ID = ?", val.Client).Find(&client)
-				var cms []models.ClientServiceCaseManagement
-				db.Where("client = ?", client.ID).Find(&cms)
-				var scm []models.OutClientSCM
-				for _, cm := range cms {
-					var tcm models.ClienteSCMTcm
-					db.Where("scm = ?", cm.ID).Find(&tcm)
-					var demografic models.ClientSCMDemografic
-					db.Where("scm = ?", cm.ID).Find(&demografic)
-					var sures []models.ClientSCMSure
-					db.Where("scm = ?", cm.ID).Find(&sures)
-					var medicals []models.ClientSCMMedical
-					db.Where("scm = ?", cm.ID).Find(&medicals)
-					var mentals []models.ClientSCMMental
-					db.Where("scm = ?", cm.ID).Find(&mentals)
-					// Documents
-					var certification models.ClientSCMCertification
-					db.Where("scm = ?", cm.ID).Find(&certification)
+			// for _, val := range caseManagement {
+			// 	var client models.Clients
+			// 	db.Where("ID = ?", val.Client).Find(&client)
+			// 	var cms []models.ClientServiceCaseManagement
+			// 	db.Where("client = ?", client.ID).Find(&cms)
+			// 	var scm []models.OutClientSCM
+			// 	for _, cm := range cms {
+			// 		var tcm models.ClienteSCMTcm
+			// 		db.Where("scm = ?", cm.ID).Find(&tcm)
+			// 		var demografic models.ClientSCMDemografic
+			// 		db.Where("scm = ?", cm.ID).Find(&demografic)
+			// 		var sures []models.ClientSCMSure
+			// 		db.Where("scm = ?", cm.ID).Find(&sures)
+			// 		var medicals []models.ClientSCMMedical
+			// 		db.Where("scm = ?", cm.ID).Find(&medicals)
+			// 		var mentals []models.ClientSCMMental
+			// 		db.Where("scm = ?", cm.ID).Find(&mentals)
+			// 		// Documents
+			// 		var certification models.ClientSCMCertification
+			// 		db.Where("scm = ?", cm.ID).Find(&certification)
 
-					var assessment models.ClientSCMAssessment
-					db.Where("scm = ?", cm.ID).Find(&assessment)
+			// 		var assessment models.ClientSCMAssessment
+			// 		db.Where("scm = ?", cm.ID).Find(&assessment)
 
-					var sp models.ClientSCMSp
-					db.Where("scm = ?", cm.ID).Find(&sp)
+			// 		var sp models.ClientSCMSp
+			// 		db.Where("scm = ?", cm.ID).Find(&sp)
 
-					var goal1 models.SpGoal1
-					db.Where("sp = ?", sp.ID).Find(&goal1)
-					var goal2 models.SpGoal2
-					db.Where("sp = ?", sp.ID).Find(&goal2)
-					var goal3 models.SpGoal3
-					db.Where("sp = ?", sp.ID).Find(&goal3)
-					var goal4 models.SpGoal4
-					db.Where("sp = ?", sp.ID).Find(&goal4)
-					var goal5 models.SpGoal5
-					db.Where("sp = ?", sp.ID).Find(&goal5)
-					var goal6 models.SpGoal6
-					db.Where("sp = ?", sp.ID).Find(&goal6)
-					var goal7 models.SpGoal7
-					db.Where("sp = ?", sp.ID).Find(&goal7)
-					var goal8 models.SpGoal8
-					db.Where("sp = ?", sp.ID).Find(&goal8)
+			// 		var goal1 models.SpGoal1
+			// 		db.Where("sp = ?", sp.ID).Find(&goal1)
+			// 		var goal2 models.SpGoal2
+			// 		db.Where("sp = ?", sp.ID).Find(&goal2)
+			// 		var goal3 models.SpGoal3
+			// 		db.Where("sp = ?", sp.ID).Find(&goal3)
+			// 		var goal4 models.SpGoal4
+			// 		db.Where("sp = ?", sp.ID).Find(&goal4)
+			// 		var goal5 models.SpGoal5
+			// 		db.Where("sp = ?", sp.ID).Find(&goal5)
+			// 		var goal6 models.SpGoal6
+			// 		db.Where("sp = ?", sp.ID).Find(&goal6)
+			// 		var goal7 models.SpGoal7
+			// 		db.Where("sp = ?", sp.ID).Find(&goal7)
+			// 		var goal8 models.SpGoal8
+			// 		db.Where("sp = ?", sp.ID).Find(&goal8)
 
-					scm = append(scm, models.OutClientSCM{
-						ID:          int(cm.ID),
-						Status:      cm.Status,
-						Doa:         cm.Doa,
-						ClosingDate: cm.ClosingDate,
-					})
-				}
+			// 		scm = append(scm, models.OutClientSCM{
+			// 			ID:          int(cm.ID),
+			// 			Status:      cm.Status,
+			// 			Doa:         cm.Doa,
+			// 			ClosingDate: cm.ClosingDate,
+			// 		})
+			// 	}
 
-				clients = append(clients, models.OutClients{
-					ID:              client.ID,
-					Mr:              client.Mr,
-					ReferrerID:      client.ReferrerID,
-					ReferringAgency: client.ReferringAgency,
-					ReferringPerson: client.ReferringPerson,
-					CellPhone:       client.CellPhone,
-					Fax:             client.Fax,
-					Email:           client.Email,
-					Date:            client.Date,
+			// 	clients = append(clients, models.OutClients{
+			// 		ID:              client.ID,
+			// 		Mr:              client.Mr,
+			// 		ReferrerID:      client.ReferrerID,
+			// 		ReferringAgency: client.ReferringAgency,
+			// 		ReferringPerson: client.ReferringPerson,
+			// 		CellPhone:       client.CellPhone,
+			// 		Fax:             client.Fax,
+			// 		Email:           client.Email,
+			// 		Date:            client.Date,
 
-					LastName:  client.LastName,
-					FirstName: client.FirstName,
-					SS:        client.SS,
-					DOB:       client.DOB,
-					Sexo:      client.Sexo,
-					Race:      client.Race,
+			// 		LastName:  client.LastName,
+			// 		FirstName: client.FirstName,
+			// 		SS:        client.SS,
+			// 		DOB:       client.DOB,
+			// 		Sexo:      client.Sexo,
+			// 		Race:      client.Race,
 
-					Address: client.Address,
-					State:   client.State,
-					ZipCode: client.ZipCode,
+			// 		Address: client.Address,
+			// 		State:   client.State,
+			// 		ZipCode: client.ZipCode,
 
-					Phone:    client.Phone,
-					School:   client.School,
-					Lenguage: client.Lenguage,
+			// 		Phone:    client.Phone,
+			// 		School:   client.School,
+			// 		Lenguage: client.Lenguage,
 
-					SingClient: client.SingClient,
+			// 		SingClient: client.SingClient,
 
-					LegalGuardian:     client.LegalGuardian,
-					Relationship:      client.Relationship,
-					CellPhoneGuardian: client.CellPhoneGuardian,
-					SingGuardian:      client.SingGuardian,
+			// 		LegalGuardian:     client.LegalGuardian,
+			// 		Relationship:      client.Relationship,
+			// 		CellPhoneGuardian: client.CellPhoneGuardian,
+			// 		SingGuardian:      client.SingGuardian,
 
-					Medicaid:       client.Medicaid,
-					GoldCardNumber: client.GoldCardNumber,
-					Medicare:       client.Medicare,
-					TcmActive:      client.TcmActive,
-					Scm:            scm,
-				})
-			}
+			// 		Medicaid:       client.Medicaid,
+			// 		GoldCardNumber: client.GoldCardNumber,
+			// 		Medicare:       client.Medicare,
+			// 		TcmActive:      client.TcmActive,
+			// 		Scm:            scm,
+			// 	})
+			// }
 			// --------------
 			outTCM = append(outTCM, models.OutTCM{
 				ID:       i + 1,
 				Info:     tcmUserData.Record,
 				User:     tcmUserData.User,
-				Clients:  clients,
+				Clients:  len(caseManagement),
 				BillData: billData,
 			})
 		}
@@ -374,6 +377,65 @@ func SupervisorTCMs(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"tcms": result.([]models.OutTCM),
+	})
+}
+
+// Get all TCM of the SuPERVISOR ---------------------------------------------
+func SupervisorTCMs(c *fiber.Ctx) error {
+	claims, _ := GetClaims(c)
+
+	var week models.Week
+	_, _ = database.WithDB(func(db *gorm.DB) interface{} {
+		return db.Where("active = ?", true).First(&week)
+	})
+
+	result, err := database.WithDB(func(db *gorm.DB) interface{} {
+
+		tcm := core.GetUsersFromLDAP("(&(|(roll=tcm)(roll=tcms))(supervisor=" + claims["UID"].(string) + "))")
+
+		// Extraer todos los UIDs
+		uids := make([]string, len(tcm))
+		userMap := make(map[string]models.Users)
+		for i, t := range tcm {
+			uids[i] = t.Uid
+			userMap[t.Uid] = t
+		}
+
+		// Batch avatars, info y datos del usuario
+		avatarUrls, _ := core.BatchGetAvatars(uids)
+		recordsMap := BatchGetWorkerRecords(db, uids)
+
+		var OutTCMList []models.OutTCMList
+
+		for i, uTCM := range tcm {
+			// tcmInfo := core.GetWorkerRecord(uTCM.Uid)
+			// tcmUserData := GetUserInfo(uTCM.Uid)
+
+			// --------------------------------
+
+			var clients []models.Clients
+			db.Where("tcm_active = ?", uTCM.Uid).Find(&clients)
+
+			// --------------
+			OutTCMList = append(OutTCMList, models.OutTCMList{
+				ID:      i + 1,
+				Photo:   avatarUrls[uTCM.Uid],
+				User:    userMap[uTCM.Uid],
+				Info:    recordsMap[uTCM.Uid],
+				Clients: len(clients),
+			})
+		}
+
+		return OutTCMList
+	})
+	if err != nil {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"message": "Error",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"tcms": result.([]models.OutTCMList),
 	})
 }
 

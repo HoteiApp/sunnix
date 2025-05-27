@@ -4,8 +4,15 @@ type OutTCM struct {
 	ID       int            `json:"id"`
 	Info     WorkerRecord   `json:"info"`
 	User     Users          `json:"user"`
-	Clients  []OutClients   `json:"clients"`
+	Clients  int            `json:"clients"`
 	BillData BillingDataOUT `json:"bill"`
+}
+type OutTCMList struct {
+	ID      int          `json:"id"`
+	Photo   string       `json:"photo"`
+	Info    WorkerRecord `json:"info"`
+	User    Users        `json:"user"`
+	Clients int          `json:"clients"`
 }
 
 type OutTCMS struct {

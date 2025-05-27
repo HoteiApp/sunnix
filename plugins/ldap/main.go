@@ -52,6 +52,8 @@ func GetPermissions() []string {
 // --	How to use this function in AGA
 // --	system.ExtractFunctionsPlugins("ldap","Search","(&(uid=user))")
 func Search(arg ...interface{}) interface{} {
+	conn := system.Connect() // Abres conexión
+	defer conn.Close()       // La cierras al final de la función
 	// Crea una nueva solicitud de búsqueda con los parámetros proporcionados.
 	searchRequest := ldap.NewSearchRequest(
 		system.LdapBaseDn, // El DN base para realizar la búsqueda
@@ -64,10 +66,8 @@ func Search(arg ...interface{}) interface{} {
 		[]string{"*"},   // Una lista de atributos para recuperar
 		nil,
 	)
-	defer system.Connect().Close()
-	// Realiza la búsqueda en el servidor LDAP utilizando la conexión establecida.
-	sr, _ := system.Connect().Search(searchRequest)
-
+	// Usa la conexión existente para buscar
+	sr, _ := conn.Search(searchRequest)
 	// Retorna el resultado de la búsqueda como un objeto de tipo interface{}.
 	return sr
 }
@@ -98,11 +98,11 @@ func Login(arg ...interface{}) interface{} {
 // -- How to use this function in AGA
 // -- system.ExtractFunctionsPlugins("ldap","ListAll",nil)
 func ListAll(arg ...interface{}) interface{} {
-	// Cierra la conexión al servidor LDAP al final de la función.
-	defer system.Connect().Close()
+	conn := system.Connect() // Abres una sola conexión
+	defer conn.Close()       // Y la cierras correctamente al salir
 
 	// Realiza una búsqueda en el servidor LDAP para recuperar todos los objetos.
-	result, _ := system.Connect().Search(ldap.NewSearchRequest(
+	result, _ := conn.Search(ldap.NewSearchRequest(
 		system.LdapBaseDn,
 		ldap.ScopeWholeSubtree,
 		ldap.NeverDerefAliases,

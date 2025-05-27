@@ -70,6 +70,7 @@ func Routes(app *fiber.App) {
 	// TODO Caundo se terminen las pruebas pasar a que solo los admin y hr pueden crear los usuarios
 	api.Post("/register", controllers.Register).Name("Register")
 	api.Post("/speech", controllers.HandleTextToSpeech).Name("Speech")
+	api.Post("/generateaudio", controllers.GenerateAudiotoText).Name("GenerateAudiotoText")
 
 	api.Post("/login", polities.Captcha, controllers.AuthLogin).Name("AuthLogin")
 	api.Post("/logout", controllers.AuthLogout).Name("AuthLogout")
@@ -89,6 +90,9 @@ func Routes(app *fiber.App) {
 	my.Post("/signature", controllers.ChangeSignature).Name("ChangeSignature")
 	my.Post("/generatePDF", controllers.GeneratePDF).Name("GeneratePDF")
 
+	// ----------------------------------------------------------------------
+	preference := api.Group("preference")
+	preference.Post("/table", controllers.TablePreferencePost).Name("TablePreferencePost")
 	// ----------------------------------------------------------------------
 	voice := api.Group("voice")
 	voice.Post("/get", controllers.VoiceGet).Name("VoicePost")
