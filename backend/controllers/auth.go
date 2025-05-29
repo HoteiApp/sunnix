@@ -370,6 +370,22 @@ func AuthLogin(c *fiber.Ctx) error {
 	resultGetUser := GetUserInfo(username)
 	securityCode := false
 
+	if !resultGetUser.User.Active {
+		c.Status(fiber.StatusUnauthorized)
+		system.Log <- models.Logs{
+			App:         "sunissup",
+			Action:      "LOGIN_LOCK",
+			LoggedIn:    username,
+			Username:    username,
+			Client:      0,
+			Description: core.GetTextMessage("login_err_006"),
+		}
+		return c.JSON(fiber.Map{
+			"OK":      false,
+			"message": core.GetTextMessage("login_err_006"),
+		})
+	}
+
 	if resultGetUser.User.Email != "" {
 		securityCode = resultGetUser.User.SecurityCode
 	} else {

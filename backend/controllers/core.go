@@ -3,7 +3,6 @@ package controllers
 import (
 	"encoding/json"
 	"strconv"
-	"strings"
 
 	"github.com/HoteiApp/sunnix/backend/core"
 	"github.com/HoteiApp/sunnix/backend/database"
@@ -69,17 +68,25 @@ func CoreListUser(c *fiber.Ctx) error {
 	bytes, _ := json.Marshal(&result)
 	var resultSearch ldap.SearchResult
 	_ = json.Unmarshal(bytes, &resultSearch)
+
 	if len(resultSearch.Entries) > 0 {
+
+		// Paso 1: Recolectar todos los UID necesarios (TCMs y Supervisores)
+		uidSet := make(map[string]struct{})
+		for _, userLdap := range resultSearch.Entries {
+			uidSet[userLdap.GetAttributeValue("uid")] = struct{}{}
+		}
+
+		// Paso 2: Consultar LDAP para todos los TCMs
+		var allUIDs []string
+		for uid := range uidSet {
+			allUIDs = append(allUIDs, uid)
+		}
+		// Paso 5: Obtener todos los avatares necesarios en una sola llamada
+		avatarUrls, _ := core.BatchGetAvatars(allUIDs)
+
 		for _, userLdap := range resultSearch.Entries {
 			id, _ := strconv.ParseUint(userLdap.GetAttributeValue("id"), 10, 64)
-			objectsUrl := core.ExtractFunctionsPlugins("s3", "ListeFilesInFolder", "records/"+userLdap.GetAttributeValue("uid")+"/")
-			avatar := ""
-			for _, doc := range objectsUrl.([]map[string]string) {
-				if strings.Contains(doc["Key"], "avatar") {
-					avatar = doc["URL"]
-					break
-				}
-			}
 
 			users = append(users, models.Users{
 				ID:           uint(id),
@@ -94,7 +101,7 @@ func CoreListUser(c *fiber.Ctx) error {
 				Credentials:  userLdap.GetAttributeValue("credentials"),
 				Supervisor:   userLdap.GetAttributeValue("supervisor"),
 				Business:     userLdap.GetAttributeValue("business"),
-				Avatar:       avatar,
+				Avatar:       avatarUrls[userLdap.GetAttributeValue("uid")],
 			})
 		}
 	}

@@ -376,6 +376,7 @@ func ApproveUser(c *fiber.Ctx) error {
 	roll := data["roll"]
 
 	tcms := data["tcms"]
+	active := data["active"]
 
 	if uid == "" {
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
@@ -403,6 +404,7 @@ func ApproveUser(c *fiber.Ctx) error {
 		"status-->hired",
 		"roll-->"+roll,
 		"supervisor-->"+tcms,
+		"active-->"+active,
 	)
 
 	// result, _ := database.WithDB(func(db *gorm.DB) interface{} {

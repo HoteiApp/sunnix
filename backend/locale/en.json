@@ -8,6 +8,7 @@
     "login_err_003": "User not found",
     "login_err_004": "The second factor code is incorrect",
     "login_err_005": "You can not access the account",
+    "login_err_006": "Account inactive",
     "logout_ok_001": "I successfully logged out of the system",
     "changepassword_ok_001": "Password was changed successfully",
     "changepassword_err_001": "You must enter a password",
