@@ -1,0 +1,25 @@
+    Aetma-BH - Aetma Bettel Health
+    Aetma-D - Aetma Melicae
+    CCP - (Community Care Plan)
+    ECC - (Florida Community Care)
+    FCC-D - (Florida Community Care - Melicae)
+    Cigna (Cigna Health)
+    Cleas (Cleas Health) - OJO
+    CP (Care Plus)
+    Dev - (Devoted)
+    Doc - (Doctor)
+    Free Med - (Free Medicaid)
+    HS - (HealthSun)
+    HSP - (HealthSprings)
+    Hum-Med - (Humana Medicaid)
+    HUM-D - (Humana Medicare)
+    Leon - (Leon Health)
+    Molina - (Molina Health)
+    Pret (Pretted) -----------------OJO
+    United - (United Health)
+    Simply-Med - (Simply Medicaid)
+    Simply-D - (Simply Medicare)
+    Solis (Solis Health Plans)
+    Sun-(Sunshine)
+    Sun-CMS - (Children Medical Service)
+    Well - WellCare 
